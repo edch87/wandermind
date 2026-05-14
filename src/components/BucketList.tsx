@@ -19,86 +19,64 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
   const [showFilters, setShowFilters] = useState(false);
 
   let filtered = items.filter(i => i.status === tab);
+  if (filterCategory !== 'all') filtered = filtered.filter(i => i.category === filterCategory);
+  if (filterCost !== 'all') filtered = filtered.filter(i => i.costLevel === filterCost);
 
-  if (filterCategory !== 'all') {
-    filtered = filtered.filter(i => i.category === filterCategory);
-  }
-  if (filterCost !== 'all') {
-    filtered = filtered.filter(i => i.costLevel === filterCost);
-  }
-
-  // Sort
   filtered.sort((a, b) => {
     switch (sortBy) {
-      case 'priority': {
-        const rank = { high: 3, medium: 2, low: 1 };
-        return rank[b.priority] - rank[a.priority];
-      }
+      case 'priority': return ({ high: 3, medium: 2, low: 1 }[b.priority]) - ({ high: 3, medium: 2, low: 1 }[a.priority]);
       case 'travel': return a.travelTimeMinutes - b.travelTimeMinutes;
       case 'name': return a.name.localeCompare(b.name);
       default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
   });
 
-  // Get unique categories in list
   const usedCategories = [...new Set(items.map(i => i.category))];
 
   return (
-    <div className="px-5 py-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">My Bucket List</h2>
+    <div className="page-enter px-6 py-6 pb-24">
+      <h2 className="text-xl font-semibold text-sand-900 mb-4">My <span className="heading-accent">bucket list</span></h2>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setTab('want_to_do')}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${
-            tab === 'want_to_do' ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          Want to do ({items.filter(i => i.status === 'want_to_do').length})
+      <div className="flex bg-sand-100 rounded-2xl p-1 mb-4">
+        <button onClick={() => setTab('want_to_do')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
+            tab === 'want_to_do' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-500'
+          }`}>
+          To explore ({items.filter(i => i.status === 'want_to_do').length})
         </button>
-        <button
-          onClick={() => setTab('done')}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${
-            tab === 'done' ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          Completed ({items.filter(i => i.status === 'done').length})
+        <button onClick={() => setTab('done')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
+            tab === 'done' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-500'
+          }`}>
+          Done ({items.filter(i => i.status === 'done').length})
         </button>
       </div>
 
-      {/* Sort + Filter */}
+      {/* Sort & Filter */}
       <div className="flex items-center gap-2 mb-4">
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 focus:outline-none"
-        >
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}
+          className="text-xs px-3 py-2 rounded-xl border border-sand-200 bg-white text-sand-700 focus:outline-none">
           <option value="recent">Recently added</option>
           <option value="priority">Priority</option>
-          <option value="travel">Nearest first</option>
+          <option value="travel">Nearest</option>
           <option value="name">A-Z</option>
         </select>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`text-xs px-3 py-1.5 rounded-lg border transition ${
+        <button onClick={() => setShowFilters(!showFilters)}
+          className={`text-xs px-3 py-2 rounded-xl border transition ${
             showFilters || filterCategory !== 'all' || filterCost !== 'all'
-              ? 'border-teal-500 text-teal-600 bg-teal-50' : 'border-gray-200 text-gray-600'
-          }`}
-        >
-          🔽 Filters {(filterCategory !== 'all' || filterCost !== 'all') && '(active)'}
+              ? 'border-sand-500 text-sand-800 bg-sand-100' : 'border-sand-200 text-sand-600'
+          }`}>
+          Filters {(filterCategory !== 'all' || filterCost !== 'all') && '●'}
         </button>
       </div>
 
       {showFilters && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+        <div className="bg-sand-100 rounded-2xl p-4 mb-4 space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-500 block mb-1">Category</label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value as Category | 'all')}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white w-full"
-            >
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Category</label>
+            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as Category | 'all')}
+              className="text-xs px-3 py-2 rounded-xl border border-sand-200 bg-white w-full">
               <option value="all">All categories</option>
               {usedCategories.map(c => (
                 <option key={c} value={c}>{CATEGORY_INFO[c].emoji} {CATEGORY_INFO[c].label}</option>
@@ -106,7 +84,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 block mb-1">Cost</label>
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Cost</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterCost === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterCost('all')}>All</button>
@@ -117,70 +95,57 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </div>
           </div>
           <button onClick={() => { setFilterCategory('all'); setFilterCost('all'); }}
-            className="text-xs text-teal-500 font-medium">Clear all filters</button>
+            className="text-xs text-terra-500 font-medium">Clear filters</button>
         </div>
       )}
 
-      {/* Items list */}
+      {/* Items */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-16">
           <div className="text-4xl mb-3">{tab === 'want_to_do' ? '🗺️' : '🎉'}</div>
-          <p className="text-sm text-gray-500">
-            {tab === 'want_to_do'
-              ? 'No places yet! Add your first bucket list item.'
-              : 'No completed items yet. Get out there!'}
+          <p className="text-sm text-sand-500 mb-4">
+            {tab === 'want_to_do' ? 'No places yet. Start adding some!' : 'Nothing completed yet. Get out there!'}
           </p>
           {tab === 'want_to_do' && (
-            <button
-              onClick={() => onNavigate({ name: 'add' })}
-              className="mt-4 px-6 py-2 bg-teal-500 text-white rounded-xl text-sm font-medium"
-            >
-              Add a place
-            </button>
+            <button onClick={() => onNavigate({ name: 'add' })}
+              className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-xl text-sm font-medium">Add a place</button>
           )}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filtered.map(item => {
             const cat = CATEGORY_INFO[item.category];
             return (
-              <button
-                key={item.id}
-                onClick={() => onSelectItem(item.id)}
-                className="w-full text-left bg-white rounded-xl p-4 border border-gray-100 hover:border-teal-200 transition flex items-start gap-3"
-              >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ backgroundColor: cat.color + '15' }}
-                >
-                  {cat.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-xs text-gray-500">
-                      {item.transportMode === 'car' ? '🚗' : '🚶'} {item.travelTimeMinutes} min
-                    </span>
-                    <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">
-                      {item.weatherSuitability === 'good_weather' ? '☀️' : item.weatherSuitability === 'bad_weather_ideal' ? '☔' : '🌤️'}
-                    </span>
-                    <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">{DURATION_LABELS[item.durationEstimate]}</span>
-                    <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">{COST_LABELS[item.costLevel]}</span>
-                  </div>
-                  {item.status === 'done' && item.completionRating && (
-                    <div className="mt-1 text-xs text-amber-500">
-                      {'⭐'.repeat(item.completionRating)}
-                    </div>
+              <button key={item.id} onClick={() => onSelectItem(item.id)}
+                className="w-full text-left card flex overflow-hidden">
+                {/* Image */}
+                <div className="w-24 h-24 flex-shrink-0 bg-sand-200">
+                  {item.photoUrl ? (
+                    <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl">{cat.emoji}</div>
                   )}
                 </div>
-                {item.priority === 'high' && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                    High
-                  </span>
-                )}
+                {/* Content */}
+                <div className="flex-1 p-3 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className="badge bg-sand-100 text-sand-700">{item.travelTimeMinutes} min</span>
+                        <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
+                        <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
+                      </div>
+                    </div>
+                    {item.priority === 'high' && (
+                      <span className="badge bg-terra-500 text-white flex-shrink-0">High</span>
+                    )}
+                  </div>
+                  {item.status === 'done' && item.completionRating && (
+                    <div className="mt-1.5 text-xs text-sand-500">{'⭐'.repeat(item.completionRating)}</div>
+                  )}
+                </div>
               </button>
             );
           })}

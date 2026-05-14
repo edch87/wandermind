@@ -51,8 +51,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-teal-500 text-lg font-medium">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-sand-50">
+        <div className="text-sand-500 text-lg font-medium">Loading...</div>
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function App() {
 
   // Navigation bar component
   const NavBar = () => (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-2 py-1 z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-2 py-1 z-50">
       <div className="flex justify-around">
         {([
           { icon: '🏠', label: 'Home', s: { name: 'dashboard' } },
@@ -85,7 +85,7 @@ export default function App() {
             key={s.name}
             onClick={() => navigate(s)}
             className={`flex flex-col items-center py-1.5 px-3 rounded-lg transition-colors ${
-              screen.name === s.name ? 'text-teal-500' : 'text-gray-400 hover:text-gray-600'
+              screen.name === s.name ? 'text-sand-900' : 'text-sand-400 hover:text-sand-600'
             }`}
           >
             <span className="text-xl">{icon}</span>

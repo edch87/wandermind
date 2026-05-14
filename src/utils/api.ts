@@ -85,6 +85,72 @@ function classifyWeatherCode(code: number): { type: WeatherType; description: st
   return { type: 'cloudy', description: 'Overcast' };
 }
 
+// Fetch place image from Wikidata/Wikipedia
+export async function fetchPlaceImage(tags: Record<string, string>, lat: number, lng: number): Promise<string> {
+  // Try 1: Wikidata → get image via SPARQL-free REST endpoint
+  const wikidataId = tags['wikidata'];
+  if (wikidataId) {
+    try {
+      const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${wikidataId}&props=claims&format=json&origin=*`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const entity = data.entities?.[wikidataId];
+        const imageClaim = entity?.claims?.P18?.[0];
+        const filename = imageClaim?.mainsnak?.datavalue?.value;
+        if (filename) {
+          // Use Wikipedia's Special:FilePath which handles the hash routing for us
+          return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=400`;
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Try 2: Wikipedia page image
+  const wikipedia = tags['wikipedia'];
+  if (wikipedia) {
+    try {
+      const parts = wikipedia.includes(':') ? wikipedia.split(':') : ['en', wikipedia];
+      const lang = parts[0];
+      const title = parts.slice(1).join(':');
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&pithumbsize=400&format=json&origin=*`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const pages = data.query?.pages;
+        if (pages) {
+          const page = Object.values(pages)[0] as { thumbnail?: { source: string } };
+          if (page?.thumbnail?.source) return page.thumbnail.source;
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Try 3: Search Wikipedia by place name for an image
+  try {
+    const placeName = tags['name'] || '';
+    if (placeName) {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=1&prop=pageimages&pithumbsize=400&format=json&origin=*`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const pages = data.query?.pages;
+        if (pages) {
+          const page = Object.values(pages)[0] as { thumbnail?: { source: string } };
+          if (page?.thumbnail?.source) return page.thumbnail.source;
+        }
+      }
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: Static map tile
+  const z = 14;
+  const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z));
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, z));
+  return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+}
+
 export async function fetchWeatherForecast(lat: number, lng: number): Promise<WeatherForecast[]> {
   try {
     const url = `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lng}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=7`;
