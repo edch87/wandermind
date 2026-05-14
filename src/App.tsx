@@ -1,0 +1,151 @@
+import { useState, useEffect } from 'react';
+import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
+import type { UserProfile, BucketListItem } from './types';
+import Onboarding from './components/Onboarding';
+import Dashboard from './components/Dashboard';
+import AddPlace from './components/AddPlace';
+import BucketList from './components/BucketList';
+import ItemDetail from './components/ItemDetail';
+import RecommendationFlow from './components/RecommendationFlow';
+import Settings from './components/Settings';
+
+type Screen =
+  | { name: 'dashboard' }
+  | { name: 'add' }
+  | { name: 'list' }
+  | { name: 'detail'; itemId: string }
+  | { name: 'recommend' }
+  | { name: 'settings' };
+
+export default function App() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [items, setItems] = useState<BucketListItem[]>([]);
+  const [screen, setScreen] = useState<Screen>({ name: 'dashboard' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const p = getProfile();
+    const i = getItems();
+    setProfile(p);
+    setItems(i);
+    setLoading(false);
+  }, []);
+
+  const refreshItems = () => setItems(getItems());
+
+  const handleSaveProfile = (p: UserProfile) => {
+    saveProfile(p);
+    setProfile(p);
+  };
+
+  const handleSaveItem = (item: BucketListItem) => {
+    saveItem(item);
+    refreshItems();
+  };
+
+  const handleDeleteItem = (id: string) => {
+    deleteItem(id);
+    refreshItems();
+    setScreen({ name: 'list' });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-teal-500 text-lg font-medium">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!profile || !profile.onboardingComplete) {
+    return (
+      <Onboarding
+        onComplete={(p) => {
+          handleSaveProfile(p);
+          setScreen({ name: 'dashboard' });
+        }}
+      />
+    );
+  }
+
+  const navigate = (s: Screen) => setScreen(s);
+
+  // Navigation bar component
+  const NavBar = () => (
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-2 py-1 z-50">
+      <div className="flex justify-around">
+        {([
+          { icon: '🏠', label: 'Home', s: { name: 'dashboard' } },
+          { icon: '📋', label: 'My List', s: { name: 'list' } },
+          { icon: '➕', label: 'Add', s: { name: 'add' } },
+          { icon: '🎯', label: 'Suggest', s: { name: 'recommend' } },
+          { icon: '⚙️', label: 'Settings', s: { name: 'settings' } },
+        ] as { icon: string; label: string; s: Screen }[]).map(({ icon, label, s }) => (
+          <button
+            key={s.name}
+            onClick={() => navigate(s)}
+            className={`flex flex-col items-center py-1.5 px-3 rounded-lg transition-colors ${
+              screen.name === s.name ? 'text-teal-500' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <span className="text-xl">{icon}</span>
+            <span className="text-[10px] font-medium mt-0.5">{label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+
+  return (
+    <div className="pb-16">
+      {screen.name === 'dashboard' && (
+        <Dashboard
+          profile={profile}
+          items={items}
+          onNavigate={(s) => navigate(s as Screen)}
+        />
+      )}
+      {screen.name === 'add' && (
+        <AddPlace
+          profile={profile}
+          onSave={(item) => {
+            handleSaveItem(item);
+            setScreen({ name: 'list' });
+          }}
+          onBack={() => setScreen({ name: 'dashboard' })}
+        />
+      )}
+      {screen.name === 'list' && (
+        <BucketList
+          items={items}
+          onSelectItem={(id) => setScreen({ name: 'detail', itemId: id })}
+          onNavigate={(s) => navigate(s as Screen)}
+        />
+      )}
+      {screen.name === 'detail' && (
+        <ItemDetail
+          item={items.find(i => i.id === screen.itemId)!}
+          onBack={() => setScreen({ name: 'list' })}
+          onSave={handleSaveItem}
+          onDelete={handleDeleteItem}
+        />
+      )}
+      {screen.name === 'recommend' && (
+        <RecommendationFlow
+          profile={profile}
+          items={items}
+          onBack={() => setScreen({ name: 'dashboard' })}
+          onViewItem={(id) => setScreen({ name: 'detail', itemId: id })}
+        />
+      )}
+      {screen.name === 'settings' && (
+        <Settings
+          profile={profile}
+          onSave={handleSaveProfile}
+          onBack={() => setScreen({ name: 'dashboard' })}
+        />
+      )}
+      <NavBar />
+    </div>
+  );
+}
