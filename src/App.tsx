@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem } from './types';
+import type { Session } from '@supabase/supabase-js';
+import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import AddPlace from './components/AddPlace';
@@ -18,38 +21,71 @@ type Screen =
   | { name: 'settings' };
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [items, setItems] = useState<BucketListItem[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: 'dashboard' });
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
 
+  // Listen for auth changes
   useEffect(() => {
-    const p = getProfile();
-    const i = getItems();
-    setProfile(p);
-    setItems(i);
-    setLoading(false);
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const refreshItems = () => setItems(getItems());
+  // Load user data when authenticated
+  const loadUserData = useCallback(async () => {
+    if (!session) return;
+    setDataLoading(true);
+    const [p, i] = await Promise.all([getProfile(), getItems()]);
+    setProfile(p);
+    setItems(i);
+    setDataLoading(false);
+  }, [session]);
 
-  const handleSaveProfile = (p: UserProfile) => {
-    saveProfile(p);
+  useEffect(() => {
+    if (session) loadUserData();
+  }, [session, loadUserData]);
+
+  const refreshItems = async () => {
+    const i = await getItems();
+    setItems(i);
+  };
+
+  const handleSaveProfile = async (p: UserProfile) => {
+    await saveProfile(p);
     setProfile(p);
   };
 
-  const handleSaveItem = (item: BucketListItem) => {
-    saveItem(item);
-    refreshItems();
+  const handleSaveItem = async (item: BucketListItem) => {
+    await saveItem(item);
+    await refreshItems();
   };
 
-  const handleDeleteItem = (id: string) => {
-    deleteItem(id);
-    refreshItems();
+  const handleDeleteItem = async (id: string) => {
+    await deleteItem(id);
+    await refreshItems();
     setScreen({ name: 'list' });
   };
 
-  if (loading) {
+  const handleSignOut = () => {
+    setSession(null);
+    setProfile(null);
+    setItems([]);
+    setScreen({ name: 'dashboard' });
+  };
+
+  // Auth loading
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
         <div className="text-sand-500 text-lg font-medium">Loading...</div>
@@ -57,6 +93,21 @@ export default function App() {
     );
   }
 
+  // Not logged in
+  if (!session) {
+    return <AuthScreen onAuthSuccess={() => {}} />;
+  }
+
+  // Data loading
+  if (dataLoading && !profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-sand-50">
+        <div className="text-sand-500 text-lg font-medium">Loading your data...</div>
+      </div>
+    );
+  }
+
+  // Needs onboarding
   if (!profile || !profile.onboardingComplete) {
     return (
       <Onboarding
@@ -143,6 +194,7 @@ export default function App() {
           profile={profile}
           onSave={handleSaveProfile}
           onBack={() => setScreen({ name: 'dashboard' })}
+          onSignOut={handleSignOut}
         />
       )}
       <NavBar />

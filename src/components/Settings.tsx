@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { searchPlaces } from '../utils/api';
+import { supabase } from '../utils/supabase';
 import type { UserProfile, TransportMode, NominatimResult } from '../types';
 
 interface Props {
   profile: UserProfile;
   onSave: (profile: UserProfile) => void;
   onBack: () => void;
+  onSignOut: () => void;
 }
 
-export default function Settings({ profile, onSave, onBack }: Props) {
+export default function Settings({ profile, onSave, onBack, onSignOut }: Props) {
   const [name, setName] = useState(profile.displayName);
   const [transport, setTransport] = useState<TransportMode>(profile.preferredTransport);
   const [hasDog, setHasDog] = useState(profile.hasDog);
@@ -134,10 +136,22 @@ export default function Settings({ profile, onSave, onBack }: Props) {
         <button onClick={handleSave}
           className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-2xl font-semibold hover:bg-sand-800 transition">Save changes</button>
 
-        <div className="pt-4 border-t border-sand-200">
-          <button onClick={() => { if (confirm('This will delete all data. Are you sure?')) { localStorage.clear(); window.location.reload(); } }}
+        <div className="pt-4 border-t border-sand-200 space-y-3">
+          <button onClick={async () => { await supabase.auth.signOut(); onSignOut(); }}
+            className="w-full py-3 rounded-2xl text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition">Sign out</button>
+
+          <button onClick={async () => {
+            if (confirm('This will delete all your saved places. Are you sure?')) {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('bucket_list_items').delete().eq('user_id', user.id);
+                await supabase.from('profiles').update({ onboarding_complete: false, display_name: '' }).eq('id', user.id);
+              }
+              window.location.reload();
+            }
+          }}
             className="w-full py-3 rounded-2xl text-terra-500 text-sm font-medium border border-terra-500/20 hover:bg-terra-500/5">Reset all data</button>
-          <p className="text-[10px] text-sand-400 mt-2 text-center">Deletes all saved places and settings</p>
+          <p className="text-[10px] text-sand-400 mt-2 text-center">Deletes all saved places and resets settings</p>
         </div>
 
         <p className="text-[10px] text-sand-400 text-center pb-4">WanderMind v1.0</p>

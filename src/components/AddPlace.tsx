@@ -115,13 +115,20 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         </div>
         {searching && <p className="text-xs text-sand-400 mb-2 px-1">Searching...</p>}
         <div className="space-y-1">
-          {results.map((r) => (
-            <button key={r.place_id} onClick={() => selectPlace(r)}
-              className="w-full text-left px-4 py-3.5 rounded-2xl hover:bg-sand-100 transition">
-              <div className="text-sm font-medium text-sand-900">{r.display_name.split(',')[0]}</div>
-              <div className="text-xs text-sand-500 mt-0.5">{r.display_name.split(',').slice(1, 3).join(',')}</div>
-            </button>
-          ))}
+          {results.map((r) => {
+            const addr = r.address || {};
+            const placeName = r.display_name.split(',')[0].trim();
+            const locale = addr.city || addr.town || addr.village || addr.county || addr.state || '';
+            const country = addr.country || '';
+            const subtitle = [locale, country].filter(Boolean).join(', ');
+            return (
+              <button key={r.place_id} onClick={() => selectPlace(r)}
+                className="w-full text-left px-4 py-3.5 rounded-2xl hover:bg-sand-100 transition">
+                <div className="text-sm font-medium text-sand-900">{placeName}</div>
+                {subtitle && <div className="text-xs text-sand-500 mt-0.5">{subtitle}</div>}
+              </button>
+            );
+          })}
         </div>
         {!searching && results.length === 0 && query.length >= 3 && (
           <div className="text-center py-12">

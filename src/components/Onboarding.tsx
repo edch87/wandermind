@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { searchPlaces } from '../utils/api';
-import { generateId } from '../utils/storage';
+import { supabase } from '../utils/supabase';
 import type { UserProfile, TransportMode, NominatimResult } from '../types';
 
 interface Props {
@@ -62,10 +62,12 @@ export default function Onboarding({ onComplete }: Props) {
     setSearchQuery(result.display_name.split(',').slice(0, 2).join(','));
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!selectedLocation) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     onComplete({
-      id: generateId(), displayName: name,
+      id: user.id, displayName: name,
       homeLatitude: selectedLocation.lat, homeLongitude: selectedLocation.lng,
       homeAddress: selectedLocation.address, preferredTransport: transport,
       hasDog, hasKids, onboardingComplete: true,
