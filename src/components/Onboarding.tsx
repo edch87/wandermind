@@ -78,9 +78,9 @@ export default function Onboarding({ onComplete }: Props) {
   if (step === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <div className="text-6xl mb-6">🧭</div>
-        <h1 className="text-3xl font-semibold text-sand-900 mb-2">WanderMind</h1>
-        <p className="heading-accent text-lg mb-2">Your smart bucket list</p>
+        <div className="text-6xl mb-6">🐦</div>
+        <h1 className="text-3xl font-semibold text-sand-900 mb-2">Lark</h1>
+        <p className="heading-accent text-lg mb-2">Do it on a lark</p>
         <p className="text-sand-500 text-sm mb-10 max-w-xs leading-relaxed">
           Save places you want to visit. When you have free time, we'll recommend the perfect one based on weather, time, and mood.
         </p>

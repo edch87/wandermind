@@ -154,7 +154,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
           <p className="text-[10px] text-sand-400 mt-2 text-center">Deletes all saved places and resets settings</p>
         </div>
 
-        <p className="text-[10px] text-sand-400 text-center pb-4">WanderMind v1.0</p>
+        <p className="text-[10px] text-sand-400 text-center pb-4">Lark v1.0</p>
       </div>
     </div>
   );

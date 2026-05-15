@@ -1,3 +1,6 @@
 node_modules
 dist
+lark
 .DS_Store
+.env
+.env.txt
