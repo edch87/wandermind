@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { BucketListItem, Category, CostLevel } from '../types';
-import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, formatDuration } from '../types';
-import { Star, MapPin } from 'lucide-react';
+import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
+import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
+import { Star, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
   items: BucketListItem[];
@@ -17,11 +17,43 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [filterCategory, setFilterCategory] = useState<Category | 'all'>('all');
   const [filterCost, setFilterCost] = useState<CostLevel | 'all'>('all');
+  const [filterDuration, setFilterDuration] = useState<DurationEstimate | 'all'>('all');
+  const [filterSetting, setFilterSetting] = useState<Setting | 'all'>('all');
+  const [filterWeather, setFilterWeather] = useState<WeatherSuitability | 'all'>('all');
+  const [filterGroup, setFilterGroup] = useState<GroupType | 'all'>('all');
+  const [filterSeason, setFilterSeason] = useState<Season | 'all'>('all');
+  const [filterTimeOfDay, setFilterTimeOfDay] = useState<TimeOfDay | 'all'>('all');
+  const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
+  const [filterDogFriendly, setFilterDogFriendly] = useState(false);
+  const [filterWheelchair, setFilterWheelchair] = useState(false);
+  const [filterStroller, setFilterStroller] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  const hasActiveFilters = filterCategory !== 'all' || filterCost !== 'all' || filterDuration !== 'all' ||
+    filterSetting !== 'all' || filterWeather !== 'all' || filterGroup !== 'all' || filterSeason !== 'all' ||
+    filterTimeOfDay !== 'all' || filterPriority !== 'all' || filterDogFriendly || filterWheelchair || filterStroller;
 
   let filtered = items.filter(i => i.status === tab);
   if (filterCategory !== 'all') filtered = filtered.filter(i => i.category === filterCategory);
   if (filterCost !== 'all') filtered = filtered.filter(i => i.costLevel === filterCost);
+  if (filterDuration !== 'all') filtered = filtered.filter(i => i.durationEstimate === filterDuration);
+  if (filterSetting !== 'all') filtered = filtered.filter(i => i.setting === filterSetting);
+  if (filterWeather !== 'all') filtered = filtered.filter(i => i.weatherSuitability === filterWeather);
+  if (filterGroup !== 'all') filtered = filtered.filter(i => i.groupSuitability.includes(filterGroup));
+  if (filterSeason !== 'all') filtered = filtered.filter(i => (i.bestSeasons || []).includes('any') || (i.bestSeasons || []).includes(filterSeason));
+  if (filterTimeOfDay !== 'all') filtered = filtered.filter(i => (i.bestTimesOfDay || []).includes('any') || (i.bestTimesOfDay || []).includes(filterTimeOfDay));
+  if (filterPriority !== 'all') filtered = filtered.filter(i => i.priority === filterPriority);
+  if (filterDogFriendly) filtered = filtered.filter(i => i.dogFriendly === true);
+  if (filterWheelchair) filtered = filtered.filter(i => i.wheelchairAccessible === true);
+  if (filterStroller) filtered = filtered.filter(i => i.strollerFriendly === true);
+
+  const clearAllFilters = () => {
+    setFilterCategory('all'); setFilterCost('all'); setFilterDuration('all');
+    setFilterSetting('all'); setFilterWeather('all'); setFilterGroup('all');
+    setFilterSeason('all'); setFilterTimeOfDay('all'); setFilterPriority('all');
+    setFilterDogFriendly(false); setFilterWheelchair(false); setFilterStroller(false);
+  };
 
   filtered.sort((a, b) => {
     switch (sortBy) {
@@ -65,10 +97,10 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
         </select>
         <button onClick={() => setShowFilters(!showFilters)}
           className={`text-xs px-3 py-2 rounded-xl border transition ${
-            showFilters || filterCategory !== 'all' || filterCost !== 'all'
+            showFilters || hasActiveFilters
               ? 'border-sand-500 text-sand-800 bg-sand-100' : 'border-sand-200 text-sand-600'
           }`}>
-          Filters {(filterCategory !== 'all' || filterCost !== 'all') && '●'}
+          Filters {hasActiveFilters && '●'}
         </button>
       </div>
 
@@ -95,7 +127,108 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
               ))}
             </div>
           </div>
-          <button onClick={() => { setFilterCategory('all'); setFilterCost('all'); }}
+          <div>
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Time needed</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterDuration === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterDuration('all')}>All</button>
+              {(Object.entries(DURATION_LABELS) as [DurationEstimate, string][]).map(([key, label]) => (
+                <button key={key} className={`toggle-btn text-xs ${filterDuration === key ? 'active' : ''}`}
+                  onClick={() => setFilterDuration(key)}>{label}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Good for</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterGroup === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterGroup('all')}>All</button>
+              {(['solo', 'couple', 'friends', 'family', 'kids'] as GroupType[]).map(g => (
+                <button key={g} className={`toggle-btn text-xs ${filterGroup === g ? 'active' : ''}`}
+                  onClick={() => setFilterGroup(g)}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Priority</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterPriority === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterPriority('all')}>All</button>
+              {(['high', 'medium', 'low'] as Priority[]).map(p => (
+                <button key={p} className={`toggle-btn text-xs ${filterPriority === p ? 'active' : ''}`}
+                  onClick={() => setFilterPriority(p)}>{p.charAt(0).toUpperCase() + p.slice(1)}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Accessibility</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterDogFriendly ? 'active' : ''}`}
+                onClick={() => setFilterDogFriendly(!filterDogFriendly)}>Dog-friendly</button>
+              <button className={`toggle-btn text-xs ${filterWheelchair ? 'active' : ''}`}
+                onClick={() => setFilterWheelchair(!filterWheelchair)}>Wheelchair</button>
+              <button className={`toggle-btn text-xs ${filterStroller ? 'active' : ''}`}
+                onClick={() => setFilterStroller(!filterStroller)}>Stroller</button>
+            </div>
+          </div>
+
+          {/* Expandable extra filters */}
+          <button onClick={() => setShowMoreFilters(!showMoreFilters)}
+            className="text-xs text-sand-600 font-medium inline-flex items-center gap-1">
+            {showMoreFilters ? 'Less filters' : 'More filters'}
+            {showMoreFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+
+          {showMoreFilters && (
+            <>
+              <div>
+                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Setting</label>
+                <div className="toggle-group">
+                  <button className={`toggle-btn text-xs ${filterSetting === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterSetting('all')}>All</button>
+                  {([['indoor', 'Indoor'], ['outdoor', 'Outdoor'], ['mixed', 'Mixed']] as const).map(([key, label]) => (
+                    <button key={key} className={`toggle-btn text-xs ${filterSetting === key ? 'active' : ''}`}
+                      onClick={() => setFilterSetting(key)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Weather</label>
+                <div className="toggle-group">
+                  <button className={`toggle-btn text-xs ${filterWeather === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterWeather('all')}>All</button>
+                  {([['any', 'Any weather'], ['good_weather', 'Good weather'], ['bad_weather_ideal', 'Bad weather']] as const).map(([key, label]) => (
+                    <button key={key} className={`toggle-btn text-xs ${filterWeather === key ? 'active' : ''}`}
+                      onClick={() => setFilterWeather(key)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Season</label>
+                <div className="toggle-group">
+                  <button className={`toggle-btn text-xs ${filterSeason === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterSeason('all')}>All</button>
+                  {(Object.entries(SEASON_LABELS) as [Season, string][]).filter(([k]) => k !== 'any').map(([key, label]) => (
+                    <button key={key} className={`toggle-btn text-xs ${filterSeason === key ? 'active' : ''}`}
+                      onClick={() => setFilterSeason(key)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Time of day</label>
+                <div className="toggle-group">
+                  <button className={`toggle-btn text-xs ${filterTimeOfDay === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterTimeOfDay('all')}>All</button>
+                  {(Object.entries(TIME_OF_DAY_LABELS) as [TimeOfDay, string][]).filter(([k]) => k !== 'any').map(([key, label]) => (
+                    <button key={key} className={`toggle-btn text-xs ${filterTimeOfDay === key ? 'active' : ''}`}
+                      onClick={() => setFilterTimeOfDay(key)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <button onClick={clearAllFilters}
             className="text-xs text-terra-500 font-medium">Clear filters</button>
         </div>
       )}

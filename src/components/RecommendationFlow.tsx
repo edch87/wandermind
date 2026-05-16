@@ -3,7 +3,8 @@ import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLev
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
-import { Car, Bike, Train, Footprints, Dog, Accessibility, Baby } from 'lucide-react';
+import { getOpeningHoursWarning } from '../utils/openingHours';
+import { Car, Bike, Train, Footprints, Dog, Accessibility, Baby, AlertTriangle } from 'lucide-react';
 
 const TIME_SNAPS = [
   { min: 60, label: '1 hr' },
@@ -344,6 +345,9 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           {top3.map((scored, idx) => {
             const { item, reasons } = scored;
             const travelMin = travelOverrides[item.id] ?? item.travelTimeMinutes;
+            const targetDate = getDateString(dateOffset);
+            const hoursWarning = getOpeningHoursWarning(item.openingHours, targetDate);
+            const nonHoursReasons = reasons.filter(r => !r.startsWith('Closed') && !r.startsWith('May be closed') && !r.startsWith('Only open') && !r.startsWith('Closes at') && !r.startsWith('Open until') && !r.startsWith('Opens at'));
             return (
               <div key={item.id} className="card overflow-hidden">
                 {item.photoUrl && (
@@ -369,9 +373,18 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                     <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
                     <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
                   </div>
-                  {reasons.length > 0 && (
+                  {hoursWarning && (
+                    <div className={`flex items-center gap-2 mt-2.5 text-xs px-3 py-2 rounded-xl ${
+                      hoursWarning.startsWith('Closed') || hoursWarning.startsWith('May be closed')
+                        ? 'bg-terra-500/10 text-terra-600' : 'bg-amber-50 text-amber-700'
+                    }`}>
+                      <AlertTriangle size={13} strokeWidth={1.5} className="flex-shrink-0" />
+                      <span>{hoursWarning}</span>
+                    </div>
+                  )}
+                  {nonHoursReasons.length > 0 && (
                     <p className="text-xs text-sand-600 mt-3 bg-sand-50 rounded-xl p-3 border border-sand-100">
-                      {reasons.slice(0, 3).join(' · ')}
+                      {nonHoursReasons.slice(0, 3).join(' · ')}
                     </p>
                   )}
                   <div className="flex gap-2 mt-3">

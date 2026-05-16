@@ -2,6 +2,7 @@ import type {
   BucketListItem, RecommendationConstraints, WeatherForecast,
   ScoredItem, CostLevel, DurationEstimate, Vibe, Category, Season, EnergyLevel
 } from '../types';
+import { getOpeningHoursWarning } from './openingHours';
 
 const DURATION_MINUTES: Record<DurationEstimate, number> = {
   under_1h: 45, '1_2h': 90, '2_3h': 150, half_day: 240, full_day: 480,
@@ -171,6 +172,19 @@ export function getRecommendations(
     // Cost bonus
     if (item.costLevel === 'free') { score += 5; reasons.push('Free!'); }
     else if (item.costLevel === 'cheap') score += 3;
+
+    // Opening hours warning
+    const hoursWarning = getOpeningHoursWarning(item.openingHours, constraints.date);
+    if (hoursWarning) {
+      // If closed on this day, penalise heavily
+      if (hoursWarning.startsWith('Closed') || hoursWarning.startsWith('May be closed')) {
+        score -= 50;
+        reasons.push(hoursWarning);
+      } else {
+        // Time-based warnings (early close, late open, etc.) — still show but lighter penalty
+        reasons.push(hoursWarning);
+      }
+    }
 
     return { item, score, reasons };
   });
