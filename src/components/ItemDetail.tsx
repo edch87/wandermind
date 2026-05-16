@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay, GroupType, Priority } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { formatOpeningHours } from '../utils/openingHours';
 import {
   Navigation,
