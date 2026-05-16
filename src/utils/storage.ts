@@ -13,6 +13,7 @@ function profileFromDb(row: Record<string, unknown>): UserProfile {
     preferredTransport: (row.preferred_transport as UserProfile['preferredTransport']) || 'car',
     hasDog: (row.has_dog as boolean) || false,
     hasKids: (row.has_kids as boolean) || false,
+    needsAccessibility: (row.needs_accessibility as boolean) || false,
     onboardingComplete: (row.onboarding_complete as boolean) || false,
   };
 }
@@ -27,6 +28,7 @@ function profileToDb(profile: UserProfile) {
     preferred_transport: profile.preferredTransport,
     has_dog: profile.hasDog,
     has_kids: profile.hasKids,
+    needs_accessibility: profile.needsAccessibility,
     onboarding_complete: profile.onboardingComplete,
     updated_at: new Date().toISOString(),
   };
@@ -59,8 +61,8 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     durationEstimate: (row.duration_estimate as BucketListItem['durationEstimate']) || '1_2h',
     costLevel: (row.cost_level as BucketListItem['costLevel']) || 'moderate',
     specificCost: row.specific_cost as number | undefined,
-    bestSeason: (row.best_season as BucketListItem['bestSeason']) || 'any',
-    bestTimeOfDay: (row.best_time_of_day as BucketListItem['bestTimeOfDay']) || 'any',
+    bestSeasons: (row.best_seasons as BucketListItem['bestSeasons']) || (row.best_season ? [row.best_season as string] : ['any']),
+    bestTimesOfDay: (row.best_times_of_day as BucketListItem['bestTimesOfDay']) || (row.best_time_of_day ? [row.best_time_of_day as string] : ['any']),
     groupSuitability: (row.group_suitability as BucketListItem['groupSuitability']) || [],
     dogFriendly: row.dog_friendly as boolean | undefined,
     wheelchairAccessible: row.wheelchair_accessible as boolean | undefined,
@@ -103,8 +105,8 @@ function itemToDb(item: BucketListItem, userId: string) {
     duration_estimate: item.durationEstimate,
     cost_level: item.costLevel,
     specific_cost: item.specificCost ?? null,
-    best_season: item.bestSeason,
-    best_time_of_day: item.bestTimeOfDay,
+    best_seasons: item.bestSeasons,
+    best_times_of_day: item.bestTimesOfDay,
     group_suitability: item.groupSuitability,
     dog_friendly: item.dogFriendly ?? null,
     wheelchair_accessible: item.wheelchairAccessible ?? null,

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import type { BucketListItem } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
+import {
+  Car, Bike, Train, Footprints,
+  Sun, CloudRain, CloudSun,
+  Clock, Coins, Users, Dog, Accessibility, Baby,
+  Flower2, Sunrise, MapPin, Star, ArrowRight, Trash2, Check,
+} from 'lucide-react';
 
 interface Props {
   item: BucketListItem;
@@ -8,6 +14,23 @@ interface Props {
   onSave: (item: BucketListItem) => void;
   onDelete: (id: string) => void;
 }
+
+const transportIconEl = (mode: string) => {
+  switch (mode) {
+    case 'car': return <Car size={16} strokeWidth={1.5} />;
+    case 'bike': return <Bike size={16} strokeWidth={1.5} />;
+    case 'transit': return <Train size={16} strokeWidth={1.5} />;
+    default: return <Footprints size={16} strokeWidth={1.5} />;
+  }
+};
+
+const weatherIconEl = (suitability: string) => {
+  switch (suitability) {
+    case 'good_weather': return <Sun size={16} strokeWidth={1.5} />;
+    case 'bad_weather_ideal': return <CloudRain size={16} strokeWidth={1.5} />;
+    default: return <CloudSun size={16} strokeWidth={1.5} />;
+  }
+};
 
 export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
   const [showComplete, setShowComplete] = useState(false);
@@ -27,18 +50,22 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`, '_blank');
   };
 
-  const infoRows = [
-    { icon: item.transportMode === 'car' ? '🚗' : item.transportMode === 'bike' ? '🚲' : item.transportMode === 'transit' ? '🚆' : '🚶',
-      label: `${item.travelTimeMinutes} min from home (${item.travelDistanceKm} km)` },
-    { icon: item.weatherSuitability === 'good_weather' ? '☀️' : item.weatherSuitability === 'bad_weather_ideal' ? '☔' : '🌤️',
+  const seasonsDisplay = (item.bestSeasons || []).map(s => SEASON_LABELS[s]).join(', ') || 'Any season';
+  const timesDisplay = (item.bestTimesOfDay || []).map(t => TIME_OF_DAY_LABELS[t]).join(', ') || 'Any time';
+
+  const infoRows: { icon: React.ReactNode; label: string }[] = [
+    { icon: transportIconEl(item.transportMode),
+      label: `${formatDuration(item.travelTimeMinutes)} from home (${item.travelDistanceKm} km)` },
+    { icon: weatherIconEl(item.weatherSuitability),
       label: item.weatherSuitability === 'good_weather' ? 'Best in good weather' : item.weatherSuitability === 'bad_weather_ideal' ? 'Great for bad weather' : 'Any weather' },
-    { icon: '⏱️', label: DURATION_LABELS[item.durationEstimate] },
-    { icon: '💰', label: COST_LABELS[item.costLevel] + (item.specificCost ? ` (~€${item.specificCost})` : '') },
-    { icon: '👥', label: item.groupSuitability.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ') },
-    ...(item.dogFriendly !== undefined ? [{ icon: '🐕', label: item.dogFriendly ? 'Dog-friendly' : 'Not dog-friendly' }] : []),
-    ...(item.wheelchairAccessible !== undefined ? [{ icon: '♿', label: item.wheelchairAccessible ? 'Wheelchair accessible' : 'Not accessible' }] : []),
-    { icon: '🌸', label: SEASON_LABELS[item.bestSeason] },
-    ...(item.bestTimeOfDay !== 'any' ? [{ icon: '🌅', label: `Best in the ${item.bestTimeOfDay}` }] : []),
+    { icon: <Clock size={16} strokeWidth={1.5} />, label: DURATION_LABELS[item.durationEstimate] },
+    { icon: <Coins size={16} strokeWidth={1.5} />, label: COST_LABELS[item.costLevel] + (item.specificCost ? ` (~${item.specificCost})` : '') },
+    { icon: <Users size={16} strokeWidth={1.5} />, label: item.groupSuitability.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ') },
+    ...(item.dogFriendly !== undefined ? [{ icon: <Dog size={16} strokeWidth={1.5} />, label: item.dogFriendly ? 'Dog-friendly' : 'Not dog-friendly' }] : []),
+    ...(item.wheelchairAccessible !== undefined ? [{ icon: <Accessibility size={16} strokeWidth={1.5} />, label: item.wheelchairAccessible ? 'Wheelchair accessible' : 'Not accessible' }] : []),
+    ...(item.strollerFriendly !== undefined ? [{ icon: <Baby size={16} strokeWidth={1.5} />, label: item.strollerFriendly ? 'Stroller-friendly' : 'Not stroller-friendly' }] : []),
+    { icon: <Flower2 size={16} strokeWidth={1.5} />, label: seasonsDisplay },
+    ...(timesDisplay !== 'Any time' ? [{ icon: <Sunrise size={16} strokeWidth={1.5} />, label: timesDisplay }] : []),
   ];
 
   return (
@@ -51,7 +78,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
         ) : (
-          <div className="h-40 bg-sand-200 flex items-center justify-center text-5xl">{cat.emoji}</div>
+          <div className="h-40 bg-sand-200 flex items-center justify-center text-sm font-medium text-sand-500">{cat.label}</div>
         )}
         <button onClick={onBack}
           className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm shadow-sm">
@@ -63,11 +90,13 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
         {/* Title card */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-sand-100 mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="badge text-xs" style={{ backgroundColor: cat.color + '15', color: cat.color }}>{cat.emoji} {cat.label}</span>
+            <span className="badge text-xs" style={{ backgroundColor: cat.color + '15', color: cat.color }}>{cat.label}</span>
             <span className="badge bg-sand-100 text-sand-600 text-xs">{item.priority} priority</span>
           </div>
           <h2 className="text-xl font-semibold text-sand-900">{item.name}</h2>
-          <p className="text-xs text-sand-500 mt-1">{item.address?.split(',').slice(0, 3).join(',')}</p>
+          <p className="text-xs text-sand-500 mt-1 inline-flex items-center gap-1">
+            <MapPin size={12} strokeWidth={1.5} /> {item.address?.split(',').slice(0, 3).join(',')}
+          </p>
         </div>
 
         {/* Info rows */}
@@ -75,7 +104,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           <div className="space-y-3">
             {infoRows.map((row, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-base w-6 text-center">{row.icon}</span>
+                <span className="w-6 flex justify-center text-sand-500">{row.icon}</span>
                 <span className="text-sm text-sand-700">{row.label}</span>
               </div>
             ))}
@@ -104,7 +133,13 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             <p className="text-[10px] font-medium text-forest-600 uppercase tracking-wider mb-1">
               Completed {item.completedAt ? new Date(item.completedAt).toLocaleDateString() : ''}
             </p>
-            {item.completionRating && <p className="text-sm mb-1">{'⭐'.repeat(item.completionRating)}</p>}
+            {item.completionRating && (
+              <div className="flex gap-1 mb-1">
+                {Array.from({ length: item.completionRating }).map((_, i) => (
+                  <Star key={i} size={14} strokeWidth={1.5} className="text-amber-500 fill-amber-500" />
+                ))}
+              </div>
+            )}
             {item.completionNotes && <p className="text-sm text-sand-700">{item.completionNotes}</p>}
           </div>
         )}
@@ -112,18 +147,18 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
         {/* Actions */}
         <div className="space-y-2 mt-4">
           <button onClick={handleNavigate}
-            className="w-full py-3.5 rounded-2xl font-medium text-sm bg-sand-900 text-sand-100 hover:bg-sand-800 transition">
-            Navigate →
+            className="w-full py-3.5 rounded-2xl font-medium text-sm bg-sand-900 text-sand-100 hover:bg-sand-800 transition inline-flex items-center justify-center gap-2">
+            Navigate <ArrowRight size={16} strokeWidth={1.5} />
           </button>
           {item.status === 'want_to_do' && (
             <button onClick={() => setShowComplete(true)}
-              className="w-full py-3.5 rounded-2xl font-medium text-sm bg-forest-500 text-white hover:bg-forest-600 transition">
-              Mark as done ✓
+              className="w-full py-3.5 rounded-2xl font-medium text-sm bg-forest-500 text-white hover:bg-forest-600 transition inline-flex items-center justify-center gap-2">
+              Mark as done <Check size={16} strokeWidth={1.5} />
             </button>
           )}
           <button onClick={() => setConfirmDelete(true)}
-            className="w-full py-3.5 rounded-2xl font-medium text-sm text-terra-500 border border-terra-500/20 hover:bg-terra-500/5 transition">
-            Delete
+            className="w-full py-3.5 rounded-2xl font-medium text-sm text-terra-500 border border-terra-500/20 hover:bg-terra-500/5 transition inline-flex items-center justify-center gap-2">
+            <Trash2 size={16} strokeWidth={1.5} /> Delete
           </button>
         </div>
       </div>
@@ -138,7 +173,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               <div className="flex gap-2">
                 {[1,2,3,4,5].map(n => (
                   <button key={n} onClick={() => setRating(n)}
-                    className={`text-2xl transition ${n <= rating ? '' : 'opacity-25'}`}>⭐</button>
+                    className={`transition ${n <= rating ? 'text-amber-500' : 'text-sand-300'}`}>
+                    <Star size={24} strokeWidth={1.5} className={n <= rating ? 'fill-amber-500' : ''} />
+                  </button>
                 ))}
               </div>
             </div>

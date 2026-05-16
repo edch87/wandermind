@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../utils/supabase';
+import { Feather } from 'lucide-react';
 
 interface Props {
   onAuthSuccess: () => void;
@@ -51,9 +52,14 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
     <div className="min-h-screen flex flex-col items-center justify-center px-8 bg-sand-50">
       <div className="w-full max-w-xs">
         <div className="text-center mb-10">
-          <div className="text-5xl mb-4">🐦</div>
+          <div className="flex justify-center mb-4">
+            <Feather size={40} strokeWidth={1.5} className="text-sand-900" />
+          </div>
           <h1 className="text-3xl font-semibold text-sand-900 mb-1">Lark</h1>
-          <p className="heading-accent text-base">Do it on a lark</p>
+          <p className="heading-accent text-base mb-3">Do it on a lark</p>
+          <p className="text-sand-500 text-sm leading-relaxed max-w-[260px] mx-auto">
+            Save places you want to visit. When you have free time, we'll suggest the perfect one based on weather, mood, and who you're with.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

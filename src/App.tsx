@@ -3,6 +3,7 @@ import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem } from './types';
 import type { Session } from '@supabase/supabase-js';
+import { Home, ClipboardList, Plus, Target, Settings as SettingsIcon } from 'lucide-react';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -122,16 +123,18 @@ export default function App() {
   const navigate = (s: Screen) => setScreen(s);
 
   // Navigation bar component
+  const navItems: { icon: React.ReactNode; label: string; s: Screen }[] = [
+    { icon: <Home size={20} strokeWidth={1.5} />, label: 'Home', s: { name: 'dashboard' } },
+    { icon: <ClipboardList size={20} strokeWidth={1.5} />, label: 'My List', s: { name: 'list' } },
+    { icon: <Plus size={20} strokeWidth={1.5} />, label: 'Add', s: { name: 'add' } },
+    { icon: <Target size={20} strokeWidth={1.5} />, label: 'Suggest', s: { name: 'recommend' } },
+    { icon: <SettingsIcon size={20} strokeWidth={1.5} />, label: 'Settings', s: { name: 'settings' } },
+  ];
+
   const NavBar = () => (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-2 py-1 z-50">
       <div className="flex justify-around">
-        {([
-          { icon: '🏠', label: 'Home', s: { name: 'dashboard' } },
-          { icon: '📋', label: 'My List', s: { name: 'list' } },
-          { icon: '➕', label: 'Add', s: { name: 'add' } },
-          { icon: '🎯', label: 'Suggest', s: { name: 'recommend' } },
-          { icon: '⚙️', label: 'Settings', s: { name: 'settings' } },
-        ] as { icon: string; label: string; s: Screen }[]).map(({ icon, label, s }) => (
+        {navItems.map(({ icon, label, s }) => (
           <button
             key={s.name}
             onClick={() => navigate(s)}
@@ -139,7 +142,7 @@ export default function App() {
               screen.name === s.name ? 'text-sand-900' : 'text-sand-400 hover:text-sand-600'
             }`}
           >
-            <span className="text-xl">{icon}</span>
+            {icon}
             <span className="text-[10px] font-medium mt-0.5">{label}</span>
           </button>
         ))}
@@ -154,6 +157,7 @@ export default function App() {
           profile={profile}
           items={items}
           onNavigate={(s) => navigate(s as Screen)}
+          onSaveProfile={handleSaveProfile}
         />
       )}
       {screen.name === 'add' && (

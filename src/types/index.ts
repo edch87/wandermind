@@ -25,6 +25,7 @@ export interface UserProfile {
   preferredTransport: TransportMode;
   hasDog: boolean;
   hasKids: boolean;
+  needsAccessibility: boolean;
   onboardingComplete: boolean;
 }
 
@@ -60,8 +61,8 @@ export interface BucketListItem {
   durationEstimate: DurationEstimate;
   costLevel: CostLevel;
   specificCost?: number;
-  bestSeason: Season;
-  bestTimeOfDay: TimeOfDay;
+  bestSeasons: Season[];
+  bestTimesOfDay: TimeOfDay[];
   groupSuitability: GroupType[];
   dogFriendly?: boolean;
   wheelchairAccessible?: boolean;
@@ -117,23 +118,23 @@ export interface NominatimResult {
   address?: Record<string, string>;
 }
 
-export const CATEGORY_INFO: Record<Category, { label: string; emoji: string; color: string }> = {
-  museum_gallery: { label: 'Museum & Gallery', emoji: '🏛️', color: '#7c3aed' },
-  historical: { label: 'Historical', emoji: '🏰', color: '#92400e' },
-  nature_landscape: { label: 'Nature & Landscape', emoji: '🏞️', color: '#059669' },
-  park_garden: { label: 'Park & Garden', emoji: '🌳', color: '#16a34a' },
-  mountain_hiking: { label: 'Mountain & Hiking', emoji: '🏔️', color: '#475569' },
-  beach_water: { label: 'Beach & Water', emoji: '🏖️', color: '#0284c7' },
-  sport_adventure: { label: 'Sport & Adventure', emoji: '🧗', color: '#dc2626' },
-  food_drink: { label: 'Food & Drink', emoji: '🍽️', color: '#ea580c' },
-  entertainment: { label: 'Entertainment', emoji: '🎢', color: '#c026d3' },
-  wellness: { label: 'Wellness', emoji: '🧘', color: '#0d9488' },
-  shopping: { label: 'Shopping', emoji: '🛍️', color: '#e11d48' },
-  religious_spiritual: { label: 'Religious & Spiritual', emoji: '⛪', color: '#6366f1' },
-  zoo_aquarium: { label: 'Zoo & Aquarium', emoji: '🦁', color: '#65a30d' },
-  event_festival: { label: 'Event & Festival', emoji: '🎪', color: '#d97706' },
-  city_exploration: { label: 'City Exploration', emoji: '🏙️', color: '#64748b' },
-  other: { label: 'Other', emoji: '📍', color: '#78716c' },
+export const CATEGORY_INFO: Record<Category, { label: string; icon: string; color: string }> = {
+  museum_gallery: { label: 'Museum & Gallery', icon: 'Landmark', color: '#7c3aed' },
+  historical: { label: 'Historical', icon: 'Castle', color: '#92400e' },
+  nature_landscape: { label: 'Nature & Landscape', icon: 'Mountain', color: '#059669' },
+  park_garden: { label: 'Park & Garden', icon: 'TreePine', color: '#16a34a' },
+  mountain_hiking: { label: 'Mountain & Hiking', icon: 'MountainSnow', color: '#475569' },
+  beach_water: { label: 'Beach & Water', icon: 'Waves', color: '#0284c7' },
+  sport_adventure: { label: 'Sport & Adventure', icon: 'Flame', color: '#dc2626' },
+  food_drink: { label: 'Food & Drink', icon: 'UtensilsCrossed', color: '#ea580c' },
+  entertainment: { label: 'Entertainment', icon: 'Ticket', color: '#c026d3' },
+  wellness: { label: 'Wellness', icon: 'Heart', color: '#0d9488' },
+  shopping: { label: 'Shopping', icon: 'ShoppingBag', color: '#e11d48' },
+  religious_spiritual: { label: 'Religious & Spiritual', icon: 'Church', color: '#6366f1' },
+  zoo_aquarium: { label: 'Zoo & Aquarium', icon: 'PawPrint', color: '#65a30d' },
+  event_festival: { label: 'Event & Festival', icon: 'PartyPopper', color: '#d97706' },
+  city_exploration: { label: 'City Exploration', icon: 'Building2', color: '#64748b' },
+  other: { label: 'Other', icon: 'MapPin', color: '#78716c' },
 };
 
 export const DURATION_LABELS: Record<DurationEstimate, string> = {
@@ -158,3 +159,19 @@ export const SEASON_LABELS: Record<Season, string> = {
   autumn: 'Autumn',
   winter: 'Winter',
 };
+
+export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
+  any: 'Any time',
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
+};
+
+// Format travel duration nicely: 45 min, 1hr 30mins, 2hrs 15mins
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) return `${hrs}hr${hrs > 1 ? 's' : ''}`;
+  return `${hrs}hr${hrs > 1 ? 's' : ''} ${mins}min${mins > 1 ? 's' : ''}`;
+}

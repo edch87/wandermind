@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { searchPlaces } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import type { UserProfile, TransportMode, NominatimResult } from '../types';
+import { Feather, MapPin, Target, CloudSun, Car, Bike, Train, Footprints, Baby, Dog, Accessibility } from 'lucide-react';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -17,6 +18,7 @@ export default function Onboarding({ onComplete }: Props) {
   const [transport, setTransport] = useState<TransportMode>('car');
   const [hasDog, setHasDog] = useState(false);
   const [hasKids, setHasKids] = useState(false);
+  const [needsAccessibility, setNeedsAccessibility] = useState(false);
   const [searching, setSearching] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
@@ -70,25 +72,38 @@ export default function Onboarding({ onComplete }: Props) {
       id: user.id, displayName: name,
       homeLatitude: selectedLocation.lat, homeLongitude: selectedLocation.lng,
       homeAddress: selectedLocation.address, preferredTransport: transport,
-      hasDog, hasKids, onboardingComplete: true,
+      hasDog, hasKids, needsAccessibility, onboardingComplete: true,
     });
   };
 
+  const transportOptions: { val: TransportMode; label: string; icon: React.ReactNode }[] = [
+    { val: 'car', label: 'Car', icon: <Car size={16} strokeWidth={1.5} /> },
+    { val: 'bike', label: 'Bike', icon: <Bike size={16} strokeWidth={1.5} /> },
+    { val: 'transit', label: 'Transit', icon: <Train size={16} strokeWidth={1.5} /> },
+    { val: 'walk', label: 'Walk', icon: <Footprints size={16} strokeWidth={1.5} /> },
+  ];
+
   // Welcome
   if (step === 0) {
+    const features: { icon: React.ReactNode; text: string }[] = [
+      { icon: <MapPin size={18} strokeWidth={1.5} />, text: 'Save places with smart auto-categorisation' },
+      { icon: <Target size={18} strokeWidth={1.5} />, text: 'Get personalised recommendations' },
+      { icon: <CloudSun size={18} strokeWidth={1.5} />, text: 'Weather-aware suggestions' },
+    ];
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <div className="text-6xl mb-6">🐦</div>
+        <Feather size={48} strokeWidth={1.5} className="text-sand-900 mb-6" />
         <h1 className="text-3xl font-semibold text-sand-900 mb-2">Lark</h1>
         <p className="heading-accent text-lg mb-2">Do it on a lark</p>
         <p className="text-sand-500 text-sm mb-10 max-w-xs leading-relaxed">
           Save places you want to visit. When you have free time, we'll recommend the perfect one based on weather, time, and mood.
         </p>
         <div className="space-y-4 w-full max-w-xs mb-10 text-left">
-          {[['📍', 'Save places with smart auto-categorisation'], ['🎯', 'Get personalised recommendations'], ['🌤️', 'Weather-aware suggestions']].map(([icon, text], i) => (
+          {features.map((f, i) => (
             <div key={i} className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-sand-200 flex items-center justify-center text-lg flex-shrink-0">{icon}</div>
-              <span className="text-sm text-sand-700">{text}</span>
+              <div className="w-10 h-10 rounded-xl bg-sand-200 flex items-center justify-center text-sand-700 flex-shrink-0">{f.icon}</div>
+              <span className="text-sm text-sand-700">{f.text}</span>
             </div>
           ))}
         </div>
@@ -164,9 +179,11 @@ export default function Onboarding({ onComplete }: Props) {
       <div className="mb-6">
         <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-2 block">How do you usually travel?</label>
         <div className="toggle-group">
-          {([['car','🚗 Car'],['bike','🚲 Bike'],['transit','🚆 Transit'],['walk','🚶 Walk']] as const).map(([val, label]) => (
+          {transportOptions.map(({ val, label, icon }) => (
             <button key={val} className={`toggle-btn ${transport === val ? 'active' : ''}`}
-              onClick={() => setTransport(val as TransportMode)}>{label}</button>
+              onClick={() => setTransport(val)}>
+              <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+            </button>
           ))}
         </div>
       </div>
@@ -177,12 +194,17 @@ export default function Onboarding({ onComplete }: Props) {
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={hasKids} onChange={(e) => setHasKids(e.target.checked)}
               className="w-5 h-5 rounded border-sand-300 text-sand-900 focus:ring-sand-500" />
-            <span className="text-sm text-sand-700">👶 I have kids</span>
+            <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Baby size={16} strokeWidth={1.5} /> I have kids</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={hasDog} onChange={(e) => setHasDog(e.target.checked)}
               className="w-5 h-5 rounded border-sand-300 text-sand-900 focus:ring-sand-500" />
-            <span className="text-sm text-sand-700">🐕 I have a dog</span>
+            <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Dog size={16} strokeWidth={1.5} /> I have a dog</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={needsAccessibility} onChange={(e) => setNeedsAccessibility(e.target.checked)}
+              className="w-5 h-5 rounded border-sand-300 text-sand-900 focus:ring-sand-500" />
+            <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Accessibility size={16} strokeWidth={1.5} /> I need accessible options</span>
           </label>
         </div>
       </div>

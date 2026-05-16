@@ -7,7 +7,13 @@ import type {
   WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay,
   GroupType, Priority
 } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
+import {
+  Car, Bike, Train, Footprints, MapPin, Search,
+  Building2, TreePine, RefreshCw,
+  CloudSun, Sun, CloudRain,
+  Dog, Accessibility, Baby,
+} from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -16,6 +22,15 @@ interface Props {
 }
 
 type Step = 'search' | 'loading' | 'review';
+
+const transportIcon = (mode: string) => {
+  switch (mode) {
+    case 'car': return <Car size={16} strokeWidth={1.5} />;
+    case 'bike': return <Bike size={16} strokeWidth={1.5} />;
+    case 'transit': return <Train size={16} strokeWidth={1.5} />;
+    default: return <Footprints size={16} strokeWidth={1.5} />;
+  }
+};
 
 export default function AddPlace({ profile, onSave, onBack }: Props) {
   const [step, setStep] = useState<Step>('search');
@@ -99,6 +114,16 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     updateDraft({ groupSuitability: current.includes(g) ? current.filter(x => x !== g) : [...current, g] });
   };
 
+  const toggleSeason = (s: Season) => {
+    const current = draft.bestSeasons || [];
+    updateDraft({ bestSeasons: current.includes(s) ? current.filter(x => x !== s) : [...current, s] });
+  };
+
+  const toggleTimeOfDay = (t: TimeOfDay) => {
+    const current = draft.bestTimesOfDay || [];
+    updateDraft({ bestTimesOfDay: current.includes(t) ? current.filter(x => x !== t) : [...current, t] });
+  };
+
   // Search screen
   if (step === 'search') {
     return (
@@ -137,7 +162,7 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         )}
         {query.length < 3 && (
           <div className="text-center py-16">
-            <div className="text-4xl mb-3">🔍</div>
+            <div className="flex justify-center mb-3"><Search size={32} strokeWidth={1.5} className="text-sand-300" /></div>
             <p className="text-sm text-sand-500">Search for museums, restaurants, parks, hikes, viewpoints...</p>
           </div>
         )}
@@ -186,10 +211,12 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           <p className="text-xs text-sand-500 mt-1">{draft.address?.split(',').slice(1, 3).join(',')}</p>
           {draft.travelTimeMinutes! > 0 && (
             <div className="flex items-center gap-3 mt-3">
-              <span className="badge bg-sand-100 text-sand-700">
-                {draft.transportMode === 'car' ? '🚗' : draft.transportMode === 'bike' ? '🚲' : draft.transportMode === 'transit' ? '🚆' : '🚶'} {draft.travelTimeMinutes} min
+              <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
+                {transportIcon(draft.transportMode || 'car')} {formatDuration(draft.travelTimeMinutes!)}
               </span>
-              <span className="badge bg-sand-100 text-sand-700">📍 {draft.travelDistanceKm} km</span>
+              <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
+                <MapPin size={14} strokeWidth={1.5} /> {draft.travelDistanceKm} km
+              </span>
             </div>
           )}
         </div>
@@ -197,19 +224,23 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         {/* Fields */}
         <Section label="Category">
           <div className="toggle-group">
-            {(Object.entries(CATEGORY_INFO) as [Category, { label: string; emoji: string }][]).map(([key, info]) => (
+            {(Object.entries(CATEGORY_INFO) as [Category, { label: string; icon: string; color: string }][]).map(([key, info]) => (
               <button key={key} className={`toggle-btn text-xs ${draft.category === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ category: key })}>{info.emoji} {info.label}</button>
+                onClick={() => updateDraft({ category: key })}>{info.label}</button>
             ))}
           </div>
         </Section>
 
         <Section label="Setting">
           <div className="toggle-group">
-            {(['indoor', 'outdoor', 'mixed'] as Setting[]).map(s => (
-              <button key={s} className={`toggle-btn ${draft.setting === s ? 'active' : ''}`}
-                onClick={() => updateDraft({ setting: s })}>
-                {s === 'indoor' ? '🏢 Indoor' : s === 'outdoor' ? '🌿 Outdoor' : '🔄 Mixed'}
+            {([
+              { val: 'indoor' as Setting, label: 'Indoor', icon: <Building2 size={16} strokeWidth={1.5} /> },
+              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreePine size={16} strokeWidth={1.5} /> },
+              { val: 'mixed' as Setting, label: 'Mixed', icon: <RefreshCw size={16} strokeWidth={1.5} /> },
+            ]).map(({ val, label, icon }) => (
+              <button key={val} className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
+                onClick={() => updateDraft({ setting: val })}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
               </button>
             ))}
           </div>
@@ -217,9 +248,15 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
 
         <Section label="Weather">
           <div className="toggle-group">
-            {([['any', '🌤️ Any weather'], ['good_weather', '☀️ Good weather only'], ['bad_weather_ideal', '☔ Great for bad weather']] as const).map(([val, label]) => (
+            {([
+              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} strokeWidth={1.5} /> },
+              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} strokeWidth={1.5} /> },
+              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} strokeWidth={1.5} /> },
+            ]).map(({ val, label, icon }) => (
               <button key={val} className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ weatherSuitability: val as WeatherSuitability })}>{label}</button>
+                onClick={() => updateDraft({ weatherSuitability: val })}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
             ))}
           </div>
         </Section>
@@ -242,29 +279,29 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           </div>
         </Section>
 
-        <Section label="Best season">
+        <Section label="Best seasons">
           <div className="toggle-group">
             {(Object.entries(SEASON_LABELS) as [Season, string][]).map(([key, label]) => (
-              <button key={key} className={`toggle-btn ${draft.bestSeason === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ bestSeason: key })}>{label}</button>
+              <button key={key} className={`toggle-btn ${(draft.bestSeasons || []).includes(key) ? 'active' : ''}`}
+                onClick={() => toggleSeason(key)}>{label}</button>
             ))}
           </div>
         </Section>
 
-        <Section label="Best time of day">
+        <Section label="Best times of day">
           <div className="toggle-group">
-            {([['any', 'Any time'], ['morning', '🌅 Morning'], ['afternoon', '☀️ Afternoon'], ['evening', '🌆 Evening']] as const).map(([val, label]) => (
-              <button key={val} className={`toggle-btn ${draft.bestTimeOfDay === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ bestTimeOfDay: val as TimeOfDay })}>{label}</button>
+            {(Object.entries(TIME_OF_DAY_LABELS) as [TimeOfDay, string][]).map(([key, label]) => (
+              <button key={key} className={`toggle-btn ${(draft.bestTimesOfDay || []).includes(key) ? 'active' : ''}`}
+                onClick={() => toggleTimeOfDay(key)}>{label}</button>
             ))}
           </div>
         </Section>
 
         <Section label="Good for">
           <div className="toggle-group">
-            {([['solo', '👤 Solo'], ['couple', '👫 Couple'], ['friends', '👥 Friends'], ['family', '👨‍👩‍👧 Family'], ['kids', '👶 Kids']] as const).map(([val, label]) => (
-              <button key={val} className={`toggle-btn ${(draft.groupSuitability || []).includes(val as GroupType) ? 'active' : ''}`}
-                onClick={() => toggleGroupType(val as GroupType)}>{label}</button>
+            {(['solo', 'couple', 'friends', 'family', 'kids'] as GroupType[]).map((val) => (
+              <button key={val} className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
+                onClick={() => toggleGroupType(val)}>{val.charAt(0).toUpperCase() + val.slice(1)}</button>
             ))}
           </div>
         </Section>
@@ -272,11 +309,17 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         <Section label="Accessibility">
           <div className="toggle-group">
             <button className={`toggle-btn ${draft.dogFriendly === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ dogFriendly: draft.dogFriendly === true ? undefined : true })}>🐕 Dog-friendly</button>
+              onClick={() => updateDraft({ dogFriendly: draft.dogFriendly === true ? undefined : true })}>
+              <span className="inline-flex items-center gap-1.5"><Dog size={16} strokeWidth={1.5} /> Dog-friendly</span>
+            </button>
             <button className={`toggle-btn ${draft.wheelchairAccessible === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ wheelchairAccessible: draft.wheelchairAccessible === true ? undefined : true })}>♿ Wheelchair</button>
+              onClick={() => updateDraft({ wheelchairAccessible: draft.wheelchairAccessible === true ? undefined : true })}>
+              <span className="inline-flex items-center gap-1.5"><Accessibility size={16} strokeWidth={1.5} /> Wheelchair</span>
+            </button>
             <button className={`toggle-btn ${draft.strollerFriendly === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ strollerFriendly: draft.strollerFriendly === true ? undefined : true })}>🍼 Stroller</button>
+              onClick={() => updateDraft({ strollerFriendly: draft.strollerFriendly === true ? undefined : true })}>
+              <span className="inline-flex items-center gap-1.5"><Baby size={16} strokeWidth={1.5} /> Stroller</span>
+            </button>
           </div>
         </Section>
 

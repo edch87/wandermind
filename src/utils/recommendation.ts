@@ -57,7 +57,8 @@ export function getRecommendations(
 
     // Season
     const season = getCurrentSeason();
-    if (item.bestSeason !== 'any' && item.bestSeason !== season) return false;
+    const seasons = item.bestSeasons || [];
+    if (seasons.length > 0 && !seasons.includes('any') && !seasons.includes(season)) return false;
 
     // Dog
     if (constraints.dogComing && item.dogFriendly === false) return false;
@@ -111,7 +112,8 @@ export function getRecommendations(
     }
 
     // Season bonus
-    if (item.bestSeason === getCurrentSeason()) {
+    const itemSeasons = item.bestSeasons || [];
+    if (itemSeasons.includes(getCurrentSeason())) {
       score += 10;
       reasons.push(`Best time of year to visit`);
     }

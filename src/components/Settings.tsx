@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { searchPlaces } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import type { UserProfile, TransportMode, NominatimResult } from '../types';
+import { Car, Bike, Train, Footprints, Baby, Dog, Accessibility } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -16,6 +17,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   const [transport, setTransport] = useState<TransportMode>(profile.preferredTransport);
   const [hasDog, setHasDog] = useState(profile.hasDog);
   const [hasKids, setHasKids] = useState(profile.hasKids);
+  const [needsAccessibility, setNeedsAccessibility] = useState(profile.needsAccessibility ?? false);
   const [homeAddress, setHomeAddress] = useState(profile.homeAddress);
   const [homeLat, setHomeLat] = useState(profile.homeLatitude);
   const [homeLng, setHomeLng] = useState(profile.homeLongitude);
@@ -25,6 +27,13 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+
+  const transportOptions: { val: TransportMode; label: string; icon: React.ReactNode }[] = [
+    { val: 'car', label: 'Car', icon: <Car size={16} strokeWidth={1.5} /> },
+    { val: 'bike', label: 'Bike', icon: <Bike size={16} strokeWidth={1.5} /> },
+    { val: 'transit', label: 'Transit', icon: <Train size={16} strokeWidth={1.5} /> },
+    { val: 'walk', label: 'Walk', icon: <Footprints size={16} strokeWidth={1.5} /> },
+  ];
 
   useEffect(() => {
     if (showLocationEdit && mapRef.current && !mapInstance.current) {
@@ -60,7 +69,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   };
 
   const handleSave = () => {
-    onSave({ ...profile, displayName: name, preferredTransport: transport, hasDog, hasKids,
+    onSave({ ...profile, displayName: name, preferredTransport: transport, hasDog, hasKids, needsAccessibility,
       homeLatitude: homeLat, homeLongitude: homeLng, homeAddress });
     onBack();
   };
@@ -82,9 +91,11 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
         <div>
           <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-2 block">Transport</label>
           <div className="toggle-group">
-            {([['car','🚗 Car'],['bike','🚲 Bike'],['transit','🚆 Transit'],['walk','🚶 Walk']] as const).map(([val, label]) => (
+            {transportOptions.map(({ val, label, icon }) => (
               <button key={val} className={`toggle-btn ${transport === val ? 'active' : ''}`}
-                onClick={() => setTransport(val as TransportMode)}>{label}</button>
+                onClick={() => setTransport(val)}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -95,12 +106,17 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={hasKids} onChange={(e) => setHasKids(e.target.checked)}
                 className="w-5 h-5 rounded border-sand-300" />
-              <span className="text-sm text-sand-700">👶 I have kids</span>
+              <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Baby size={16} strokeWidth={1.5} /> I have kids</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={hasDog} onChange={(e) => setHasDog(e.target.checked)}
                 className="w-5 h-5 rounded border-sand-300" />
-              <span className="text-sm text-sand-700">🐕 I have a dog</span>
+              <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Dog size={16} strokeWidth={1.5} /> I have a dog</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={needsAccessibility} onChange={(e) => setNeedsAccessibility(e.target.checked)}
+                className="w-5 h-5 rounded border-sand-300" />
+              <span className="inline-flex items-center gap-2 text-sm text-sand-700"><Accessibility size={16} strokeWidth={1.5} /> I need accessible options</span>
             </label>
           </div>
         </div>

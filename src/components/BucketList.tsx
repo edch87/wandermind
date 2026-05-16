@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { BucketListItem, Category, CostLevel } from '../types';
-import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS } from '../types';
+import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, formatDuration } from '../types';
+import { Star, MapPin } from 'lucide-react';
 
 interface Props {
   items: BucketListItem[];
@@ -79,7 +80,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
               className="text-xs px-3 py-2 rounded-xl border border-sand-200 bg-white w-full">
               <option value="all">All categories</option>
               {usedCategories.map(c => (
-                <option key={c} value={c}>{CATEGORY_INFO[c].emoji} {CATEGORY_INFO[c].label}</option>
+                <option key={c} value={c}>{CATEGORY_INFO[c].label}</option>
               ))}
             </select>
           </div>
@@ -102,7 +103,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
       {/* Items */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-4xl mb-3">{tab === 'want_to_do' ? '🗺️' : '🎉'}</div>
+          <div className="flex justify-center mb-3"><MapPin size={32} strokeWidth={1.5} className="text-sand-300" /></div>
           <p className="text-sm text-sand-500 mb-4">
             {tab === 'want_to_do' ? 'No places yet. Start adding some!' : 'Nothing completed yet. Get out there!'}
           </p>
@@ -124,7 +125,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                     <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">{cat.emoji}</div>
+                    <div className="w-full h-full flex items-center justify-center text-xs font-medium text-sand-500">{cat.label}</div>
                   )}
                 </div>
                 {/* Content */}
@@ -133,7 +134,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                     <div className="min-w-0">
                       <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        <span className="badge bg-sand-100 text-sand-700">{item.travelTimeMinutes} min</span>
+                        <span className="badge bg-sand-100 text-sand-700">{formatDuration(item.travelTimeMinutes)}</span>
                         <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
                         <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
                       </div>
@@ -143,7 +144,11 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                     )}
                   </div>
                   {item.status === 'done' && item.completionRating && (
-                    <div className="mt-1.5 text-xs text-sand-500">{'⭐'.repeat(item.completionRating)}</div>
+                    <div className="mt-1.5 flex gap-0.5">
+                      {Array.from({ length: item.completionRating }).map((_, i) => (
+                        <Star key={i} size={12} strokeWidth={1.5} className="text-amber-500 fill-amber-500" />
+                      ))}
+                    </div>
                   )}
                 </div>
               </button>
