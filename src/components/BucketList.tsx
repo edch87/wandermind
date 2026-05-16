@@ -50,7 +50,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
             tab === 'done' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-500'
           }`}>
-          Done ({items.filter(i => i.status === 'done').length})
+          Visited ({items.filter(i => i.status === 'done').length})
         </button>
       </div>
 

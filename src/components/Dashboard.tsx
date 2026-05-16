@@ -28,10 +28,6 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
   const doneItems = items.filter(i => i.status === 'done');
   const recentItems = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
-  const catCounts: Record<string, number> = {};
-  todoItems.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
-  const topCategory = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
-
   const todayWeather = weather[0];
   const outdoorCount = todoItems.filter(i => i.setting === 'outdoor' || i.setting === 'mixed').length;
   const indoorCount = todoItems.filter(i => i.weatherSuitability === 'any' || i.weatherSuitability === 'bad_weather_ideal').length;
@@ -95,9 +91,8 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
 
       {/* Header */}
       <div className="px-6 pt-8 pb-4">
-        <p className="text-sm text-sand-500 mb-1">Let's go on a</p>
         <h1 className="text-2xl font-semibold text-sand-900">
-          <span className="heading-accent">lark</span>, {profile.displayName}
+          Hello {profile.displayName}, let's go on a <span className="heading-accent">lark</span>
         </h1>
       </div>
 
@@ -129,12 +124,12 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
           <button onClick={() => onNavigate({ name: 'recommend' })}
             className="flex-1 bg-sand-900 text-sand-100 rounded-2xl py-4 text-center hover:bg-sand-800 transition">
             <div className="flex justify-center mb-1"><Feather size={20} strokeWidth={1.5} /></div>
-            <div className="text-xs font-medium">Recommend</div>
+            <div className="text-xs font-medium">Suggest something</div>
           </button>
           <button onClick={handleSpontaneous}
             className="flex-1 bg-terra-500 text-white rounded-2xl py-4 text-center hover:bg-terra-600 transition">
             <div className="flex justify-center mb-1"><Shuffle size={20} strokeWidth={1.5} /></div>
-            <div className="text-xs font-medium">Spontaneous</div>
+            <div className="text-xs font-medium">I'm feeling spontaneous</div>
           </button>
           <button onClick={() => onNavigate({ name: 'add' })}
             className="flex-1 bg-sand-200 text-sand-800 rounded-2xl py-4 text-center hover:bg-sand-300 transition">
@@ -181,24 +176,18 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       {/* Stats */}
       <div className="px-6 mb-6">
         <div className="flex gap-3">
-          <div className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center">
+          <button onClick={() => onNavigate({ name: 'list' })}
+            className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center hover:border-sand-400 transition">
             <div className="flex justify-center mb-1"><MapPin size={18} strokeWidth={1.5} className="text-sand-500" /></div>
             <div className="text-2xl font-semibold text-sand-900">{todoItems.length}</div>
             <div className="text-[11px] text-sand-500 mt-1">To explore</div>
-          </div>
-          <div className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center">
+          </button>
+          <button onClick={() => onNavigate({ name: 'list' })}
+            className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center hover:border-sand-400 transition">
             <div className="flex justify-center mb-1"><Feather size={18} strokeWidth={1.5} className="text-forest-500" /></div>
             <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
-            <div className="text-[11px] text-sand-500 mt-1">Completed</div>
-          </div>
-          <div className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center">
-            <div className="text-2xl font-semibold text-terra-500">
-              {topCategory ? topCategory[1] : '—'}
-            </div>
-            <div className="text-[11px] text-sand-500 mt-1">
-              {topCategory ? CATEGORY_INFO[topCategory[0] as keyof typeof CATEGORY_INFO]?.label?.split(' ')[0] : 'Add some!'}
-            </div>
-          </div>
+            <div className="text-[11px] text-sand-500 mt-1">Visited</div>
+          </button>
         </div>
       </div>
 
