@@ -112,6 +112,7 @@ export default function App() {
   if (!profile || !profile.onboardingComplete) {
     return (
       <Onboarding
+        displayName={session.user.user_metadata?.display_name || ''}
         onComplete={(p) => {
           handleSaveProfile(p);
           setScreen({ name: 'dashboard' });
