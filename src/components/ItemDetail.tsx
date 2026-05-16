@@ -166,7 +166,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
       {/* Mark as done modal */}
       {showComplete && (
         <div className="fixed inset-0 bg-sand-900/50 flex items-end z-50">
-          <div className="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl p-6">
+          <div className="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl p-6 pb-24">
             <h3 className="text-lg font-semibold text-sand-900 mb-4">How was it?</h3>
             <div className="mb-4">
               <label className="text-xs font-medium text-sand-600 mb-2 block uppercase tracking-wider">Rating</label>

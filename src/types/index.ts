@@ -81,6 +81,8 @@ export interface BucketListItem {
 export interface RecommendationConstraints {
   date: string;
   timeAvailableMinutes: number;
+  /** Minimum time filter — only show activities that need at least this many minutes */
+  timeMinMinutes?: number;
   groupTypes: GroupType[];
   moods: Mood[];
   maxCostLevel: CostLevel;

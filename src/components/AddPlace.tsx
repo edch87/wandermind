@@ -116,12 +116,26 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
 
   const toggleSeason = (s: Season) => {
     const current = draft.bestSeasons || [];
-    updateDraft({ bestSeasons: current.includes(s) ? current.filter(x => x !== s) : [...current, s] });
+    if (s === 'any') {
+      // Toggle "Any season": if already selected, deselect; otherwise select only "any"
+      updateDraft({ bestSeasons: current.includes('any') ? [] : ['any'] });
+    } else {
+      // Selecting a specific season: remove "any" if present, then toggle the specific one
+      const withoutAny = current.filter(x => x !== 'any');
+      const updated = withoutAny.includes(s) ? withoutAny.filter(x => x !== s) : [...withoutAny, s];
+      updateDraft({ bestSeasons: updated });
+    }
   };
 
   const toggleTimeOfDay = (t: TimeOfDay) => {
     const current = draft.bestTimesOfDay || [];
-    updateDraft({ bestTimesOfDay: current.includes(t) ? current.filter(x => x !== t) : [...current, t] });
+    if (t === 'any') {
+      updateDraft({ bestTimesOfDay: current.includes('any') ? [] : ['any'] });
+    } else {
+      const withoutAny = current.filter(x => x !== 'any');
+      const updated = withoutAny.includes(t) ? withoutAny.filter(x => x !== t) : [...withoutAny, t];
+      updateDraft({ bestTimesOfDay: updated });
+    }
   };
 
   // Search screen

@@ -1,9 +1,84 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { UserProfile, BucketListItem, GroupType, Mood, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
 import { Car, Bike, Train, Footprints, Dog, Accessibility, Baby } from 'lucide-react';
+
+const TIME_SNAPS = [
+  { min: 60, label: '1 hr' },
+  { min: 120, label: '2 hrs' },
+  { min: 180, label: '3 hrs' },
+  { min: 240, label: 'Half day' },
+  { min: 480, label: 'Full day' },
+];
+
+function TimeRangeSlider({ range, onChange }: { range: [number, number]; onChange: (r: [number, number]) => void }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<'min' | 'max' | null>(null);
+  const count = TIME_SNAPS.length;
+
+  const indexFromX = useCallback((clientX: number): number => {
+    const rect = trackRef.current!.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(pct * (count - 1));
+  }, [count]);
+
+  const handlePointerDown = (thumb: 'min' | 'max') => (e: React.PointerEvent) => {
+    dragging.current = thumb;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const idx = indexFromX(e.clientX);
+    if (dragging.current === 'min') {
+      onChange([Math.min(idx, range[1]), range[1]]);
+    } else {
+      onChange([range[0], Math.max(idx, range[0])]);
+    }
+  };
+
+  const handlePointerUp = () => { dragging.current = null; };
+
+  const leftPct = (range[0] / (count - 1)) * 100;
+  const rightPct = (range[1] / (count - 1)) * 100;
+
+  return (
+    <div className="pt-2 pb-1">
+      <div className="relative h-10 flex items-center" ref={trackRef}
+        onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
+        {/* Track background */}
+        <div className="absolute inset-x-0 h-1.5 rounded-full bg-sand-200" />
+        {/* Active range */}
+        <div className="absolute h-1.5 rounded-full bg-sand-900"
+          style={{ left: `${leftPct}%`, width: `${rightPct - leftPct}%` }} />
+        {/* Snap dots */}
+        {TIME_SNAPS.map((_, i) => (
+          <div key={i} className={`absolute w-2 h-2 rounded-full -translate-x-1 ${
+            i >= range[0] && i <= range[1] ? 'bg-sand-900' : 'bg-sand-300'
+          }`} style={{ left: `${(i / (count - 1)) * 100}%` }} />
+        ))}
+        {/* Min thumb */}
+        <div className="absolute w-7 h-7 rounded-full bg-white border-2 border-sand-900 shadow-md -translate-x-1/2 cursor-grab active:cursor-grabbing z-10 touch-none"
+          style={{ left: `${leftPct}%` }}
+          onPointerDown={handlePointerDown('min')} />
+        {/* Max thumb */}
+        <div className="absolute w-7 h-7 rounded-full bg-white border-2 border-sand-900 shadow-md -translate-x-1/2 cursor-grab active:cursor-grabbing z-10 touch-none"
+          style={{ left: `${rightPct}%` }}
+          onPointerDown={handlePointerDown('max')} />
+      </div>
+      {/* Labels */}
+      <div className="relative h-5">
+        {TIME_SNAPS.map((snap, i) => (
+          <span key={i} className={`absolute text-[10px] -translate-x-1/2 ${
+            i >= range[0] && i <= range[1] ? 'text-sand-900 font-medium' : 'text-sand-400'
+          }`} style={{ left: `${(i / (count - 1)) * 100}%` }}>{snap.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   profile: UserProfile;
@@ -35,7 +110,7 @@ function getWeekendOffsets(): { sat: number; sun: number } {
 export default function RecommendationFlow({ profile, items, onBack, onViewItem }: Props) {
   const [step, setStep] = useState<Step>('input');
   const [dateOffset, setDateOffset] = useState(0);
-  const [timeMinutes, setTimeMinutes] = useState(180);
+  const [timeRange, setTimeRange] = useState<[number, number]>([0, 4]); // indices into TIME_SNAPS
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
   const [moods, setMoods] = useState<Mood[]>([]);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
@@ -78,9 +153,12 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
     setTravelOverrides(overrides);
 
     setLoadingMsg('Finding your best options...');
+    const timeMax = TIME_SNAPS[timeRange[1]].min;
+    const timeMin = TIME_SNAPS[timeRange[0]].min;
     const scored = getRecommendations(items, {
       date: targetDate,
-      timeAvailableMinutes: timeMinutes,
+      timeAvailableMinutes: timeMax,
+      timeMinMinutes: timeMin,
       groupTypes,
       moods,
       maxCostLevel: maxCost,
@@ -92,7 +170,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
       travelTimeOverrides: overrides,
     }, dayWeather);
     setResults(scored);
-    setCombos(findCombos(scored, timeMinutes));
+    setCombos(findCombos(scored, timeMax));
     setStep('results');
   };
 
@@ -135,14 +213,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           </div>
         </Section>
 
-        <Section label="Total time, door to door?">
-          <div className="toggle-group">
-            {[{ min: 60, label: '1 hour' }, { min: 120, label: '2 hours' }, { min: 180, label: '3 hours' },
-              { min: 240, label: 'Half day' }, { min: 480, label: 'Full day' }].map(({ min, label }) => (
-              <button key={min} className={`toggle-btn ${timeMinutes === min ? 'active' : ''}`}
-                onClick={() => setTimeMinutes(min)}>{label}</button>
-            ))}
-          </div>
+        <Section label="How much time do you have?">
+          <TimeRangeSlider range={timeRange} onChange={setTimeRange} />
           <p className="text-[10px] text-sand-400 mt-1">Includes travel time there and back</p>
         </Section>
 

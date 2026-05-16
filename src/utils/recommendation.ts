@@ -40,6 +40,7 @@ export function getRecommendations(
     const travelOneWay = constraints.travelTimeOverrides?.[item.id] ?? item.travelTimeMinutes;
     const totalNeeded = (travelOneWay * 2) + activityMin;
     if (totalNeeded > constraints.timeAvailableMinutes) return false;
+    if (constraints.timeMinMinutes && totalNeeded < constraints.timeMinMinutes) return false;
 
     // Group suitability
     if (constraints.groupTypes.length > 0) {
