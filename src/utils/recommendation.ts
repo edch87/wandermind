@@ -1,6 +1,6 @@
 import type {
   BucketListItem, RecommendationConstraints, WeatherForecast,
-  ScoredItem, CostLevel, DurationEstimate, Mood, Category, Season
+  ScoredItem, CostLevel, DurationEstimate, Vibe, Category, Season, EnergyLevel
 } from '../types';
 
 const DURATION_MINUTES: Record<DurationEstimate, number> = {
@@ -11,11 +11,29 @@ const COST_RANK: Record<CostLevel, number> = {
   free: 0, cheap: 1, moderate: 2, expensive: 3,
 };
 
-const MOOD_CATEGORIES: Record<Mood, Category[]> = {
-  adventurous: ['mountain_hiking', 'sport_adventure', 'nature_landscape', 'beach_water'],
-  cultural: ['museum_gallery', 'historical', 'city_exploration', 'religious_spiritual'],
-  relaxed: ['wellness', 'food_drink', 'park_garden', 'shopping'],
-  fun: ['entertainment', 'zoo_aquarium', 'event_festival', 'beach_water'],
+const VIBE_CATEGORIES: Record<Exclude<Vibe, 'flexible'>, Category[]> = {
+  foodie: ['food_drink'],
+  curious: ['museum_gallery', 'historical', 'neighbourhood_walks'],
+  outdoorsy: ['hiking_trails', 'nature_landscape', 'park_garden', 'beach_water'],
+  playful: ['entertainment', 'zoo_aquarium', 'event_festival', 'active_adventure', 'beach_water'],
+  unwind: ['wellness', 'food_drink', 'park_garden'],
+  explore: ['neighbourhood_walks', 'nature_landscape', 'hiking_trails'],
+};
+
+/** Max duration (minutes) per energy level — used for soft scoring, not hard filtering */
+const ENERGY_DURATION_CAP: Record<EnergyLevel, number> = {
+  surprise_me: Infinity,
+  up_for_anything: Infinity,
+  got_some_energy: 240,  // up to half day
+  keep_it_easy: 120,     // up to 2 hours
+};
+
+/** Max comfortable travel time (one-way minutes) per energy level */
+const ENERGY_TRAVEL_CAP: Record<EnergyLevel, number> = {
+  surprise_me: Infinity,
+  up_for_anything: Infinity,
+  got_some_energy: 60,
+  keep_it_easy: 30,
 };
 
 export function getCurrentSeason(): Season {
@@ -127,13 +145,27 @@ export function getRecommendations(
       reasons.push(`Best time of year to visit`);
     }
 
-    // Mood match
-    if (constraints.moods.length > 0) {
-      const moodCategories = constraints.moods.flatMap(m => MOOD_CATEGORIES[m]);
-      if (moodCategories.includes(item.category)) {
+    // Vibe match
+    const activeVibes = constraints.vibes.filter(v => v !== 'flexible');
+    if (activeVibes.length > 0) {
+      const vibeCategories = activeVibes.flatMap(v => VIBE_CATEGORIES[v as Exclude<Vibe, 'flexible'>]);
+      if (vibeCategories.includes(item.category)) {
         score += 10;
-        reasons.push('Matches your mood');
+        reasons.push('Matches your vibe');
       }
+    }
+
+    // Energy level fit
+    const activityDuration = DURATION_MINUTES[item.durationEstimate] || 120;
+    const durationCap = ENERGY_DURATION_CAP[constraints.energy];
+    const travelCap = ENERGY_TRAVEL_CAP[constraints.energy];
+    if (activityDuration <= durationCap && travelOneWay <= travelCap) {
+      score += 10;
+      if (constraints.energy === 'keep_it_easy') reasons.push('Easy, low-effort outing');
+      else if (constraints.energy === 'up_for_anything') reasons.push('Great for a big day out');
+    } else if (constraints.energy === 'keep_it_easy' || constraints.energy === 'got_some_energy') {
+      // Penalise items that exceed energy comfort zone
+      score -= 10;
     }
 
     // Cost bonus

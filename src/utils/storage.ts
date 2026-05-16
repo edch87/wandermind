@@ -1,6 +1,20 @@
 import { supabase } from './supabase';
 import type { UserProfile, BucketListItem } from '../types';
 
+// ── Legacy category migration map ──
+const LEGACY_CATEGORY_MAP: Record<string, string> = {
+  mountain_hiking: 'hiking_trails',
+  sport_adventure: 'active_adventure',
+  religious_spiritual: 'historical',
+  city_exploration: 'neighbourhood_walks',
+  shopping: 'food_drink',   // markets → food_drink; malls → entertainment would also work
+  other: 'neighbourhood_walks',
+};
+
+function migrateCategory(raw: string): string {
+  return LEGACY_CATEGORY_MAP[raw] || raw;
+}
+
 // ── Helpers: convert between camelCase (app) and snake_case (database) ──
 
 function profileFromDb(row: Record<string, unknown>): UserProfile {
@@ -55,7 +69,7 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     travelTimeMinutes: (row.travel_time_minutes as number) || 0,
     travelDistanceKm: (row.travel_distance_km as number) || 0,
     transportMode: (row.transport_mode as BucketListItem['transportMode']) || 'car',
-    category: (row.category as BucketListItem['category']) || 'other',
+    category: migrateCategory((row.category as string) || 'neighbourhood_walks') as BucketListItem['category'],
     setting: (row.setting as BucketListItem['setting']) || 'mixed',
     weatherSuitability: (row.weather_suitability as BucketListItem['weatherSuitability']) || 'any',
     durationEstimate: (row.duration_estimate as BucketListItem['durationEstimate']) || '1_2h',

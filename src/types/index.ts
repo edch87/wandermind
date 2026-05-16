@@ -1,8 +1,8 @@
 export type Category =
   | 'museum_gallery' | 'historical' | 'nature_landscape' | 'park_garden'
-  | 'mountain_hiking' | 'beach_water' | 'sport_adventure' | 'food_drink'
-  | 'entertainment' | 'wellness' | 'shopping' | 'religious_spiritual'
-  | 'zoo_aquarium' | 'event_festival' | 'city_exploration' | 'other';
+  | 'hiking_trails' | 'beach_water' | 'active_adventure' | 'food_drink'
+  | 'entertainment' | 'wellness' | 'zoo_aquarium' | 'event_festival'
+  | 'neighbourhood_walks';
 
 export type Setting = 'indoor' | 'outdoor' | 'mixed';
 export type WeatherSuitability = 'any' | 'good_weather' | 'bad_weather_ideal';
@@ -13,7 +13,8 @@ export type TimeOfDay = 'any' | 'morning' | 'afternoon' | 'evening';
 export type GroupType = 'solo' | 'couple' | 'friends' | 'family' | 'kids';
 export type TransportMode = 'car' | 'bike' | 'transit' | 'walk';
 export type Priority = 'low' | 'medium' | 'high';
-export type Mood = 'adventurous' | 'cultural' | 'relaxed' | 'fun';
+export type EnergyLevel = 'surprise_me' | 'up_for_anything' | 'got_some_energy' | 'keep_it_easy';
+export type Vibe = 'flexible' | 'foodie' | 'curious' | 'outdoorsy' | 'playful' | 'unwind' | 'explore';
 export type WeatherType = 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'foggy';
 
 export interface UserProfile {
@@ -84,7 +85,8 @@ export interface RecommendationConstraints {
   /** Minimum time filter — only show activities that need at least this many minutes */
   timeMinMinutes?: number;
   groupTypes: GroupType[];
-  moods: Mood[];
+  energy: EnergyLevel;
+  vibes: Vibe[];
   maxCostLevel: CostLevel;
   travelFrom: 'home' | 'current';
   currentLatitude?: number;
@@ -130,18 +132,15 @@ export const CATEGORY_INFO: Record<Category, { label: string; icon: string; colo
   historical: { label: 'Historical', icon: 'Castle', color: '#92400e' },
   nature_landscape: { label: 'Nature & Landscape', icon: 'Mountain', color: '#059669' },
   park_garden: { label: 'Park & Garden', icon: 'TreePine', color: '#16a34a' },
-  mountain_hiking: { label: 'Mountain & Hiking', icon: 'MountainSnow', color: '#475569' },
+  hiking_trails: { label: 'Hiking & Trails', icon: 'MountainSnow', color: '#475569' },
   beach_water: { label: 'Beach & Water', icon: 'Waves', color: '#0284c7' },
-  sport_adventure: { label: 'Sport & Adventure', icon: 'Flame', color: '#dc2626' },
+  active_adventure: { label: 'Active & Adventure', icon: 'Flame', color: '#dc2626' },
   food_drink: { label: 'Food & Drink', icon: 'UtensilsCrossed', color: '#ea580c' },
   entertainment: { label: 'Entertainment', icon: 'Ticket', color: '#c026d3' },
   wellness: { label: 'Wellness', icon: 'Heart', color: '#0d9488' },
-  shopping: { label: 'Shopping', icon: 'ShoppingBag', color: '#e11d48' },
-  religious_spiritual: { label: 'Religious & Spiritual', icon: 'Church', color: '#6366f1' },
   zoo_aquarium: { label: 'Zoo & Aquarium', icon: 'PawPrint', color: '#65a30d' },
   event_festival: { label: 'Event & Festival', icon: 'PartyPopper', color: '#d97706' },
-  city_exploration: { label: 'City Exploration', icon: 'Building2', color: '#64748b' },
-  other: { label: 'Other', icon: 'MapPin', color: '#78716c' },
+  neighbourhood_walks: { label: 'Neighbourhood & City Walks', icon: 'Building2', color: '#64748b' },
 };
 
 export const DURATION_LABELS: Record<DurationEstimate, string> = {

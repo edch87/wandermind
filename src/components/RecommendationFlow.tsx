@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import type { UserProfile, BucketListItem, GroupType, Mood, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
+import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
@@ -112,7 +112,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [dateOffset, setDateOffset] = useState(0);
   const [timeRange, setTimeRange] = useState<[number, number]>([0, 4]); // indices into TIME_SNAPS
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
-  const [moods, setMoods] = useState<Mood[]>([]);
+  const [energy, setEnergy] = useState<EnergyLevel>('surprise_me');
+  const [vibes, setVibes] = useState<Vibe[]>(['flexible']);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
   const [transportMode, setTransportMode] = useState<TransportMode>('car');
   const [dogComing, setDogComing] = useState(false);
@@ -126,7 +127,17 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [travelOverrides, setTravelOverrides] = useState<Record<string, number>>({});
 
   const toggleGroup = (g: GroupType) => setGroupTypes(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
-  const toggleMood = (m: Mood) => setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+  const toggleVibe = (v: Vibe) => {
+    if (v === 'flexible') {
+      setVibes(['flexible']);
+    } else {
+      setVibes(prev => {
+        const without = prev.filter(x => x !== 'flexible' && x !== v);
+        const toggled = prev.includes(v) ? without : [...without, v];
+        return toggled.length === 0 ? ['flexible'] : toggled;
+      });
+    }
+  };
 
   const handleGetRecommendations = async () => {
     setStep('loading');
@@ -160,7 +171,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
       timeAvailableMinutes: timeMax,
       timeMinMinutes: timeMin,
       groupTypes,
-      moods,
+      energy,
+      vibes,
       maxCostLevel: maxCost,
       travelFrom: 'home',
       transportMode,
@@ -228,15 +240,25 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           </div>
         </Section>
 
-        <Section label="How are you feeling?">
+        <Section label="How much energy do you have?">
           <div className="toggle-group">
-            {([['adventurous','🏔️ Adventurous'],['cultural','🎨 Cultural'],['relaxed','🧘 Relaxed'],['fun','🎢 Fun']] as const)
+            {([['surprise_me','🎲 Surprise me'],['up_for_anything','⚡ Up for anything'],['got_some_energy','✨ Got some energy'],['keep_it_easy','🍃 Keep it easy']] as const)
               .map(([val, label]) => (
-              <button key={val} className={`toggle-btn ${moods.includes(val) ? 'active' : ''}`}
-                onClick={() => toggleMood(val)}>{label}</button>
+              <button key={val} className={`toggle-btn ${energy === val ? 'active' : ''}`}
+                onClick={() => setEnergy(val)}>{label}</button>
             ))}
           </div>
-          <p className="text-[10px] text-sand-400 mt-1">Select multiple or skip for all</p>
+        </Section>
+
+        <Section label="What's your vibe?">
+          <div className="toggle-group">
+            {([['flexible','🤷 I\'m flexible'],['foodie','🍽️ Foodie'],['curious','🧠 Curious'],['outdoorsy','🌿 Outdoorsy'],['playful','🎉 Playful'],['unwind','🧘 Unwind'],['explore','🗺️ Explore']] as const)
+              .map(([val, label]) => (
+              <button key={val} className={`toggle-btn ${vibes.includes(val) ? 'active' : ''}`}
+                onClick={() => toggleVibe(val)}>{label}</button>
+            ))}
+          </div>
+          <p className="text-[10px] text-sand-400 mt-1">Pick one or more, or stay flexible</p>
         </Section>
 
         <Section label="Max budget?">
