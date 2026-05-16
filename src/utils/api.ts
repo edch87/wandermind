@@ -44,31 +44,65 @@ export async function fetchOsmTags(osmType: string, osmId: number): Promise<Reco
   }
 }
 
+// Average speeds (km/h) used for distance-based time estimates
+const MODE_SPEEDS: Record<string, number> = {
+  walk: 5,
+  bike: 15,
+  car: 60,   // fallback only — OSRM driving is preferred
+};
+
+// Haversine straight-line distance in km
+function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export async function calculateTravelTime(
   homeLat: number, homeLng: number,
   placeLat: number, placeLng: number,
-  mode: string = 'driving'
+  mode: string = 'car'
 ): Promise<{ durationMinutes: number; distanceKm: number }> {
-  const modeMap: Record<string, string> = {
-    car: 'driving', bike: 'cycling', walk: 'foot', transit: 'driving'
-  };
-  const osrmMode = modeMap[mode] || 'driving';
+  // For walking and cycling, use distance-based estimates since OSRM's public
+  // demo server doesn't reliably support foot/cycling profiles.
+  // We fetch the driving route for distance (road distance is more accurate
+  // than straight-line), then compute time from the mode's average speed.
   try {
-    const url = `${OSRM_BASE}/route/v1/${osrmMode}/${homeLng},${homeLat};${placeLng},${placeLat}?overview=false`;
+    const url = `${OSRM_BASE}/route/v1/driving/${homeLng},${homeLat};${placeLng},${placeLat}?overview=false`;
     const res = await fetch(url);
-    if (!res.ok) return { durationMinutes: 0, distanceKm: 0 };
+    if (!res.ok) throw new Error('OSRM request failed');
     const data = await res.json();
     const route = data.routes?.[0];
-    if (!route) return { durationMinutes: 0, distanceKm: 0 };
-    let minutes = Math.round(route.duration / 60);
-    // Rough transit estimate
-    if (mode === 'transit') minutes = Math.round(minutes * 1.5);
-    return {
-      durationMinutes: minutes,
-      distanceKm: Math.round(route.distance / 100) / 10,
-    };
+    if (!route) throw new Error('No route found');
+
+    const distanceKm = Math.round(route.distance / 100) / 10;
+
+    if (mode === 'car') {
+      // Use OSRM's driving duration directly — it accounts for road types & speed limits
+      return {
+        durationMinutes: Math.round(route.duration / 60),
+        distanceKm,
+      };
+    }
+
+    // Walk / bike: compute from distance and average speed
+    // Add 20% to road distance for walking (detours, paths, shortcuts roughly balance out)
+    const adjustedDistance = mode === 'walk' ? distanceKm * 1.2 : distanceKm;
+    const speed = MODE_SPEEDS[mode] || MODE_SPEEDS.car;
+    const minutes = Math.round((adjustedDistance / speed) * 60);
+
+    return { durationMinutes: minutes, distanceKm };
   } catch {
-    return { durationMinutes: 0, distanceKm: 0 };
+    // Fallback: straight-line distance × 1.3 (rough road-distance factor)
+    const straightLine = haversineDistanceKm(homeLat, homeLng, placeLat, placeLng);
+    const distanceKm = Math.round(straightLine * 13) / 10; // ×1.3, one decimal
+    const speed = MODE_SPEEDS[mode] || MODE_SPEEDS.car;
+    const minutes = Math.round((distanceKm / speed) * 60);
+    return { durationMinutes: minutes, distanceKm };
   }
 }
 

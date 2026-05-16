@@ -9,7 +9,7 @@ import type {
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
 import {
-  Car, Bike, Train, Footprints, MapPin, Search,
+  Car, Bike, Footprints, MapPin, Search,
   Building2, TreePine, RefreshCw,
   CloudSun, Sun, CloudRain,
   Dog, Accessibility, Baby,
@@ -27,7 +27,6 @@ const transportIcon = (mode: string) => {
   switch (mode) {
     case 'car': return <Car size={16} strokeWidth={1.5} />;
     case 'bike': return <Bike size={16} strokeWidth={1.5} />;
-    case 'transit': return <Train size={16} strokeWidth={1.5} />;
     default: return <Footprints size={16} strokeWidth={1.5} />;
   }
 };

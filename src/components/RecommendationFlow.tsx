@@ -4,7 +4,7 @@ import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
-import { Car, Bike, Train, Footprints, Dog, Accessibility, Baby, AlertTriangle } from 'lucide-react';
+import { Car, Bike, Footprints, Dog, Accessibility, Baby, AlertTriangle } from 'lucide-react';
 
 const TIME_SNAPS = [
   { min: 60, label: '1 hr' },
@@ -192,7 +192,6 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const transportOptions: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
     { mode: 'car', icon: <Car size={14} strokeWidth={1.5} />, label: 'Car' },
     { mode: 'bike', icon: <Bike size={14} strokeWidth={1.5} />, label: 'Bike' },
-    { mode: 'transit', icon: <Train size={14} strokeWidth={1.5} />, label: 'Transit' },
     { mode: 'walk', icon: <Footprints size={14} strokeWidth={1.5} />, label: 'Walk' },
   ];
 
