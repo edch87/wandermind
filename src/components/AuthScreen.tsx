@@ -66,13 +66,13 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
           {mode === 'signup' && (
             <div>
               <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1.5 block">
-                Your name
+                What should we call you?
               </label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Edward"
+                placeholder="e.g. Alex"
                 required
                 className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
               />
