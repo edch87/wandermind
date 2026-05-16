@@ -37,7 +37,8 @@ export function getRecommendations(
 
     // Time budget: travel there + activity + travel back
     const activityMin = DURATION_MINUTES[item.durationEstimate] || 120;
-    const totalNeeded = (item.travelTimeMinutes * 2) + activityMin;
+    const travelOneWay = constraints.travelTimeOverrides?.[item.id] ?? item.travelTimeMinutes;
+    const totalNeeded = (travelOneWay * 2) + activityMin;
     if (totalNeeded > constraints.timeAvailableMinutes) return false;
 
     // Group suitability
@@ -62,6 +63,12 @@ export function getRecommendations(
 
     // Dog
     if (constraints.dogComing && item.dogFriendly === false) return false;
+
+    // Accessibility
+    if (constraints.needsAccessibility && item.wheelchairAccessible === false) return false;
+
+    // Stroller
+    if (constraints.strollerNeeded && item.strollerFriendly === false) return false;
 
     return true;
   });
@@ -94,14 +101,15 @@ export function getRecommendations(
     }
 
     // Travel efficiency
-    const travelRatio = (item.travelTimeMinutes * 2) / constraints.timeAvailableMinutes;
-    if (travelRatio < 0.3) { score += 15; reasons.push(`Only ${item.travelTimeMinutes} min away`); }
+    const travelOneWay = constraints.travelTimeOverrides?.[item.id] ?? item.travelTimeMinutes;
+    const travelRatio = (travelOneWay * 2) / constraints.timeAvailableMinutes;
+    if (travelRatio < 0.3) { score += 15; reasons.push(`Only ${travelOneWay} min away`); }
     else if (travelRatio < 0.5) score += 10;
     else score += 5;
 
     // Duration fit
     const activityMin = DURATION_MINUTES[item.durationEstimate] || 120;
-    const availableAfterTravel = constraints.timeAvailableMinutes - (item.travelTimeMinutes * 2);
+    const availableAfterTravel = constraints.timeAvailableMinutes - (travelOneWay * 2);
     if (availableAfterTravel > 0) {
       const fillRatio = activityMin / availableAfterTravel;
       if (fillRatio >= 0.6 && fillRatio <= 1.0) {

@@ -3,7 +3,7 @@ import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem } from './types';
 import type { Session } from '@supabase/supabase-js';
-import { Home, ClipboardList, Plus, Target, Settings as SettingsIcon } from 'lucide-react';
+import { Home, ClipboardList, Plus, Feather, Settings as SettingsIcon } from 'lucide-react';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -127,7 +127,7 @@ export default function App() {
     { icon: <Home size={20} strokeWidth={1.5} />, label: 'Home', s: { name: 'dashboard' } },
     { icon: <ClipboardList size={20} strokeWidth={1.5} />, label: 'My List', s: { name: 'list' } },
     { icon: <Plus size={20} strokeWidth={1.5} />, label: 'Add', s: { name: 'add' } },
-    { icon: <Target size={20} strokeWidth={1.5} />, label: 'Suggest', s: { name: 'recommend' } },
+    { icon: <Feather size={20} strokeWidth={1.5} />, label: 'Suggest', s: { name: 'recommend' } },
     { icon: <SettingsIcon size={20} strokeWidth={1.5} />, label: 'Settings', s: { name: 'settings' } },
   ];
 

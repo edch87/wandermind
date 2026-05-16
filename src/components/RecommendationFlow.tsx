@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { UserProfile, BucketListItem, GroupType, Mood, CostLevel, WeatherForecast, ScoredItem } from '../types';
-import { DURATION_LABELS, COST_LABELS } from '../types';
-import { fetchWeatherForecast } from '../utils/api';
+import type { UserProfile, BucketListItem, GroupType, Mood, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
+import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
+import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
+import { Car, Bike, Train, Footprints, Dog, Accessibility, Baby } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -38,28 +39,71 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
   const [moods, setMoods] = useState<Mood[]>([]);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
+  const [transportMode, setTransportMode] = useState<TransportMode>('car');
   const [dogComing, setDogComing] = useState(false);
+  const [needsAccessibility, setNeedsAccessibility] = useState(false);
+  const [strollerNeeded, setStrollerNeeded] = useState(false);
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [results, setResults] = useState<ScoredItem[]>([]);
   const [combos, setCombos] = useState<ReturnType<typeof findCombos>>([]);
+  const [loadingMsg, setLoadingMsg] = useState('');
+  // Store calculated travel times so results can display them
+  const [travelOverrides, setTravelOverrides] = useState<Record<string, number>>({});
 
   const toggleGroup = (g: GroupType) => setGroupTypes(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
   const toggleMood = (m: Mood) => setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
 
   const handleGetRecommendations = async () => {
     setStep('loading');
+
+    // Fetch weather
+    setLoadingMsg('Checking the weather...');
     const forecasts = await fetchWeatherForecast(profile.homeLatitude, profile.homeLongitude);
     const targetDate = getDateString(dateOffset);
     const dayWeather = forecasts.find(f => f.date === targetDate) || forecasts[0] || null;
     setWeather(dayWeather);
-    const scored = getRecommendations(items, { date: targetDate, timeAvailableMinutes: timeMinutes,
-      groupTypes, moods, maxCostLevel: maxCost, travelFrom: 'home', dogComing }, dayWeather);
+
+    // Calculate travel times for all candidate items based on selected transport mode
+    setLoadingMsg('Calculating travel times...');
+    const candidateItems = items.filter(i => i.status === 'want_to_do').map(i => ({
+      id: i.id, latitude: i.latitude, longitude: i.longitude,
+    }));
+    const travelTimes = await calculateBatchTravelTimes(
+      profile.homeLatitude, profile.homeLongitude, candidateItems, transportMode
+    );
+    const overrides: Record<string, number> = {};
+    for (const [id, travel] of Object.entries(travelTimes)) {
+      overrides[id] = travel.durationMinutes;
+    }
+    setTravelOverrides(overrides);
+
+    setLoadingMsg('Finding your best options...');
+    const scored = getRecommendations(items, {
+      date: targetDate,
+      timeAvailableMinutes: timeMinutes,
+      groupTypes,
+      moods,
+      maxCostLevel: maxCost,
+      travelFrom: 'home',
+      transportMode,
+      dogComing,
+      needsAccessibility,
+      strollerNeeded,
+      travelTimeOverrides: overrides,
+    }, dayWeather);
     setResults(scored);
     setCombos(findCombos(scored, timeMinutes));
     setStep('results');
   };
 
   const weekend = getWeekendOffsets();
+
+  const transportOptions: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
+    { mode: 'car', icon: <Car size={14} strokeWidth={1.5} />, label: 'Car' },
+    { mode: 'bike', icon: <Bike size={14} strokeWidth={1.5} />, label: 'Bike' },
+    { mode: 'transit', icon: <Train size={14} strokeWidth={1.5} />, label: 'Transit' },
+    { mode: 'walk', icon: <Footprints size={14} strokeWidth={1.5} />, label: 'Walk' },
+  ];
 
   if (step === 'input') {
     return (
@@ -80,7 +124,18 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           </div>
         </Section>
 
-        <Section label="How much time?">
+        <Section label="How are you getting there?">
+          <div className="toggle-group">
+            {transportOptions.map(({ mode, icon, label }) => (
+              <button key={mode} className={`toggle-btn ${transportMode === mode ? 'active' : ''}`}
+                onClick={() => setTransportMode(mode)}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        <Section label="Total time, door to door?">
           <div className="toggle-group">
             {[{ min: 60, label: '1 hour' }, { min: 120, label: '2 hours' }, { min: 180, label: '3 hours' },
               { min: 240, label: 'Half day' }, { min: 480, label: 'Full day' }].map(({ min, label }) => (
@@ -88,6 +143,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                 onClick={() => setTimeMinutes(min)}>{label}</button>
             ))}
           </div>
+          <p className="text-[10px] text-sand-400 mt-1">Includes travel time there and back</p>
         </Section>
 
         <Section label="Who's coming?">
@@ -121,14 +177,22 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           </div>
         </Section>
 
-        {profile.hasDog && (
-          <Section label="Bringing the dog?">
-            <div className="toggle-group">
-              <button className={`toggle-btn ${!dogComing ? 'active' : ''}`} onClick={() => setDogComing(false)}>No</button>
-              <button className={`toggle-btn ${dogComing ? 'active' : ''}`} onClick={() => setDogComing(true)}>🐕 Yes</button>
-            </div>
-          </Section>
-        )}
+        <Section label="Anything else?">
+          <div className="toggle-group">
+            <button className={`toggle-btn ${dogComing ? 'active' : ''}`}
+              onClick={() => setDogComing(!dogComing)}>
+              <span className="inline-flex items-center gap-1.5"><Dog size={14} strokeWidth={1.5} /> Bringing dog</span>
+            </button>
+            <button className={`toggle-btn ${strollerNeeded ? 'active' : ''}`}
+              onClick={() => setStrollerNeeded(!strollerNeeded)}>
+              <span className="inline-flex items-center gap-1.5"><Baby size={14} strokeWidth={1.5} /> Need stroller access</span>
+            </button>
+            <button className={`toggle-btn ${needsAccessibility ? 'active' : ''}`}
+              onClick={() => setNeedsAccessibility(!needsAccessibility)}>
+              <span className="inline-flex items-center gap-1.5"><Accessibility size={14} strokeWidth={1.5} /> Wheelchair access</span>
+            </button>
+          </div>
+        </Section>
 
         <button onClick={handleGetRecommendations}
           className="w-full bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-base hover:bg-sand-800 transition mt-4">
@@ -144,7 +208,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         <div className="w-12 h-12 rounded-full bg-sand-100 flex items-center justify-center mb-4">
           <div className="w-6 h-6 border-2 border-sand-300 border-t-sand-700 rounded-full animate-spin" />
         </div>
-        <p className="text-sm text-sand-600 font-medium">Checking the weather...</p>
+        <p className="text-sm text-sand-600 font-medium">{loadingMsg}</p>
       </div>
     );
   }
@@ -185,6 +249,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         <div className="space-y-4">
           {top3.map((scored, idx) => {
             const { item, reasons } = scored;
+            const travelMin = travelOverrides[item.id] ?? item.travelTimeMinutes;
             return (
               <div key={item.id} className="card overflow-hidden">
                 {item.photoUrl && (
@@ -206,7 +271,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                   )}
                   <h3 className="font-semibold text-sand-900 text-base">{item.name}</h3>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="badge bg-sand-100 text-sand-700">{item.travelTimeMinutes} min</span>
+                    <span className="badge bg-sand-100 text-sand-700">{formatDuration(travelMin)} by {transportMode}</span>
                     <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
                     <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
                   </div>

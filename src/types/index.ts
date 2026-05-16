@@ -87,7 +87,12 @@ export interface RecommendationConstraints {
   travelFrom: 'home' | 'current';
   currentLatitude?: number;
   currentLongitude?: number;
+  transportMode: TransportMode;
   dogComing: boolean;
+  needsAccessibility: boolean;
+  strollerNeeded: boolean;
+  /** Override travel times per item (itemId → minutes one-way). Used for dynamic OSRM calculation. */
+  travelTimeOverrides?: Record<string, number>;
 }
 
 export interface WeatherForecast {

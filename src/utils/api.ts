@@ -72,6 +72,31 @@ export async function calculateTravelTime(
   }
 }
 
+/**
+ * Calculate travel times for multiple items in parallel via OSRM.
+ * Returns a map of itemId → { durationMinutes, distanceKm }.
+ */
+export async function calculateBatchTravelTimes(
+  originLat: number,
+  originLng: number,
+  items: { id: string; latitude: number; longitude: number }[],
+  mode: string = 'car'
+): Promise<Record<string, { durationMinutes: number; distanceKm: number }>> {
+  const CONCURRENCY = 5;
+  const results: Record<string, { durationMinutes: number; distanceKm: number }> = {};
+
+  for (let i = 0; i < items.length; i += CONCURRENCY) {
+    const batch = items.slice(i, i + CONCURRENCY);
+    const promises = batch.map(async (item) => {
+      const travel = await calculateTravelTime(originLat, originLng, item.latitude, item.longitude, mode);
+      results[item.id] = travel;
+    });
+    await Promise.all(promises);
+  }
+
+  return results;
+}
+
 function classifyWeatherCode(code: number): { type: WeatherType; description: string } {
   if (code <= 1) return { type: 'sunny', description: 'Clear sky' };
   if (code <= 3) return { type: 'cloudy', description: 'Partly cloudy' };

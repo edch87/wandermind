@@ -261,13 +261,14 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           </div>
         </Section>
 
-        <Section label="Duration">
+        <Section label="Activity duration">
           <div className="toggle-group">
             {(Object.entries(DURATION_LABELS) as [DurationEstimate, string][]).map(([key, label]) => (
               <button key={key} className={`toggle-btn ${draft.durationEstimate === key ? 'active' : ''}`}
                 onClick={() => updateDraft({ durationEstimate: key })}>{label}</button>
             ))}
           </div>
+          <p className="text-[10px] text-sand-400 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
         </Section>
 
         <Section label="Cost">

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { UserProfile, BucketListItem, WeatherForecast, TransportMode } from '../types';
+import type { UserProfile, BucketListItem, WeatherForecast } from '../types';
 import { CATEGORY_INFO, formatDuration } from '../types';
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
-  Target, Dice5, Plus, Feather, MapPin,
-  Car, Bike, Train, Footprints,
+  Feather, Shuffle, Plus, MapPin,
 } from 'lucide-react';
 
 interface Props {
@@ -16,7 +15,7 @@ interface Props {
   onSaveProfile: (p: UserProfile) => void;
 }
 
-export default function Dashboard({ profile, items, onNavigate, onSaveProfile }: Props) {
+export default function Dashboard({ profile, items, onNavigate }: Props) {
   const [weather, setWeather] = useState<WeatherForecast[]>([]);
   const [surprise, setSurprise] = useState<BucketListItem | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -38,8 +37,9 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
   const indoorCount = todoItems.filter(i => i.weatherSuitability === 'any' || i.weatherSuitability === 'bad_weather_ideal').length;
   const isBadWeather = todayWeather && ['rainy', 'snowy', 'foggy'].includes(todayWeather.weatherType);
 
-  const handleSurpriseMe = () => {
+  const handleSpontaneous = () => {
     const dayWeather = weather[0] || null;
+    // "I'm feeling spontaneous" — random pick from list, capped at full day (480 min)
     const scored = getRecommendations(items, {
       date: new Date().toISOString().split('T')[0],
       timeAvailableMinutes: 480,
@@ -47,7 +47,10 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
       moods: [],
       maxCostLevel: 'expensive',
       travelFrom: 'home',
+      transportMode: 'car',
       dogComing: false,
+      needsAccessibility: false,
+      strollerNeeded: false,
     }, dayWeather);
     if (scored.length > 0) {
       const randomIdx = Math.floor(Math.random() * Math.min(scored.length, 5));
@@ -55,10 +58,6 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
     }
-  };
-
-  const handleTransportChange = (mode: TransportMode) => {
-    onSaveProfile({ ...profile, preferredTransport: mode });
   };
 
   const weatherIconEl = (() => {
@@ -72,13 +71,6 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
       default: return <CloudSun size={28} strokeWidth={1.5} />;
     }
   })();
-
-  const transportIcons: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
-    { mode: 'car', icon: <Car size={14} strokeWidth={1.5} />, label: 'Car' },
-    { mode: 'bike', icon: <Bike size={14} strokeWidth={1.5} />, label: 'Bike' },
-    { mode: 'transit', icon: <Train size={14} strokeWidth={1.5} />, label: 'Transit' },
-    { mode: 'walk', icon: <Footprints size={14} strokeWidth={1.5} />, label: 'Walk' },
-  ];
 
   return (
     <div className="page-enter pb-24">
@@ -108,26 +100,6 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
         </h1>
       </div>
 
-      {/* Transport mode switcher */}
-      <div className="px-6 mb-4">
-        <div className="flex gap-1.5">
-          {transportIcons.map(({ mode, icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => handleTransportChange(mode)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                profile.preferredTransport === mode
-                  ? 'bg-sand-900 text-sand-100'
-                  : 'bg-sand-100 text-sand-500 hover:bg-sand-200'
-              }`}
-            >
-              {icon}
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Weather card */}
       {todayWeather && (
         <div className="mx-6 mb-5">
@@ -155,13 +127,13 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
         <div className="flex gap-3">
           <button onClick={() => onNavigate({ name: 'recommend' })}
             className="flex-1 bg-sand-900 text-sand-100 rounded-2xl py-4 text-center hover:bg-sand-800 transition">
-            <div className="flex justify-center mb-1"><Target size={20} strokeWidth={1.5} /></div>
+            <div className="flex justify-center mb-1"><Feather size={20} strokeWidth={1.5} /></div>
             <div className="text-xs font-medium">Recommend</div>
           </button>
-          <button onClick={handleSurpriseMe}
+          <button onClick={handleSpontaneous}
             className="flex-1 bg-terra-500 text-white rounded-2xl py-4 text-center hover:bg-terra-600 transition">
-            <div className="flex justify-center mb-1"><Dice5 size={20} strokeWidth={1.5} /></div>
-            <div className="text-xs font-medium">Surprise me</div>
+            <div className="flex justify-center mb-1"><Shuffle size={20} strokeWidth={1.5} /></div>
+            <div className="text-xs font-medium">Spontaneous</div>
           </button>
           <button onClick={() => onNavigate({ name: 'add' })}
             className="flex-1 bg-sand-200 text-sand-800 rounded-2xl py-4 text-center hover:bg-sand-300 transition">
@@ -183,7 +155,7 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
             )}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="badge bg-terra-500 text-white">Surprise pick!</span>
+                <span className="badge bg-terra-500 text-white">Spontaneous pick!</span>
                 <button onClick={() => setSurprise(null)} className="text-sand-400 text-xs">✕</button>
               </div>
               <h3 className="font-semibold text-sand-900 text-lg">{surprise.name}</h3>
@@ -214,7 +186,7 @@ export default function Dashboard({ profile, items, onNavigate, onSaveProfile }:
             <div className="text-[11px] text-sand-500 mt-1">To explore</div>
           </div>
           <div className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center">
-            <div className="flex justify-center mb-1"><Target size={18} strokeWidth={1.5} className="text-forest-500" /></div>
+            <div className="flex justify-center mb-1"><Feather size={18} strokeWidth={1.5} className="text-forest-500" /></div>
             <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
             <div className="text-[11px] text-sand-500 mt-1">Completed</div>
           </div>
