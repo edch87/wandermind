@@ -2,7 +2,6 @@ import type { HereSearchResult, WeatherForecast, WeatherType } from '../types';
 
 const HERE_API_KEY = import.meta.env.VITE_HERE_API_KEY || '';
 const HERE_AUTOSUGGEST = 'https://autosuggest.search.hereapi.com/v1/autosuggest';
-const HERE_GEOCODE = 'https://geocode.search.hereapi.com/v1/geocode';
 const HERE_REVGEOCODE = 'https://revgeocode.search.hereapi.com/v1/revgeocode';
 const HERE_LOOKUP = 'https://lookup.search.hereapi.com/v1/lookup';
 const HERE_ROUTE = 'https://router.hereapi.com/v8/routes';
@@ -227,7 +226,6 @@ export async function calculateTravelTime(
     let totalMeters = 0;
 
     for (const section of sections) {
-      const summary = section.summary || section.departure?.time ? section : null;
       if (section.summary) {
         totalSeconds += section.summary.duration || 0;
         totalMeters += section.summary.length || 0;
