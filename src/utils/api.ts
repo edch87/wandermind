@@ -1,7 +1,8 @@
 import type { HereSearchResult, WeatherForecast, WeatherType } from '../types';
 
 const HERE_API_KEY = import.meta.env.VITE_HERE_API_KEY || '';
-const HERE_AUTOSUGGEST = 'https://autosuggest.search.hereapi.com/v1/autosuggest';
+const HERE_DISCOVER = 'https://discover.search.hereapi.com/v1/discover';
+const HERE_GEOCODE = 'https://geocode.search.hereapi.com/v1/geocode';
 const HERE_REVGEOCODE = 'https://revgeocode.search.hereapi.com/v1/revgeocode';
 const HERE_LOOKUP = 'https://lookup.search.hereapi.com/v1/lookup';
 const HERE_ROUTE = 'https://router.hereapi.com/v8/routes';
@@ -38,36 +39,30 @@ function mapHereItem(item: Record<string, unknown>): HereSearchResult | null {
   };
 }
 
-export async function searchPlaces(query: string): Promise<HereSearchResult[]> {
+/**
+ * Search for places using HERE APIs.
+ * When lat/lng are provided, uses the Discover API (best for POI search near a location).
+ * Without lat/lng, uses the Geocode API (works globally for cities/addresses).
+ */
+export async function searchPlaces(query: string, lat?: number, lng?: number): Promise<HereSearchResult[]> {
   if (!query.trim() || query.length < 3) return [];
   try {
-    const url = `${HERE_AUTOSUGGEST}?q=${encodeURIComponent(query)}&limit=6&apiKey=${HERE_API_KEY}`;
+    let url: string;
+    if (lat !== undefined && lng !== undefined) {
+      // Discover API — great for finding restaurants, attractions, etc. near a location
+      url = `${HERE_DISCOVER}?q=${encodeURIComponent(query)}&at=${lat},${lng}&limit=6&apiKey=${HERE_API_KEY}`;
+    } else {
+      // Geocode API — works without location context, good for cities/addresses
+      url = `${HERE_GEOCODE}?q=${encodeURIComponent(query)}&limit=6&apiKey=${HERE_API_KEY}`;
+    }
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
     const items = (data.items || []) as Record<string, unknown>[];
-    // Autosuggest returns mixed results — filter for items with a position
-    // Items without a position are "query suggestions" (type === 'categoryQuery' etc.)
-    // For those, we skip them (user can refine their search)
     const results: HereSearchResult[] = [];
     for (const item of items) {
       const mapped = mapHereItem(item);
-      if (mapped) {
-        results.push(mapped);
-        continue;
-      }
-      // If item has an href but no position (common for autosuggest), look it up
-      const href = item.href as string | undefined;
-      if (href) {
-        try {
-          const lookupRes = await fetch(`${href}&apiKey=${HERE_API_KEY}`);
-          if (lookupRes.ok) {
-            const lookupData = await lookupRes.json();
-            const lookupMapped = mapHereItem(lookupData);
-            if (lookupMapped) results.push(lookupMapped);
-          }
-        } catch { /* skip this result */ }
-      }
+      if (mapped) results.push(mapped);
     }
     return results;
   } catch {

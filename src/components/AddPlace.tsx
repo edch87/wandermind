@@ -47,7 +47,7 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     if (q.length < 3) { setResults([]); return; }
     searchTimeout.current = window.setTimeout(async () => {
       setSearching(true);
-      const res = await searchPlaces(q);
+      const res = await searchPlaces(q, profile.homeLatitude, profile.homeLongitude);
       setResults(res);
       setSearching(false);
     }, 1000);
