@@ -1,54 +1,174 @@
-import type { NominatimResult, WeatherForecast, WeatherType } from '../types';
+import type { HereSearchResult, WeatherForecast, WeatherType } from '../types';
 
-const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
-const OSM_API_BASE = 'https://api.openstreetmap.org/api/0.6';
-const OSRM_BASE = 'https://router.project-osrm.org';
+const HERE_API_KEY = import.meta.env.VITE_HERE_API_KEY || '';
+const HERE_AUTOSUGGEST = 'https://autosuggest.search.hereapi.com/v1/autosuggest';
+const HERE_GEOCODE = 'https://geocode.search.hereapi.com/v1/geocode';
+const HERE_REVGEOCODE = 'https://revgeocode.search.hereapi.com/v1/revgeocode';
+const HERE_LOOKUP = 'https://lookup.search.hereapi.com/v1/lookup';
+const HERE_ROUTE = 'https://router.hereapi.com/v8/routes';
+const HERE_TRANSIT = 'https://transit.router.hereapi.com/v8/routes';
 const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
-// Rate limiting for Nominatim (1 req/sec)
-let lastNominatimCall = 0;
-async function rateLimitedFetch(url: string): Promise<Response> {
-  const now = Date.now();
-  const wait = Math.max(0, 1000 - (now - lastNominatimCall));
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-  lastNominatimCall = Date.now();
-  return fetch(url);
+// HERE raster map tiles (for Leaflet) — exported for components
+export const HERE_TILE_URL = `https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/png8?style=explore.day&apiKey=${HERE_API_KEY}`;
+export const HERE_TILE_ATTRIBUTION = '&copy; HERE Technologies';
+
+// ── Place search via HERE Autosuggest ──
+
+function mapHereItem(item: Record<string, unknown>): HereSearchResult | null {
+  const pos = item.position as { lat: number; lng: number } | undefined;
+  if (!pos) return null;
+
+  const addr = (item.address || {}) as Record<string, string>;
+  const cats = (item.categories || []) as { id: string; name: string }[];
+  const oh = (item.openingHours || []) as { text?: string[] }[];
+
+  return {
+    id: (item.id as string) || '',
+    title: (item.title as string) || '',
+    address: {
+      label: addr.label || (item.title as string) || '',
+      city: addr.city,
+      state: addr.state,
+      country: addr.countryName,
+      countryCode: addr.countryCode,
+    },
+    position: pos,
+    categories: cats,
+    openingHours: oh[0]?.text?.[0],
+  };
 }
 
-export async function searchPlaces(query: string): Promise<NominatimResult[]> {
+export async function searchPlaces(query: string): Promise<HereSearchResult[]> {
   if (!query.trim() || query.length < 3) return [];
-  const url = `${NOMINATIM_BASE}/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&limit=5`;
-  const res = await rateLimitedFetch(url);
-  if (!res.ok) return [];
-  return res.json();
-}
-
-export async function reverseGeocode(lat: number, lon: number): Promise<NominatimResult | null> {
-  const url = `${NOMINATIM_BASE}/reverse?lat=${lat}&lon=${lon}&format=jsonv2&addressdetails=1`;
-  const res = await rateLimitedFetch(url);
-  if (!res.ok) return null;
-  return res.json();
-}
-
-export async function fetchOsmTags(osmType: string, osmId: number): Promise<Record<string, string>> {
-  const typeMap: Record<string, string> = { N: 'node', W: 'way', R: 'relation', node: 'node', way: 'way', relation: 'relation' };
-  const type = typeMap[osmType] || osmType;
   try {
-    const res = await fetch(`${OSM_API_BASE}/${type}/${osmId}.json`);
-    if (!res.ok) return {};
+    const url = `${HERE_AUTOSUGGEST}?q=${encodeURIComponent(query)}&limit=6&apiKey=${HERE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
     const data = await res.json();
-    const elements = data.elements || [];
-    return elements[0]?.tags || {};
+    const items = (data.items || []) as Record<string, unknown>[];
+    // Autosuggest returns mixed results — filter for items with a position
+    // Items without a position are "query suggestions" (type === 'categoryQuery' etc.)
+    // For those, we skip them (user can refine their search)
+    const results: HereSearchResult[] = [];
+    for (const item of items) {
+      const mapped = mapHereItem(item);
+      if (mapped) {
+        results.push(mapped);
+        continue;
+      }
+      // If item has an href but no position (common for autosuggest), look it up
+      const href = item.href as string | undefined;
+      if (href) {
+        try {
+          const lookupRes = await fetch(`${href}&apiKey=${HERE_API_KEY}`);
+          if (lookupRes.ok) {
+            const lookupData = await lookupRes.json();
+            const lookupMapped = mapHereItem(lookupData);
+            if (lookupMapped) results.push(lookupMapped);
+          }
+        } catch { /* skip this result */ }
+      }
+    }
+    return results;
   } catch {
-    return {};
+    return [];
   }
 }
 
-// Average speeds (km/h) used for distance-based time estimates
+export async function reverseGeocode(lat: number, lon: number): Promise<HereSearchResult | null> {
+  try {
+    const url = `${HERE_REVGEOCODE}?at=${lat},${lon}&apiKey=${HERE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = (data.items || [])[0];
+    if (!item) return null;
+    return mapHereItem(item);
+  } catch {
+    return null;
+  }
+}
+
+// ── Place details via HERE Lookup ──
+
+export async function fetchPlaceDetails(hereId: string): Promise<{
+  categories: { id: string; name: string }[];
+  openingHours?: string;
+  tags: Record<string, string>;
+} | null> {
+  if (!hereId) return null;
+  try {
+    const url = `${HERE_LOOKUP}?id=${encodeURIComponent(hereId)}&apiKey=${HERE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const cats = (data.categories || []) as { id: string; name: string }[];
+    const oh = (data.openingHours || []) as { text?: string[] }[];
+
+    // Build a tags-like object from HERE categories for compatibility with inferDefaults
+    const tags: Record<string, string> = {};
+    for (const cat of cats) {
+      tags[`here_category_${cat.id}`] = cat.name;
+      // Map common HERE categories to OSM-like tag keys for inference.ts compatibility
+      const catId = cat.id;
+      if (catId.startsWith('100-')) tags['amenity'] = mapHereCatToOsmAmenity(catId);
+      if (catId.startsWith('200-')) tags['tourism'] = mapHereCatToOsmTourism(catId);
+      if (catId.startsWith('300-')) tags['leisure'] = mapHereCatToOsmLeisure(catId);
+      if (catId.startsWith('550-')) tags['leisure'] = 'park';
+      if (catId.startsWith('350-')) tags['sport'] = 'yes';
+    }
+    if (data.foodTypes) tags['cuisine'] = (data.foodTypes as { name: string }[]).map(f => f.name).join(';');
+
+    return {
+      categories: cats,
+      openingHours: oh[0]?.text?.[0],
+      tags,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Map HERE category IDs to OSM-like amenity values for inference.ts
+function mapHereCatToOsmAmenity(catId: string): string {
+  if (catId === '100-1000-0000') return 'restaurant';
+  if (catId === '100-1000-0001') return 'restaurant'; // casual dining
+  if (catId === '100-1000-0002') return 'fast_food';
+  if (catId === '100-1000-0003') return 'cafe';
+  if (catId === '100-1000-0004') return 'pub';
+  if (catId === '100-1000-0007') return 'biergarten';
+  if (catId === '100-1000-0008') return 'bar';
+  if (catId === '100-1100-0010') return 'cinema';
+  if (catId === '100-1100-0000') return 'arts_centre';
+  return 'restaurant';
+}
+
+function mapHereCatToOsmTourism(catId: string): string {
+  if (catId === '200-2000-0011') return 'museum';
+  if (catId === '200-2000-0014') return 'gallery';
+  if (catId === '200-2000-0000') return 'attraction';
+  if (catId === '200-2300-0000') return 'zoo';
+  if (catId === '200-2000-0012') return 'viewpoint';
+  if (catId === '200-2200-0000') return 'theme_park';
+  return 'attraction';
+}
+
+function mapHereCatToOsmLeisure(catId: string): string {
+  if (catId === '300-3000-0000') return 'park';
+  if (catId === '300-3100-0000') return 'spa';
+  if (catId === '300-3200-0000') return 'swimming_area';
+  return 'park';
+}
+
+// ── Travel time via HERE Routing ──
+
+// Average speeds (km/h) for fallback estimates
 const MODE_SPEEDS: Record<string, number> = {
   walk: 5,
   bike: 15,
-  car: 60,   // fallback only — OSRM driving is preferred
+  car: 60,
+  transit: 30,
 };
 
 // Haversine straight-line distance in km
@@ -62,44 +182,70 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function hereTransportMode(mode: string): { endpoint: string; transportMode: string } {
+  switch (mode) {
+    case 'walk':
+      return { endpoint: HERE_ROUTE, transportMode: 'pedestrian' };
+    case 'bike':
+      return { endpoint: HERE_ROUTE, transportMode: 'bicycle' };
+    case 'transit':
+      return { endpoint: HERE_TRANSIT, transportMode: 'transit' };
+    case 'car':
+    default:
+      return { endpoint: HERE_ROUTE, transportMode: 'car' };
+  }
+}
+
 export async function calculateTravelTime(
   homeLat: number, homeLng: number,
   placeLat: number, placeLng: number,
   mode: string = 'car'
 ): Promise<{ durationMinutes: number; distanceKm: number }> {
-  // For walking and cycling, use distance-based estimates since OSRM's public
-  // demo server doesn't reliably support foot/cycling profiles.
-  // We fetch the driving route for distance (road distance is more accurate
-  // than straight-line), then compute time from the mode's average speed.
   try {
-    const url = `${OSRM_BASE}/route/v1/driving/${homeLng},${homeLat};${placeLng},${placeLat}?overview=false`;
+    const { endpoint, transportMode } = hereTransportMode(mode);
+    const origin = `${homeLat},${homeLng}`;
+    const destination = `${placeLat},${placeLng}`;
+
+    let url: string;
+    if (mode === 'transit') {
+      // Transit routing uses a different API structure
+      url = `${endpoint}?origin=${origin}&destination=${destination}&apiKey=${HERE_API_KEY}`;
+    } else {
+      url = `${endpoint}?transportMode=${transportMode}&origin=${origin}&destination=${destination}&return=summary&apiKey=${HERE_API_KEY}`;
+    }
+
     const res = await fetch(url);
-    if (!res.ok) throw new Error('OSRM request failed');
+    if (!res.ok) throw new Error(`HERE routing failed: ${res.status}`);
     const data = await res.json();
+
     const route = data.routes?.[0];
     if (!route) throw new Error('No route found');
 
-    const distanceKm = Math.round(route.distance / 100) / 10;
+    // HERE returns sections within a route
+    const sections = route.sections || [];
+    let totalSeconds = 0;
+    let totalMeters = 0;
 
-    if (mode === 'car') {
-      // Use OSRM's driving duration directly — it accounts for road types & speed limits
-      return {
-        durationMinutes: Math.round(route.duration / 60),
-        distanceKm,
-      };
+    for (const section of sections) {
+      const summary = section.summary || section.departure?.time ? section : null;
+      if (section.summary) {
+        totalSeconds += section.summary.duration || 0;
+        totalMeters += section.summary.length || 0;
+      } else if (section.travelSummary) {
+        // Transit routes use travelSummary
+        totalSeconds += section.travelSummary.duration || 0;
+        totalMeters += section.travelSummary.length || 0;
+      }
     }
 
-    // Walk / bike: compute from distance and average speed
-    // Add 20% to road distance for walking (detours, paths, shortcuts roughly balance out)
-    const adjustedDistance = mode === 'walk' ? distanceKm * 1.2 : distanceKm;
-    const speed = MODE_SPEEDS[mode] || MODE_SPEEDS.car;
-    const minutes = Math.round((adjustedDistance / speed) * 60);
-
-    return { durationMinutes: minutes, distanceKm };
+    return {
+      durationMinutes: Math.round(totalSeconds / 60),
+      distanceKm: Math.round(totalMeters / 100) / 10,
+    };
   } catch {
-    // Fallback: straight-line distance × 1.3 (rough road-distance factor)
+    // Fallback: straight-line distance × 1.3
     const straightLine = haversineDistanceKm(homeLat, homeLng, placeLat, placeLng);
-    const distanceKm = Math.round(straightLine * 13) / 10; // ×1.3, one decimal
+    const distanceKm = Math.round(straightLine * 13) / 10;
     const speed = MODE_SPEEDS[mode] || MODE_SPEEDS.car;
     const minutes = Math.round((distanceKm / speed) * 60);
     return { durationMinutes: minutes, distanceKm };
@@ -107,7 +253,7 @@ export async function calculateTravelTime(
 }
 
 /**
- * Calculate travel times for multiple items in parallel via OSRM.
+ * Calculate travel times for multiple items in parallel via HERE Routing.
  * Returns a map of itemId → { durationMinutes, distanceKm }.
  */
 export async function calculateBatchTravelTimes(
@@ -131,6 +277,8 @@ export async function calculateBatchTravelTimes(
   return results;
 }
 
+// ── Weather (Open-Meteo — unchanged) ──
+
 function classifyWeatherCode(code: number): { type: WeatherType; description: string } {
   if (code <= 1) return { type: 'sunny', description: 'Clear sky' };
   if (code <= 3) return { type: 'cloudy', description: 'Partly cloudy' };
@@ -144,9 +292,9 @@ function classifyWeatherCode(code: number): { type: WeatherType; description: st
   return { type: 'cloudy', description: 'Overcast' };
 }
 
-// Fetch place image from Wikidata/Wikipedia
+// Fetch place image from Wikidata/Wikipedia (unchanged — still works with any geocoding provider)
 export async function fetchPlaceImage(tags: Record<string, string>, lat: number, lng: number): Promise<string> {
-  // Try 1: Wikidata → get image via SPARQL-free REST endpoint
+  // Try 1: Wikidata → get image
   const wikidataId = tags['wikidata'];
   if (wikidataId) {
     try {
@@ -158,7 +306,6 @@ export async function fetchPlaceImage(tags: Record<string, string>, lat: number,
         const imageClaim = entity?.claims?.P18?.[0];
         const filename = imageClaim?.mainsnak?.datavalue?.value;
         if (filename) {
-          // Use Wikipedia's Special:FilePath which handles the hash routing for us
           return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=400`;
         }
       }
@@ -202,12 +349,8 @@ export async function fetchPlaceImage(tags: Record<string, string>, lat: number,
     }
   } catch { /* fall through */ }
 
-  // Fallback: Static map tile
-  const z = 14;
-  const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z));
-  const latRad = (lat * Math.PI) / 180;
-  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, z));
-  return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+  // Fallback: Static map tile from HERE
+  return `https://image.maps.hereapi.com/mia/v3/base/mc/${Math.round(lat * 100) / 100},${Math.round(lng * 100) / 100},14/400/300/png8?apiKey=${HERE_API_KEY}`;
 }
 
 export async function fetchWeatherForecast(lat: number, lng: number): Promise<WeatherForecast[]> {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { searchPlaces } from '../utils/api';
+import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
-import type { UserProfile, NominatimResult } from '../types';
+import type { UserProfile, HereSearchResult } from '../types';
 import { Feather, MapPin, Target, BookHeart, Shuffle } from 'lucide-react';
 
 interface Props {
@@ -39,7 +39,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   const [step, setStep] = useState<Step>('welcome');
   const [slideIndex, setSlideIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searchResults, setSearchResults] = useState<HereSearchResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [searching, setSearching] = useState(false);
 
@@ -54,8 +54,8 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   useEffect(() => {
     if (step === 'location' && mapRef.current && !mapInstance.current) {
       const map = L.map(mapRef.current).setView([48.137, 11.576], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+      L.tileLayer(HERE_TILE_URL, {
+        attribution: HERE_TILE_ATTRIBUTION,
       }).addTo(map);
       mapInstance.current = map;
       map.on('click', (e: L.LeafletMouseEvent) => {
@@ -84,10 +84,10 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     setSearching(false);
   };
 
-  const selectSearchResult = (result: NominatimResult) => {
-    setSelectedLocation({ lat: parseFloat(result.lat), lng: parseFloat(result.lon), address: result.display_name });
+  const selectSearchResult = (result: HereSearchResult) => {
+    setSelectedLocation({ lat: result.position.lat, lng: result.position.lng, address: result.address.label });
     setSearchResults([]);
-    setSearchQuery(result.display_name.split(',').slice(0, 2).join(','));
+    setSearchQuery(result.title);
   };
 
   const handleComplete = async () => {
@@ -246,11 +246,11 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           <div className="bg-white border border-sand-200 rounded-2xl mb-3 max-h-40 overflow-auto">
             {searchResults.map((r) => (
               <button
-                key={r.place_id}
+                key={r.id}
                 onClick={() => selectSearchResult(r)}
                 className="w-full text-left px-4 py-3 text-sm hover:bg-sand-50 border-b border-sand-100 last:border-0 text-sand-800"
               >
-                {r.display_name}
+                {r.address.label}
               </button>
             ))}
           </div>

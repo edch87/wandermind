@@ -115,17 +115,26 @@ export interface ScoredItem {
   reasons: string[];
 }
 
-export interface NominatimResult {
-  place_id: number;
-  osm_type: string;
-  osm_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  type: string;
-  class: string;
-  address?: Record<string, string>;
+export interface HereSearchResult {
+  id: string;
+  title: string;
+  address: {
+    label: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    countryCode?: string;
+  };
+  position: {
+    lat: number;
+    lng: number;
+  };
+  categories?: { id: string; name: string }[];
+  openingHours?: string;
 }
+
+/** @deprecated — kept for backward compatibility with old imports */
+export type NominatimResult = HereSearchResult;
 
 export const CATEGORY_INFO: Record<Category, { label: string; icon: string; color: string }> = {
   museum_gallery: { label: 'Museum & Gallery', icon: 'Landmark', color: '#7c3aed' },

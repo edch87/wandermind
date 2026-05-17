@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { searchPlaces, fetchOsmTags, calculateTravelTime, fetchPlaceImage } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, calculateTravelTime, fetchPlaceImage } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
-  UserProfile, BucketListItem, NominatimResult, Category, Setting,
+  UserProfile, BucketListItem, HereSearchResult, Category, Setting,
   WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay,
   GroupType, Priority
 } from '../types';
@@ -34,7 +34,7 @@ const transportIcon = (mode: string) => {
 export default function AddPlace({ profile, onSave, onBack }: Props) {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<NominatimResult[]>([]);
+  const [results, setResults] = useState<HereSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [draft, setDraft] = useState<Partial<BucketListItem>>({});
@@ -53,16 +53,21 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     }, 1000);
   };
 
-  const selectPlace = async (result: NominatimResult) => {
+  const selectPlace = async (result: HereSearchResult) => {
     setStep('loading');
     setResults([]);
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
+    const lat = result.position.lat;
+    const lng = result.position.lng;
 
     setLoadingMsg('Fetching place details...');
     let tags: Record<string, string> = {};
-    if (result.osm_id) {
-      tags = await fetchOsmTags(result.osm_type, result.osm_id);
+    let openingHours: string | undefined;
+    if (result.id) {
+      const details = await fetchPlaceDetails(result.id);
+      if (details) {
+        tags = details.tags;
+        openingHours = details.openingHours;
+      }
     }
 
     setLoadingMsg('Calculating travel time...');
@@ -71,28 +76,27 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     );
 
     setLoadingMsg('Finding photos...');
-    const searchTags = { ...tags, name: result.display_name.split(',')[0] };
+    const searchTags = { ...tags, name: result.title };
     const photoUrl = await fetchPlaceImage(searchTags, lat, lng);
 
     setLoadingMsg('Auto-categorising...');
     const inferred = inferDefaults(tags);
-    const parts = result.display_name.split(',').map(s => s.trim());
 
     setDraft({
       id: generateId(),
       status: 'want_to_do',
       createdAt: new Date().toISOString(),
-      name: parts[0] || result.display_name,
+      name: result.title,
       latitude: lat,
       longitude: lng,
-      osmId: `${result.osm_type}/${result.osm_id}`,
+      osmId: result.id, // Store HERE place ID for future lookups
       osmTags: tags,
       photoUrl,
-      address: result.display_name,
-      country: result.address?.country || '',
-      region: result.address?.state || '',
-      city: result.address?.city || result.address?.town || '',
-      openingHours: tags['opening_hours'] || undefined,
+      address: result.address.label,
+      country: result.address.country || '',
+      region: result.address.state || '',
+      city: result.address.city || '',
+      openingHours: openingHours || result.openingHours || undefined,
       travelTimeMinutes: travel.durationMinutes,
       travelDistanceKm: travel.distanceKm,
       transportMode: profile.preferredTransport,
@@ -154,15 +158,11 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         {searching && <p className="text-xs text-sand-400 mb-2 px-1">Searching...</p>}
         <div className="space-y-1">
           {results.map((r) => {
-            const addr = r.address || {};
-            const placeName = r.display_name.split(',')[0].trim();
-            const locale = addr.city || addr.town || addr.village || addr.county || addr.state || '';
-            const country = addr.country || '';
-            const subtitle = [locale, country].filter(Boolean).join(', ');
+            const subtitle = [r.address.city, r.address.country].filter(Boolean).join(', ');
             return (
-              <button key={r.place_id} onClick={() => selectPlace(r)}
+              <button key={r.id} onClick={() => selectPlace(r)}
                 className="w-full text-left px-4 py-3.5 rounded-2xl hover:bg-sand-100 transition">
-                <div className="text-sm font-medium text-sand-900">{placeName}</div>
+                <div className="text-sm font-medium text-sand-900">{r.title}</div>
                 {subtitle && <div className="text-xs text-sand-500 mt-0.5">{subtitle}</div>}
               </button>
             );

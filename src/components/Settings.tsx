@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { searchPlaces } from '../utils/api';
+import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
-import type { UserProfile, NominatimResult } from '../types';
+import type { UserProfile, HereSearchResult } from '../types';
 
 interface Props {
   profile: UserProfile;
@@ -17,7 +17,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   const [homeLat, setHomeLat] = useState(profile.homeLatitude);
   const [homeLng, setHomeLng] = useState(profile.homeLongitude);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searchResults, setSearchResults] = useState<HereSearchResult[]>([]);
   const [showLocationEdit, setShowLocationEdit] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -26,7 +26,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   useEffect(() => {
     if (showLocationEdit && mapRef.current && !mapInstance.current) {
       const map = L.map(mapRef.current).setView([homeLat, homeLng], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+      L.tileLayer(HERE_TILE_URL, { attribution: HERE_TILE_ATTRIBUTION }).addTo(map);
       markerRef.current = L.marker([homeLat, homeLng]).addTo(map);
       mapInstance.current = map;
       map.on('click', (e: L.LeafletMouseEvent) => {
@@ -45,9 +45,9 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
     setSearchResults(results);
   };
 
-  const selectResult = (r: NominatimResult) => {
-    const lat = parseFloat(r.lat); const lng = parseFloat(r.lon);
-    setHomeLat(lat); setHomeLng(lng); setHomeAddress(r.display_name);
+  const selectResult = (r: HereSearchResult) => {
+    const lat = r.position.lat; const lng = r.position.lng;
+    setHomeLat(lat); setHomeLng(lng); setHomeAddress(r.address.label);
     setSearchResults([]); setSearchQuery('');
     if (mapInstance.current) {
       mapInstance.current.setView([lat, lng], 14);
@@ -94,8 +94,8 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
               {searchResults.length > 0 && (
                 <div className="bg-white border border-sand-200 rounded-xl mb-2 max-h-32 overflow-auto">
                   {searchResults.map(r => (
-                    <button key={r.place_id} onClick={() => selectResult(r)}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-sand-50 border-b border-sand-100 last:border-0">{r.display_name}</button>
+                    <button key={r.id} onClick={() => selectResult(r)}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-sand-50 border-b border-sand-100 last:border-0">{r.address.label}</button>
                   ))}
                 </div>
               )}
