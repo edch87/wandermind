@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
-import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
-import { Star, MapPin, CaretDown, CaretUp } from '@phosphor-icons/react';
+import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
+import { Star, MapPin, CaretDown, CaretUp, Clock, Coins } from '@phosphor-icons/react';
 
 interface Props {
   items: BucketListItem[];
@@ -267,9 +267,9 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                     <div className="min-w-0">
                       <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        <span className="badge bg-sand-100 text-sand-700">{formatDuration(item.travelTimeMinutes)}</span>
-                        <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
-                        <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
+                        <span className="badge bg-sand-100 text-sand-700">{cat.label}</span>
+                        <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1"><Clock size={10} />{DURATION_LABELS[item.durationEstimate]}</span>
+                        <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1"><Coins size={10} />{COST_LABELS[item.costLevel]}</span>
                       </div>
                     </div>
                     {item.priority === 'high' && (

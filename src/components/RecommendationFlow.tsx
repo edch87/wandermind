@@ -4,7 +4,14 @@ import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
-import { Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning } from '@phosphor-icons/react';
+import {
+  Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning,
+  User, Heart, Users, House,
+  Shuffle, Lightning, Fire, Leaf,
+  ArrowsLeftRight, ForkKnife, Lightbulb, Tree, Confetti, Wind, Compass,
+  Sun, CloudSun, CloudRain, Snowflake, Cloud,
+  MagnifyingGlass,
+} from '@phosphor-icons/react';
 
 const TIME_SNAPS = [
   { min: 60, label: '1 hr' },
@@ -232,30 +239,52 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
 
         <Section label="Who's coming?">
           <div className="toggle-group">
-            {([['solo','👤 Solo'],['couple','👫 Partner'],['friends','👥 Friends'],['family','👨‍👩‍👧 Family'],['kids','👶 Kids']] as const)
-              .map(([val, label]) => (
+            {([
+              { val: 'solo' as GroupType, icon: <User size={14} />, label: 'Solo' },
+              { val: 'couple' as GroupType, icon: <Heart size={14} />, label: 'Partner' },
+              { val: 'friends' as GroupType, icon: <Users size={14} />, label: 'Friends' },
+              { val: 'family' as GroupType, icon: <House size={14} />, label: 'Family' },
+              { val: 'kids' as GroupType, icon: <Baby size={14} />, label: 'Kids' },
+            ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${groupTypes.includes(val) ? 'active' : ''}`}
-                onClick={() => toggleGroup(val)}>{label}</button>
+                onClick={() => toggleGroup(val)}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
             ))}
           </div>
         </Section>
 
         <Section label="How much energy do you have?">
           <div className="toggle-group">
-            {([['surprise_me','🎲 Surprise me'],['up_for_anything','⚡ Up for anything'],['got_some_energy','✨ Got some energy'],['keep_it_easy','🍃 Keep it easy']] as const)
-              .map(([val, label]) => (
+            {([
+              { val: 'surprise_me' as EnergyLevel, icon: <Shuffle size={14} />, label: 'Surprise me' },
+              { val: 'up_for_anything' as EnergyLevel, icon: <Lightning size={14} />, label: 'Up for anything' },
+              { val: 'got_some_energy' as EnergyLevel, icon: <Fire size={14} />, label: 'Got some energy' },
+              { val: 'keep_it_easy' as EnergyLevel, icon: <Leaf size={14} />, label: 'Keep it easy' },
+            ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${energy === val ? 'active' : ''}`}
-                onClick={() => setEnergy(val)}>{label}</button>
+                onClick={() => setEnergy(val)}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
             ))}
           </div>
         </Section>
 
         <Section label="What's your vibe?">
           <div className="toggle-group">
-            {([['flexible','🤷 I\'m flexible'],['foodie','🍽️ Foodie'],['curious','🧠 Curious'],['outdoorsy','🌿 Outdoorsy'],['playful','🎉 Playful'],['unwind','🧘 Unwind'],['explore','🗺️ Explore']] as const)
-              .map(([val, label]) => (
+            {([
+              { val: 'flexible' as Vibe, icon: <ArrowsLeftRight size={14} />, label: "I'm flexible" },
+              { val: 'foodie' as Vibe, icon: <ForkKnife size={14} />, label: 'Foodie' },
+              { val: 'curious' as Vibe, icon: <Lightbulb size={14} />, label: 'Curious' },
+              { val: 'outdoorsy' as Vibe, icon: <Tree size={14} />, label: 'Outdoorsy' },
+              { val: 'playful' as Vibe, icon: <Confetti size={14} />, label: 'Playful' },
+              { val: 'unwind' as Vibe, icon: <Wind size={14} />, label: 'Unwind' },
+              { val: 'explore' as Vibe, icon: <Compass size={14} />, label: 'Explore' },
+            ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${vibes.includes(val) ? 'active' : ''}`}
-                onClick={() => toggleVibe(val)}>{label}</button>
+                onClick={() => toggleVibe(val)}>
+                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
+              </button>
             ))}
           </div>
           <p className="text-[10px] text-sand-600 mt-1">Pick one or more, or stay flexible</p>
@@ -319,9 +348,12 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
 
       {weather && (
         <div className="bg-sand-100 rounded-[20px] p-4 mb-5 flex items-center gap-3">
-          <span className="text-2xl">
-            {weather.weatherType === 'sunny' ? '☀️' : weather.weatherType === 'cloudy' ? '⛅' :
-             weather.weatherType === 'rainy' ? '🌧️' : weather.weatherType === 'snowy' ? '❄️' : '🌫️'}
+          <span className="flex-shrink-0">
+            {weather.weatherType === 'sunny' ? <Sun size={24} weight="fill" className="text-amber-400" /> :
+             weather.weatherType === 'cloudy' ? <CloudSun size={24} className="text-sand-500" /> :
+             weather.weatherType === 'rainy' ? <CloudRain size={24} className="text-blue-400" /> :
+             weather.weatherType === 'snowy' ? <Snowflake size={24} className="text-blue-300" /> :
+             <Cloud size={24} className="text-sand-400" />}
           </span>
           <div>
             <p className="text-sm font-medium text-sand-900">{getDateLabel(dateOffset)}: {weather.description}</p>
@@ -333,7 +365,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
 
       {top3.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-4xl mb-3">🤔</div>
+          <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-300" /></div>
           <p className="text-sm text-sand-600 mb-2">No matches for these filters.</p>
           <p className="text-xs text-sand-600 mb-4">Try widening your time or budget, or add more places!</p>
           <button onClick={() => setStep('input')}

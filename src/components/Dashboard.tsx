@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile, BucketListItem, WeatherForecast } from '../types';
-import { CATEGORY_INFO, formatDuration } from '../types';
+import { CATEGORY_INFO } from '../types';
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
 import {
@@ -156,7 +156,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
               </div>
               <h3 className="font-semibold text-sand-900 text-lg">{surprise.name}</h3>
               <p className="text-xs text-sand-700 mt-1">
-                {formatDuration(surprise.travelTimeMinutes)} · {surprise.costLevel === 'free' ? 'Free' : surprise.costLevel}
+                {surprise.travelDistanceKm} km away · {surprise.costLevel === 'free' ? 'Free' : surprise.costLevel}
               </p>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => onNavigate({ name: 'detail', itemId: surprise.id })}
@@ -211,7 +211,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
                   </div>
                   <div className="p-3">
                     <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>
-                    <div className="text-[10px] text-sand-700 mt-1">{formatDuration(item.travelTimeMinutes)} · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
+                    <div className="text-[10px] text-sand-700 mt-1">{item.travelDistanceKm} km · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
                   </div>
                 </button>
               );
