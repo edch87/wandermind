@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile, BucketListItem, WeatherForecast } from '../types';
-import { CATEGORY_INFO } from '../types';
+
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
 import {
@@ -12,7 +12,7 @@ import PlaceholderImage from './PlaceholderImage';
 interface Props {
   profile: UserProfile;
   items: BucketListItem[];
-  onNavigate: (s: { name: string; itemId?: string }) => void;
+  onNavigate: (s: { name: string; itemId?: string; initialTab?: 'want_to_do' | 'done' }) => void;
   onSaveProfile: (p: UserProfile) => void;
 }
 
@@ -204,9 +204,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         <div className="mb-6">
           <h3 className="px-6 text-sm font-semibold text-sand-900 mb-3">Recently added</h3>
           <div className="flex gap-3 overflow-x-auto px-6 pb-2 scrollbar-hide">
-            {recentItems.map(item => {
-              const cat = CATEGORY_INFO[item.category];
-              return (
+            {recentItems.map(item => (
                 <button key={item.id} onClick={() => onNavigate({ name: 'detail', itemId: item.id })}
                   className="flex-shrink-0 w-40 card text-left">
                   <div className="place-img-container h-24 overflow-hidden">
@@ -227,8 +225,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
                     <div className="text-[10px] text-sand-700 mt-1">{item.travelDistanceKm} km · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
                   </div>
                 </button>
-              );
-            })}
+            ))}
           </div>
         </div>
       )}
