@@ -393,7 +393,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
                 {[1,2,3,4,5].map(n => (
                   <button key={n} onClick={() => setRating(n)}
                     className={`transition ${n <= rating ? 'text-amber-500' : 'text-sand-300'}`}>
-                    <Star size={24} className={n <= rating ? 'fill-amber-500' : ''} />
+                    <Star size={24} weight={n <= rating ? 'fill' : 'regular'} />
                   </button>
                 ))}
               </div>
