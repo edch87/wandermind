@@ -73,12 +73,12 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
         <div>
           <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1.5 block">Your name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 focus:outline-none focus:border-sand-500 bg-white" />
+            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 focus:outline-none focus:border-sand-500 bg-white" />
         </div>
 
         <div>
           <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1 block">Home location</label>
-          <p className="text-xs text-sand-500 mb-2">{homeAddress.substring(0, 50)}{homeAddress.length > 50 ? '...' : ''}</p>
+          <p className="text-xs text-sand-700 mb-2">{homeAddress.substring(0, 50)}{homeAddress.length > 50 ? '...' : ''}</p>
           <button onClick={() => setShowLocationEdit(!showLocationEdit)}
             className="text-sm text-terra-500 font-medium">{showLocationEdit ? 'Hide map' : 'Change location'}</button>
           {showLocationEdit && (
@@ -87,29 +87,29 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
                   placeholder="Search..."
-                  className="flex-1 px-3 py-2.5 border border-sand-200 rounded-xl text-sm focus:outline-none focus:border-sand-500 bg-white" />
+                  className="flex-1 px-3 py-2.5 border border-sand-200 rounded-[12px] text-sm focus:outline-none focus:border-sand-500 bg-white" />
                 <button onClick={handleSearchLocation}
-                  className="px-4 py-2.5 bg-sand-900 text-sand-100 rounded-xl text-sm font-medium">Search</button>
+                  className="px-4 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Search</button>
               </div>
               {searchResults.length > 0 && (
-                <div className="bg-white border border-sand-200 rounded-xl mb-2 max-h-32 overflow-auto">
+                <div className="bg-white border border-sand-200 rounded-[12px] mb-2 max-h-32 overflow-auto">
                   {searchResults.map(r => (
                     <button key={r.id} onClick={() => selectResult(r)}
                       className="w-full text-left px-3 py-2 text-xs hover:bg-sand-50 border-b border-sand-100 last:border-0">{r.address.label}</button>
                   ))}
                 </div>
               )}
-              <div ref={mapRef} className="w-full h-48 rounded-2xl border border-sand-200" />
+              <div ref={mapRef} className="w-full h-48 rounded-[20px] border border-sand-200" />
             </div>
           )}
         </div>
 
         <button onClick={handleSave}
-          className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-2xl font-semibold hover:bg-sand-800 transition">Save changes</button>
+          className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold hover:bg-sand-800 transition">Save changes</button>
 
         <div className="pt-4 border-t border-sand-200 space-y-3">
           <button onClick={async () => { await supabase.auth.signOut(); onSignOut(); }}
-            className="w-full py-3 rounded-2xl text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition">Sign out</button>
+            className="w-full py-3 rounded-full text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition">Sign out</button>
 
           <button onClick={async () => {
             if (confirm('This will delete all your saved places. Are you sure?')) {
@@ -121,8 +121,8 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
               window.location.reload();
             }
           }}
-            className="w-full py-3 rounded-2xl text-terra-500 text-sm font-medium border border-terra-500/20 hover:bg-terra-500/5">Reset all data</button>
-          <p className="text-[10px] text-sand-400 mt-2 text-center">Deletes all saved places and resets settings</p>
+            className="w-full py-3 rounded-full text-terra-500 text-sm font-medium border border-terra-500/20 hover:bg-terra-500/5">Reset all data</button>
+          <p className="text-[10px] text-sand-600 mt-2 text-center">Deletes all saved places and resets settings</p>
         </div>
 
         <p className="text-[10px] text-sand-400 text-center pb-4">Lark v1.0</p>

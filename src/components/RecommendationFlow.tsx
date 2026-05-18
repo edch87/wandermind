@@ -4,7 +4,7 @@ import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
-import { Car, Bike, Footprints, Dog, Accessibility, Baby, AlertTriangle } from 'lucide-react';
+import { Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning } from '@phosphor-icons/react';
 
 const TIME_SNAPS = [
   { min: 60, label: '1 hr' },
@@ -190,9 +190,9 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const weekend = getWeekendOffsets();
 
   const transportOptions: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
-    { mode: 'car', icon: <Car size={14} strokeWidth={1.5} />, label: 'Car' },
-    { mode: 'bike', icon: <Bike size={14} strokeWidth={1.5} />, label: 'Bike' },
-    { mode: 'walk', icon: <Footprints size={14} strokeWidth={1.5} />, label: 'Walk' },
+    { mode: 'car', icon: <Car size={14} />, label: 'Car' },
+    { mode: 'bike', icon: <Bicycle size={14} />, label: 'Bike' },
+    { mode: 'walk', icon: <Footprints size={14} />, label: 'Walk' },
   ];
 
   if (step === 'input') {
@@ -227,7 +227,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
 
         <Section label="How much time do you have?">
           <TimeRangeSlider range={timeRange} onChange={setTimeRange} />
-          <p className="text-[10px] text-sand-400 mt-1">Includes travel time there and back</p>
+          <p className="text-[10px] text-sand-600 mt-1">Includes travel time there and back</p>
         </Section>
 
         <Section label="Who's coming?">
@@ -258,7 +258,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                 onClick={() => toggleVibe(val)}>{label}</button>
             ))}
           </div>
-          <p className="text-[10px] text-sand-400 mt-1">Pick one or more, or stay flexible</p>
+          <p className="text-[10px] text-sand-600 mt-1">Pick one or more, or stay flexible</p>
         </Section>
 
         <Section label="Max budget?">
@@ -275,21 +275,21 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
           <div className="toggle-group">
             <button className={`toggle-btn ${dogComing ? 'active' : ''}`}
               onClick={() => setDogComing(!dogComing)}>
-              <span className="inline-flex items-center gap-1.5"><Dog size={14} strokeWidth={1.5} /> Bringing dog</span>
+              <span className="inline-flex items-center gap-1.5"><Dog size={14} /> Bringing dog</span>
             </button>
             <button className={`toggle-btn ${strollerNeeded ? 'active' : ''}`}
               onClick={() => setStrollerNeeded(!strollerNeeded)}>
-              <span className="inline-flex items-center gap-1.5"><Baby size={14} strokeWidth={1.5} /> Need stroller access</span>
+              <span className="inline-flex items-center gap-1.5"><Baby size={14} /> Need stroller access</span>
             </button>
             <button className={`toggle-btn ${needsAccessibility ? 'active' : ''}`}
               onClick={() => setNeedsAccessibility(!needsAccessibility)}>
-              <span className="inline-flex items-center gap-1.5"><Accessibility size={14} strokeWidth={1.5} /> Wheelchair access</span>
+              <span className="inline-flex items-center gap-1.5"><Wheelchair size={14} /> Wheelchair access</span>
             </button>
           </div>
         </Section>
 
         <button onClick={handleGetRecommendations}
-          className="w-full bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-base hover:bg-sand-800 transition mt-4">
+          className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-4">
           Find recommendations
         </button>
       </div>
@@ -318,14 +318,14 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
       </div>
 
       {weather && (
-        <div className="bg-sand-100 rounded-2xl p-4 mb-5 flex items-center gap-3">
+        <div className="bg-sand-100 rounded-[20px] p-4 mb-5 flex items-center gap-3">
           <span className="text-2xl">
             {weather.weatherType === 'sunny' ? '☀️' : weather.weatherType === 'cloudy' ? '⛅' :
              weather.weatherType === 'rainy' ? '🌧️' : weather.weatherType === 'snowy' ? '❄️' : '🌫️'}
           </span>
           <div>
             <p className="text-sm font-medium text-sand-900">{getDateLabel(dateOffset)}: {weather.description}</p>
-            <p className="text-xs text-sand-500">{weather.tempMin}°C – {weather.tempMax}°C
+            <p className="text-xs text-sand-700">{weather.tempMin}°C – {weather.tempMax}°C
               {weather.precipitation > 0 && ` · ${weather.precipitation}mm rain`}</p>
           </div>
         </div>
@@ -335,9 +335,9 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         <div className="text-center py-16">
           <div className="text-4xl mb-3">🤔</div>
           <p className="text-sm text-sand-600 mb-2">No matches for these filters.</p>
-          <p className="text-xs text-sand-400 mb-4">Try widening your time or budget, or add more places!</p>
+          <p className="text-xs text-sand-600 mb-4">Try widening your time or budget, or add more places!</p>
           <button onClick={() => setStep('input')}
-            className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-xl text-sm font-medium">Adjust filters</button>
+            className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Adjust filters</button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -373,31 +373,31 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                     <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
                   </div>
                   {hoursWarning && (
-                    <div className={`flex items-center gap-2 mt-2.5 text-xs px-3 py-2 rounded-xl ${
+                    <div className={`flex items-center gap-2 mt-2.5 text-xs px-3 py-2 rounded-[12px] ${
                       hoursWarning.startsWith('Closed') || hoursWarning.startsWith('May be closed')
                         ? 'bg-terra-500/10 text-terra-600' : 'bg-amber-50 text-amber-700'
                     }`}>
-                      <AlertTriangle size={13} strokeWidth={1.5} className="flex-shrink-0" />
+                      <Warning size={13} className="flex-shrink-0" />
                       <span>{hoursWarning}</span>
                     </div>
                   )}
                   {nonHoursReasons.length > 0 && (
-                    <p className="text-xs text-sand-600 mt-3 bg-sand-50 rounded-xl p-3 border border-sand-100">
+                    <p className="text-xs text-sand-600 mt-3 bg-sand-50 rounded-[12px] p-3 border border-sand-100">
                       {nonHoursReasons.slice(0, 3).join(' · ')}
                     </p>
                   )}
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => onViewItem(item.id)}
-                      className="flex-1 py-2.5 rounded-xl bg-sand-100 text-sand-700 text-xs font-medium border border-sand-200">Details</button>
+                      className="flex-1 py-2.5 rounded-full bg-sand-100 text-sand-700 text-xs font-medium border border-sand-200">Details</button>
                     <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`, '_blank')}
-                      className="flex-1 py-2.5 rounded-xl bg-sand-900 text-sand-100 text-xs font-medium">Let's go!</button>
+                      className="flex-1 py-2.5 rounded-full bg-sand-900 text-sand-100 text-xs font-medium">Let's go!</button>
                   </div>
                 </div>
               </div>
             );
           })}
           {combos.length > 0 && (
-            <div className="bg-sand-100 rounded-2xl border border-sand-200 p-4">
+            <div className="bg-sand-100 rounded-[20px] border border-sand-200 p-4">
               <span className="badge bg-sand-900 text-sand-100 text-[10px] mb-2">Combo suggestion</span>
               <p className="text-sm text-sand-800">
                 <strong>{combos[0].itemA.name}</strong> → {combos[0].walkingMinutes} min walk → <strong>{combos[0].itemB.name}</strong>

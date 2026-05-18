@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { Feather } from 'lucide-react';
+import { Feather } from '@phosphor-icons/react';
 
 interface Props {
   onAuthSuccess: () => void;
@@ -53,11 +53,11 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
       <div className="w-full max-w-xs">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <Feather size={40} strokeWidth={1.5} className="text-sand-900" />
+            <Feather size={40} className="text-sand-900" />
           </div>
           <h1 className="text-3xl font-semibold text-sand-900 mb-1">Lark</h1>
-          <p className="text-sand-500 text-sm italic mb-3">An activity done for enjoyment or amusement</p>
-          <p className="text-sand-500 text-sm leading-relaxed max-w-[260px] mx-auto">
+          <p className="text-sand-700 text-sm italic mb-3">An activity done for enjoyment or amusement</p>
+          <p className="text-sand-700 text-sm leading-relaxed max-w-[260px] mx-auto">
             Save places you want to visit. When you have free time, we'll suggest the perfect one based on weather, mood, and who you're with.
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. Alex"
                 required
-                className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
               />
             </div>
           )}
@@ -89,7 +89,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+              className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
               placeholder="At least 6 characters"
               required
               minLength={6}
-              className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+              className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
             />
           </div>
 
@@ -118,13 +118,13 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-base hover:bg-sand-800 disabled:opacity-50 transition mt-2"
+            className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 disabled:opacity-50 transition mt-2"
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-sand-500 mt-6">
+        <p className="text-center text-sm text-sand-700 mt-6">
           {mode === 'login' ? (
             <>
               Don't have an account?{' '}

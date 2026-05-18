@@ -3,7 +3,7 @@ import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem } from './types';
 import type { Session } from '@supabase/supabase-js';
-import { Home, ClipboardList, Plus, Feather, Settings as SettingsIcon } from 'lucide-react';
+import { House, ClipboardText, Plus, Feather, Gear } from '@phosphor-icons/react';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -89,7 +89,7 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
-        <div className="text-sand-500 text-lg font-medium">Loading...</div>
+        <div className="text-sand-700 text-lg font-medium">Loading...</div>
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default function App() {
   if (dataLoading && !profile) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
-        <div className="text-sand-500 text-lg font-medium">Loading your data...</div>
+        <div className="text-sand-700 text-lg font-medium">Loading your data...</div>
       </div>
     );
   }
@@ -124,29 +124,32 @@ export default function App() {
   const navigate = (s: Screen) => setScreen(s);
 
   // Navigation bar component
-  const navItems: { icon: React.ReactNode; label: string; s: Screen }[] = [
-    { icon: <Home size={20} strokeWidth={1.5} />, label: 'Home', s: { name: 'dashboard' } },
-    { icon: <ClipboardList size={20} strokeWidth={1.5} />, label: 'My List', s: { name: 'list' } },
-    { icon: <Plus size={20} strokeWidth={1.5} />, label: 'Add', s: { name: 'add' } },
-    { icon: <Feather size={20} strokeWidth={1.5} />, label: 'Suggest', s: { name: 'recommend' } },
-    { icon: <SettingsIcon size={20} strokeWidth={1.5} />, label: 'Settings', s: { name: 'settings' } },
+  const navItems: { Icon: typeof House; label: string; s: Screen }[] = [
+    { Icon: House, label: 'Home', s: { name: 'dashboard' } },
+    { Icon: ClipboardText, label: 'My List', s: { name: 'list' } },
+    { Icon: Plus, label: 'Add', s: { name: 'add' } },
+    { Icon: Feather, label: 'Suggest', s: { name: 'recommend' } },
+    { Icon: Gear, label: 'Settings', s: { name: 'settings' } },
   ];
 
   const NavBar = () => (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-2 py-1 z-50">
       <div className="flex justify-around">
-        {navItems.map(({ icon, label, s }) => (
-          <button
-            key={s.name}
-            onClick={() => navigate(s)}
-            className={`flex flex-col items-center py-1.5 px-3 rounded-lg transition-colors ${
-              screen.name === s.name ? 'text-sand-900' : 'text-sand-400 hover:text-sand-600'
-            }`}
-          >
-            {icon}
-            <span className="text-[10px] font-medium mt-0.5">{label}</span>
-          </button>
-        ))}
+        {navItems.map(({ Icon, label, s }) => {
+          const isActive = screen.name === s.name;
+          return (
+            <button
+              key={s.name}
+              onClick={() => navigate(s)}
+              className={`flex flex-col items-center py-1.5 px-3 rounded-lg transition-colors ${
+                isActive ? 'text-sand-900' : 'text-sand-500 hover:text-sand-700'
+              }`}
+            >
+              <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
+              <span className="text-[10px] font-medium mt-0.5">{label}</span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

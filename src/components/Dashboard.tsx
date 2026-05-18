@@ -6,7 +6,7 @@ import { getRecommendations } from '../utils/recommendation';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
   Feather, Shuffle, Plus, MapPin,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 
 interface Props {
   profile: UserProfile;
@@ -58,14 +58,14 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
   };
 
   const weatherIconEl = (() => {
-    if (!todayWeather) return <CloudSun size={28} strokeWidth={1.5} />;
+    if (!todayWeather) return <CloudSun size={28} />;
     switch (todayWeather.weatherType) {
-      case 'sunny': return <Sun size={28} strokeWidth={1.5} className="text-amber-500" />;
-      case 'cloudy': return <CloudSun size={28} strokeWidth={1.5} className="text-sand-500" />;
-      case 'rainy': return <CloudRain size={28} strokeWidth={1.5} className="text-blue-500" />;
-      case 'snowy': return <Snowflake size={28} strokeWidth={1.5} className="text-sky-400" />;
-      case 'foggy': return <CloudFog size={28} strokeWidth={1.5} className="text-sand-400" />;
-      default: return <CloudSun size={28} strokeWidth={1.5} />;
+      case 'sunny': return <Sun size={28} className="text-amber-500" />;
+      case 'cloudy': return <CloudSun size={28} className="text-sand-500" />;
+      case 'rainy': return <CloudRain size={28} className="text-blue-500" />;
+      case 'snowy': return <Snowflake size={28} className="text-sky-400" />;
+      case 'foggy': return <CloudFog size={28} className="text-sand-400" />;
+      default: return <CloudSun size={28} />;
     }
   })();
 
@@ -99,14 +99,14 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       {/* Weather card */}
       {todayWeather && (
         <div className="mx-6 mb-5">
-          <div className={`rounded-2xl p-4 ${isBadWeather ? 'bg-sand-100' : 'bg-forest-50'}`}>
+          <div className="rounded-[20px] p-4 bg-sand-100">
             <div className="flex items-center gap-3">
               {weatherIconEl}
               <div className="flex-1">
                 <p className="text-sm font-medium text-sand-900">
                   {todayWeather.description}, {todayWeather.tempMax}°C
                 </p>
-                <p className="text-xs text-sand-600 mt-0.5">
+                <p className="text-xs text-sand-700 mt-0.5">
                   {isBadWeather
                     ? `Perfect for ${indoorCount > 0 ? `one of your ${indoorCount} indoor spots` : 'something cosy'}`
                     : `${outdoorCount > 0 ? `${outdoorCount} outdoor spots` : 'Great weather to'} explore!`
@@ -122,18 +122,18 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       <div className="px-6 mb-6">
         <div className="flex gap-3">
           <button onClick={() => onNavigate({ name: 'recommend' })}
-            className="flex-1 bg-sand-900 text-sand-100 rounded-2xl py-4 text-center hover:bg-sand-800 transition">
-            <div className="flex justify-center mb-1"><Feather size={20} strokeWidth={1.5} /></div>
+            className="flex-1 bg-sand-900 text-sand-100 rounded-[20px] py-4 text-center hover:bg-sand-800 transition">
+            <div className="flex justify-center mb-1"><Feather size={20} /></div>
             <div className="text-xs font-medium">Suggest something</div>
           </button>
           <button onClick={handleSpontaneous}
-            className="flex-1 bg-terra-500 text-white rounded-2xl py-4 text-center hover:bg-terra-600 transition">
-            <div className="flex justify-center mb-1"><Shuffle size={20} strokeWidth={1.5} /></div>
+            className="flex-1 bg-terra-500 text-white rounded-[20px] py-4 text-center hover:bg-terra-600 transition">
+            <div className="flex justify-center mb-1"><Shuffle size={20} /></div>
             <div className="text-xs font-medium">I'm feeling spontaneous</div>
           </button>
           <button onClick={() => onNavigate({ name: 'add' })}
-            className="flex-1 bg-sand-200 text-sand-800 rounded-2xl py-4 text-center hover:bg-sand-300 transition">
-            <div className="flex justify-center mb-1"><Plus size={20} strokeWidth={1.5} /></div>
+            className="flex-1 bg-sand-200 text-sand-900 rounded-[20px] py-4 text-center hover:bg-sand-300 transition">
+            <div className="flex justify-center mb-1"><Plus size={20} /></div>
             <div className="text-xs font-medium">Add place</div>
           </button>
         </div>
@@ -155,16 +155,16 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
                 <button onClick={() => setSurprise(null)} className="text-sand-400 text-xs">✕</button>
               </div>
               <h3 className="font-semibold text-sand-900 text-lg">{surprise.name}</h3>
-              <p className="text-xs text-sand-500 mt-1">
+              <p className="text-xs text-sand-700 mt-1">
                 {formatDuration(surprise.travelTimeMinutes)} · {surprise.costLevel === 'free' ? 'Free' : surprise.costLevel}
               </p>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => onNavigate({ name: 'detail', itemId: surprise.id })}
-                  className="flex-1 py-2 rounded-xl bg-sand-100 text-sand-700 text-xs font-medium border border-sand-200">
+                  className="flex-1 py-2 rounded-full bg-sand-100 text-sand-700 text-xs font-medium border border-sand-200">
                   Details
                 </button>
                 <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${surprise.latitude},${surprise.longitude}`, '_blank')}
-                  className="flex-1 py-2 rounded-xl bg-sand-900 text-sand-100 text-xs font-medium">
+                  className="flex-1 py-2 rounded-full bg-sand-900 text-sand-100 text-xs font-medium">
                   Navigate
                 </button>
               </div>
@@ -177,16 +177,16 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       <div className="px-6 mb-6">
         <div className="flex gap-3">
           <button onClick={() => onNavigate({ name: 'list' })}
-            className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center hover:border-sand-400 transition">
-            <div className="flex justify-center mb-1"><MapPin size={18} strokeWidth={1.5} className="text-sand-500" /></div>
+            className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
+            <div className="flex justify-center mb-1"><MapPin size={18} className="text-sand-600" /></div>
             <div className="text-2xl font-semibold text-sand-900">{todoItems.length}</div>
-            <div className="text-[11px] text-sand-500 mt-1">To explore</div>
+            <div className="text-[11px] text-sand-700 mt-1">To explore</div>
           </button>
           <button onClick={() => onNavigate({ name: 'list' })}
-            className="flex-1 bg-white rounded-2xl p-4 border border-sand-200 text-center hover:border-sand-400 transition">
-            <div className="flex justify-center mb-1"><Feather size={18} strokeWidth={1.5} className="text-forest-500" /></div>
+            className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
+            <div className="flex justify-center mb-1"><Feather size={18} className="text-forest-500" /></div>
             <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
-            <div className="text-[11px] text-sand-500 mt-1">Visited</div>
+            <div className="text-[11px] text-sand-700 mt-1">Visited</div>
           </button>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
                   </div>
                   <div className="p-3">
                     <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>
-                    <div className="text-[10px] text-sand-500 mt-1">{formatDuration(item.travelTimeMinutes)} · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
+                    <div className="text-[10px] text-sand-700 mt-1">{formatDuration(item.travelTimeMinutes)} · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
                   </div>
                 </button>
               );
@@ -223,11 +223,11 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       {/* Empty state */}
       {items.length === 0 && (
         <div className="text-center px-6 py-12">
-          <div className="flex justify-center mb-4"><Feather size={40} strokeWidth={1.5} className="text-sand-400" /></div>
+          <div className="flex justify-center mb-4"><Feather size={40} className="text-sand-400" /></div>
           <h3 className="text-lg font-semibold text-sand-900 mb-2">Your adventure starts here</h3>
-          <p className="text-sm text-sand-500 mb-6">Add places you'd love to visit and we'll help you decide when to go.</p>
+          <p className="text-sm text-sand-700 mb-6">Add places you'd love to visit and we'll help you decide when to go.</p>
           <button onClick={() => onNavigate({ name: 'add' })}
-            className="px-8 py-3 bg-sand-900 text-sand-100 rounded-xl font-medium">
+            className="px-8 py-3 bg-sand-900 text-sand-100 rounded-full font-medium">
             Add your first place
           </button>
         </div>

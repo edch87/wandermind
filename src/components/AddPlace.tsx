@@ -9,11 +9,11 @@ import type {
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
 import {
-  Car, Bike, Footprints, MapPin, Search,
-  Building2, TreePine, RefreshCw,
+  Car, Bicycle, Footprints, MapPin, MagnifyingGlass,
+  Buildings, TreeEvergreen, ArrowsClockwise,
   CloudSun, Sun, CloudRain,
-  Dog, Accessibility, Baby,
-} from 'lucide-react';
+  Dog, Wheelchair, Baby,
+} from '@phosphor-icons/react';
 
 interface Props {
   profile: UserProfile;
@@ -25,9 +25,9 @@ type Step = 'search' | 'loading' | 'review';
 
 const transportIcon = (mode: string) => {
   switch (mode) {
-    case 'car': return <Car size={16} strokeWidth={1.5} />;
-    case 'bike': return <Bike size={16} strokeWidth={1.5} />;
-    default: return <Footprints size={16} strokeWidth={1.5} />;
+    case 'car': return <Car size={16} />;
+    case 'bike': return <Bicycle size={16} />;
+    default: return <Footprints size={16} />;
   }
 };
 
@@ -153,30 +153,30 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           <input type="text" value={query} onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search for a place..."
             autoFocus
-            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
+            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
         </div>
-        {searching && <p className="text-xs text-sand-400 mb-2 px-1">Searching...</p>}
+        {searching && <p className="text-xs text-sand-600 mb-2 px-1">Searching...</p>}
         <div className="space-y-1">
           {results.map((r) => {
             const subtitle = [r.address.city, r.address.country].filter(Boolean).join(', ');
             return (
               <button key={r.id} onClick={() => selectPlace(r)}
-                className="w-full text-left px-4 py-3.5 rounded-2xl hover:bg-sand-100 transition">
+                className="w-full text-left px-4 py-3.5 rounded-[20px] hover:bg-sand-100 transition">
                 <div className="text-sm font-medium text-sand-900">{r.title}</div>
-                {subtitle && <div className="text-xs text-sand-500 mt-0.5">{subtitle}</div>}
+                {subtitle && <div className="text-xs text-sand-700 mt-0.5">{subtitle}</div>}
               </button>
             );
           })}
         </div>
         {!searching && results.length === 0 && query.length >= 3 && (
           <div className="text-center py-12">
-            <p className="text-sm text-sand-400">No results found. Try a different search.</p>
+            <p className="text-sm text-sand-600">No results found. Try a different search.</p>
           </div>
         )}
         {query.length < 3 && (
           <div className="text-center py-16">
-            <div className="flex justify-center mb-3"><Search size={32} strokeWidth={1.5} className="text-sand-300" /></div>
-            <p className="text-sm text-sand-500">Search for museums, restaurants, parks, hikes, viewpoints...</p>
+            <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-300" /></div>
+            <p className="text-sm text-sand-700">Search for museums, restaurants, parks, hikes, viewpoints...</p>
           </div>
         )}
       </div>
@@ -221,14 +221,14 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         {/* Place name & travel info */}
         <div className="mb-5">
           <h2 className="text-xl font-semibold text-sand-900">{draft.name}</h2>
-          <p className="text-xs text-sand-500 mt-1">{draft.address?.split(',').slice(1, 3).join(',')}</p>
+          <p className="text-xs text-sand-700 mt-1">{draft.address?.split(',').slice(1, 3).join(',')}</p>
           {draft.travelTimeMinutes! > 0 && (
             <div className="flex items-center gap-3 mt-3">
               <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
                 {transportIcon(draft.transportMode || 'car')} {formatDuration(draft.travelTimeMinutes!)}
               </span>
               <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
-                <MapPin size={14} strokeWidth={1.5} /> {draft.travelDistanceKm} km
+                <MapPin size={14} /> {draft.travelDistanceKm} km
               </span>
             </div>
           )}
@@ -247,9 +247,9 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         <Section label="Setting">
           <div className="toggle-group">
             {([
-              { val: 'indoor' as Setting, label: 'Indoor', icon: <Building2 size={16} strokeWidth={1.5} /> },
-              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreePine size={16} strokeWidth={1.5} /> },
-              { val: 'mixed' as Setting, label: 'Mixed', icon: <RefreshCw size={16} strokeWidth={1.5} /> },
+              { val: 'indoor' as Setting, label: 'Indoor', icon: <Buildings size={16} /> },
+              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreeEvergreen size={16} /> },
+              { val: 'mixed' as Setting, label: 'Mixed', icon: <ArrowsClockwise size={16} /> },
             ]).map(({ val, label, icon }) => (
               <button key={val} className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
                 onClick={() => updateDraft({ setting: val })}>
@@ -262,9 +262,9 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         <Section label="Weather">
           <div className="toggle-group">
             {([
-              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} strokeWidth={1.5} /> },
-              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} strokeWidth={1.5} /> },
-              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} strokeWidth={1.5} /> },
+              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} /> },
+              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} /> },
+              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} /> },
             ]).map(({ val, label, icon }) => (
               <button key={val} className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
                 onClick={() => updateDraft({ weatherSuitability: val })}>
@@ -281,7 +281,7 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
                 onClick={() => updateDraft({ durationEstimate: key })}>{label}</button>
             ))}
           </div>
-          <p className="text-[10px] text-sand-400 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
+          <p className="text-[10px] text-sand-600 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
         </Section>
 
         <Section label="Cost">
@@ -324,15 +324,15 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           <div className="toggle-group">
             <button className={`toggle-btn ${draft.dogFriendly === true ? 'active' : ''}`}
               onClick={() => updateDraft({ dogFriendly: draft.dogFriendly === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Dog size={16} strokeWidth={1.5} /> Dog-friendly</span>
+              <span className="inline-flex items-center gap-1.5"><Dog size={16} /> Dog-friendly</span>
             </button>
             <button className={`toggle-btn ${draft.wheelchairAccessible === true ? 'active' : ''}`}
               onClick={() => updateDraft({ wheelchairAccessible: draft.wheelchairAccessible === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Accessibility size={16} strokeWidth={1.5} /> Wheelchair</span>
+              <span className="inline-flex items-center gap-1.5"><Wheelchair size={16} /> Wheelchair</span>
             </button>
             <button className={`toggle-btn ${draft.strollerFriendly === true ? 'active' : ''}`}
               onClick={() => updateDraft({ strollerFriendly: draft.strollerFriendly === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Baby size={16} strokeWidth={1.5} /> Stroller</span>
+              <span className="inline-flex items-center gap-1.5"><Baby size={16} /> Stroller</span>
             </button>
           </div>
         </Section>
@@ -350,11 +350,11 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
           <textarea value={draft.personalNotes || ''} onChange={(e) => updateDraft({ personalNotes: e.target.value })}
             placeholder="Any notes about this place..."
             rows={2}
-            className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
+            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
         </Section>
 
         <button onClick={() => onSave(draft as BucketListItem)}
-          className="w-full bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-base hover:bg-sand-800 transition mt-2 mb-4">
+          className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-2 mb-4">
           Save to bucket list
         </button>
       </div>

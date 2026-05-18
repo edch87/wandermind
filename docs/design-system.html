@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lark Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: #F5EDE3; color: #2D1B0E; padding: 24px; }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+    h2 { font-size: 20px; font-weight: 600; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #F0E4D4; }
+    h3 { font-size: 14px; font-weight: 500; color: #7A5C3A; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    p { font-size: 14px; color: #7A5C3A; line-height: 1.6; margin-bottom: 12px; }
+    .subtitle { font-family: Georgia, serif; font-style: italic; color: #A67B4B; }
+
+    .section { background: #FFFAF5; border-radius: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid #F0E4D4; }
+    .swatch-row { display: flex; gap: 4px; margin-bottom: 8px; }
+    .swatch { flex: 1; height: 48px; border-radius: 8px; display: flex; align-items: flex-end; padding: 4px; }
+    .swatch span { font-size: 9px; font-weight: 500; }
+    .swatch-label { display: flex; gap: 4px; }
+    .swatch-label span { flex: 1; font-size: 9px; color: #7A5C3A; text-align: center; }
+
+    .type-sample { margin-bottom: 16px; padding: 16px; background: white; border-radius: 12px; border: 1px solid #F0E4D4; }
+    .type-meta { font-size: 11px; color: #96724A; margin-top: 4px; }
+
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .btn { padding: 10px 20px; border-radius: 9999px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; }
+    .btn-primary { background: #2D1B0E; color: #FFF3E6; }
+    .btn-accent { background: #C65D3A; color: white; }
+    .btn-secondary { background: #F5E6D3; color: #2D1B0E; }
+    .btn-outline { background: white; color: #7A5C3A; border: 1px solid #F0E4D4; }
+
+    .card-demo { background: white; border: 1px solid #F0E4D4; border-radius: 20px; padding: 16px; margin-bottom: 12px; }
+    .card-inner { background: #F5E6D3; border-radius: 12px; height: 80px; margin-bottom: 12px; }
+
+    .radius-demo { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+    .radius-box { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .radius-box div { background: white; border: 1.5px solid #E8D5BF; }
+    .radius-box span { font-size: 10px; color: #7A5C3A; }
+
+    .spacing-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; }
+    .spacing-block { background: #C65D3A; opacity: 0.6; border-radius: 4px; }
+    .spacing-label { font-size: 9px; color: #7A5C3A; text-align: center; margin-top: 4px; }
+
+    .nav-demo { background: rgba(255,250,245,0.97); border: 1px solid #F0E4D4; border-radius: 12px; padding: 12px 20px; display: flex; justify-content: space-around; }
+    .nav-item { text-align: center; font-size: 10px; font-weight: 500; }
+    .nav-item.active { color: #2D1B0E; }
+    .nav-item.inactive { color: #B8945C; }
+    .nav-icon { font-size: 20px; margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lark <span class="subtitle">Design System</span></h1>
+    <p>Visual reference for all design decisions. Last updated: May 2026.</p>
+
+    <!-- Colours -->
+    <h2>Colour Palette</h2>
+
+    <div class="section">
+      <h3>Sand (primary)</h3>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#FFFAF5; border: 1px solid #F0E4D4;"><span style="color:#7A5C3A;">50</span></div>
+        <div class="swatch" style="background:#FFF3E6;"><span style="color:#7A5C3A;">100</span></div>
+        <div class="swatch" style="background:#F5E6D3;"><span style="color:#7A5C3A;">200</span></div>
+        <div class="swatch" style="background:#E8D5BF;"><span style="color:#7A5C3A;">300</span></div>
+        <div class="swatch" style="background:#D4B896;"><span style="color:#5C4229;">400</span></div>
+        <div class="swatch" style="background:#B8945C;"><span style="color:#2D1B0E;">500</span></div>
+        <div class="swatch" style="background:#96724A;"><span style="color:#FFF3E6;">600</span></div>
+        <div class="swatch" style="background:#7A5C3A;"><span style="color:#FFF3E6;">700</span></div>
+        <div class="swatch" style="background:#5C4229;"><span style="color:#FFF3E6;">800</span></div>
+        <div class="swatch" style="background:#2D1B0E;"><span style="color:#FFF3E6;">900</span></div>
+      </div>
+
+      <h3>Terra (accent)</h3>
+      <div class="swatch-row" style="max-width: 200px;">
+        <div class="swatch" style="background:#C65D3A;"><span style="color:white;">500</span></div>
+        <div class="swatch" style="background:#A84D2E;"><span style="color:white;">600</span></div>
+      </div>
+
+      <h3>Forest (success)</h3>
+      <div class="swatch-row" style="max-width: 400px;">
+        <div class="swatch" style="background:#F0F5F0; border: 1px solid #DCE8DC;"><span style="color:#3A6347;">50</span></div>
+        <div class="swatch" style="background:#DCE8DC;"><span style="color:#3A6347;">100</span></div>
+        <div class="swatch" style="background:#4A7C59;"><span style="color:white;">500</span></div>
+        <div class="swatch" style="background:#3A6347;"><span style="color:white;">600</span></div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <h2>Typography</h2>
+
+    <div class="section">
+      <div class="type-sample">
+        <p style="font-size:24px; font-weight:600; color:#2D1B0E; margin:0;">Hello Edward, let's go on a <span class="subtitle">lark</span></p>
+        <p class="type-meta">Page heading — DM Sans 600, 24px + Georgia italic accent (#A67B4B)</p>
+      </div>
+
+      <div class="type-sample">
+        <p style="font-size:14px; font-weight:600; color:#2D1B0E; margin:0;">Recently added</p>
+        <p class="type-meta">Section heading — DM Sans 600, 14px, sand-900</p>
+      </div>
+
+      <div class="type-sample">
+        <p style="font-size:13px; font-weight:500; color:#2D1B0E; margin:0;">Englischer Garten</p>
+        <p style="font-size:12px; color:#7A5C3A; margin:4px 0 0;">Munich · 25 min · Free</p>
+        <p class="type-meta">Card title (500) + body text (400, sand-700)</p>
+      </div>
+
+      <div class="type-sample">
+        <p style="font-size:10px; font-weight:500; color:#7A5C3A; text-transform:uppercase; letter-spacing:0.05em; margin:0;">TO EXPLORE · CATEGORY · LABEL</p>
+        <p class="type-meta">Label — DM Sans 500, 10-11px, uppercase, letter-spacing 0.05em</p>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <h2>Buttons</h2>
+
+    <div class="section">
+      <h3>Styles</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary">Primary CTA</button>
+        <button class="btn btn-accent">Accent / Spontaneous</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-outline">Outline</button>
+      </div>
+      <p>All buttons use border-radius: 9999px (full pill). Large action containers (quick action grid) use 20px radius instead.</p>
+    </div>
+
+    <!-- Shape Language -->
+    <h2>Shape Language</h2>
+
+    <div class="section">
+      <h3>Nested radius rule</h3>
+      <p>Inner radius = outer radius minus padding. Cards are 20px, so elements inside (with ~8px padding) use 12px.</p>
+
+      <div class="radius-demo">
+        <div class="radius-box">
+          <div style="width:80px; height:80px; border-radius:20px;"></div>
+          <span>Card: 20px</span>
+        </div>
+        <div class="radius-box">
+          <div style="width:60px; height:40px; border-radius:12px;"></div>
+          <span>Inner: 12px</span>
+        </div>
+        <div class="radius-box">
+          <div style="width:80px; height:36px; border-radius:9999px;"></div>
+          <span>Button: pill</span>
+        </div>
+      </div>
+
+      <h3>Card example</h3>
+      <div class="card-demo">
+        <div class="card-inner"></div>
+        <p style="font-size:13px; font-weight:500; margin:0;">Card title here</p>
+        <p style="font-size:11px; color:#7A5C3A; margin:4px 0 0;">Subtitle text in sand-700</p>
+      </div>
+    </div>
+
+    <!-- Spacing -->
+    <h2>Spacing</h2>
+
+    <div class="section">
+      <h3>Base unit: 8px</h3>
+      <div class="spacing-row">
+        <div><div class="spacing-block" style="width:24px; height:8px;"></div><p class="spacing-label">8</p></div>
+        <div><div class="spacing-block" style="width:24px; height:12px;"></div><p class="spacing-label">12</p></div>
+        <div><div class="spacing-block" style="width:24px; height:16px;"></div><p class="spacing-label">16</p></div>
+        <div><div class="spacing-block" style="width:24px; height:20px;"></div><p class="spacing-label">20</p></div>
+        <div><div class="spacing-block" style="width:24px; height:24px;"></div><p class="spacing-label">24</p></div>
+        <div><div class="spacing-block" style="width:24px; height:32px;"></div><p class="spacing-label">32</p></div>
+      </div>
+      <p>Page padding: 20-24px horizontal. Card padding: 14-16px. Section gap: 20-24px.</p>
+    </div>
+
+    <!-- Navigation -->
+    <h2>Navigation</h2>
+
+    <div class="section">
+      <h3>Bottom nav — active vs inactive</h3>
+      <div class="nav-demo">
+        <div class="nav-item active">
+          <div class="nav-icon">&#9632;</div>
+          Home
+        </div>
+        <div class="nav-item inactive">
+          <div class="nav-icon">&#9633;</div>
+          My List
+        </div>
+        <div class="nav-item inactive">
+          <div class="nav-icon">&#9633;</div>
+          Add
+        </div>
+        <div class="nav-item inactive">
+          <div class="nav-icon">&#9633;</div>
+          Suggest
+        </div>
+        <div class="nav-item inactive">
+          <div class="nav-icon">&#9633;</div>
+          Settings
+        </div>
+      </div>
+      <p style="margin-top:12px;">Active = filled icon + sand-900. Inactive = outline icon + sand-500. Double cue (shape + colour) for accessibility.</p>
+    </div>
+
+    <!-- Accessibility -->
+    <h2>Accessibility</h2>
+
+    <div class="section">
+      <h3>Contrast minimums</h3>
+      <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+        <div style="background:#FFFAF5; padding:12px 16px; border-radius:12px; border:1px solid #F0E4D4;">
+          <span style="color:#7A5C3A; font-size:13px; font-weight:500;">sand-700 on sand-50</span>
+          <span style="display:block; font-size:10px; color:#96724A; margin-top:2px;">4.8:1 ratio — AA pass</span>
+        </div>
+        <div style="background:#FFF3E6; padding:12px 16px; border-radius:12px;">
+          <span style="color:#7A5C3A; font-size:13px; font-weight:500;">sand-700 on sand-100</span>
+          <span style="display:block; font-size:10px; color:#96724A; margin-top:2px;">4.5:1 ratio — AA pass</span>
+        </div>
+        <div style="background:#2D1B0E; padding:12px 16px; border-radius:12px;">
+          <span style="color:#FFF3E6; font-size:13px; font-weight:500;">sand-100 on sand-900</span>
+          <span style="display:block; font-size:10px; color:#D4B896; margin-top:2px;">15.2:1 ratio — AAA pass</span>
+        </div>
+      </div>
+
+      <h3>Rules</h3>
+      <p>Never use sand-500 or lighter for body text. Minimum is sand-700 (#7A5C3A). Viewport allows user zoom. All icon buttons must have aria-label. Touch targets minimum 44x44px.</p>
+    </div>
+
+  </div>
+</body>
+</html>

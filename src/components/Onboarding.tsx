@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import type { UserProfile, HereSearchResult } from '../types';
-import { Feather, MapPin, Target, BookHeart, Shuffle } from 'lucide-react';
+import { Feather, MapPin, Target, BookOpen, Shuffle } from '@phosphor-icons/react';
 
 interface Props {
   displayName: string;
@@ -12,22 +12,22 @@ interface Props {
 
 const CAROUSEL_SLIDES = [
   {
-    icon: <MapPin size={28} strokeWidth={1.5} />,
+    icon: <MapPin size={28} />,
     title: 'Add a place',
     description: 'Search for anywhere you\'d like to visit. We fill in the details.',
   },
   {
-    icon: <Target size={28} strokeWidth={1.5} />,
+    icon: <Target size={28} />,
     title: 'Get a recommendation',
     description: 'Tell us your mood, how long you\'ve got, and who\'s coming. We\'ll pick the best spot — weather and all.',
   },
   {
-    icon: <BookHeart size={28} strokeWidth={1.5} />,
+    icon: <BookOpen size={28} />,
     title: 'Track your adventures',
     description: 'Mark places as done, rate them, and add notes so that you can share and revisit the ones you love.',
   },
   {
-    icon: <Shuffle size={28} strokeWidth={1.5} />,
+    icon: <Shuffle size={28} />,
     title: 'Feeling spontaneous?',
     description: 'No time to plan? Hit shuffle and we\'ll pick something for you based on what\'s nearby and what the weather\'s doing.',
   },
@@ -132,14 +132,14 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     const firstName = displayName.split(' ')[0] || 'there';
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <Feather size={48} strokeWidth={1.5} className="text-sand-900 mb-6" />
+        <Feather size={48} className="text-sand-900 mb-6" />
         <h1 className="text-3xl font-semibold text-sand-900 mb-2">Welcome, {firstName}!</h1>
-        <p className="text-sand-500 text-sm mb-10 max-w-xs leading-relaxed">
+        <p className="text-sand-700 text-sm mb-10 max-w-xs leading-relaxed">
           Here's how Lark works — it only takes a minute.
         </p>
         <button
           onClick={() => setStep('carousel')}
-          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-lg hover:bg-sand-800 transition"
+          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition"
         >
           Show me
         </button>
@@ -162,19 +162,19 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         {/* Skip link */}
         <button
           onClick={() => setStep('location')}
-          className="absolute top-6 right-6 text-sm text-sand-400 hover:text-sand-600 transition"
+          className="absolute top-6 right-6 text-sm text-sand-600 hover:text-sand-700 transition"
         >
           Skip
         </button>
 
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-sand-200 flex items-center justify-center text-sand-700 mb-8">
+        <div className="w-16 h-16 rounded-[20px] bg-sand-200 flex items-center justify-center text-sand-700 mb-8">
           {slide.icon}
         </div>
 
         {/* Content */}
         <h2 className="text-2xl font-semibold text-sand-900 mb-3">{slide.title}</h2>
-        <p className="text-sand-500 text-sm leading-relaxed max-w-xs mb-10">
+        <p className="text-sand-700 text-sm leading-relaxed max-w-xs mb-10">
           {slide.description}
         </p>
 
@@ -200,7 +200,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
               setSlideIndex(slideIndex + 1);
             }
           }}
-          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-lg hover:bg-sand-800 transition"
+          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition"
         >
           {isLast ? 'Get started' : 'Next'}
         </button>
@@ -215,7 +215,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         <h2 className="text-xl font-semibold text-sand-900 mt-1">
           Where's <span className="heading-accent">home?</span>
         </h2>
-        <p className="text-sm text-sand-500 mt-1">
+        <p className="text-sm text-sand-700 mt-1">
           We'll use this to calculate travel times to your bucket list spots.
         </p>
       </div>
@@ -231,19 +231,19 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search for your city..."
-            className="flex-1 px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
           />
           <button
             onClick={handleSearch}
             disabled={searching}
-            className="px-5 py-3 bg-sand-900 text-sand-100 rounded-2xl text-sm font-medium hover:bg-sand-800 disabled:opacity-50"
+            className="px-5 py-3 bg-sand-900 text-sand-100 rounded-full text-sm font-medium hover:bg-sand-800 disabled:opacity-50"
           >
             {searching ? '...' : 'Search'}
           </button>
         </div>
 
         {searchResults.length > 0 && (
-          <div className="bg-white border border-sand-200 rounded-2xl mb-3 max-h-40 overflow-auto">
+          <div className="bg-white border border-sand-200 rounded-[20px] mb-3 max-h-40 overflow-auto">
             {searchResults.map((r) => (
               <button
                 key={r.id}
@@ -256,7 +256,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           </div>
         )}
 
-        <div ref={mapRef} className="w-full h-52 rounded-2xl mb-3 border border-sand-200" />
+        <div ref={mapRef} className="w-full h-52 rounded-[20px] mb-3 border border-sand-200" />
 
         {selectedLocation && (
           <p className="text-xs text-forest-600 mb-4 px-1">
@@ -268,7 +268,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       <button
         onClick={handleComplete}
         disabled={!selectedLocation}
-        className="w-full bg-sand-900 text-sand-100 py-4 rounded-2xl font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2"
+        className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2"
       >
         Start exploring
       </button>

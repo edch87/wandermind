@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
 import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
-import { Star, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, MapPin, CaretDown, CaretUp } from '@phosphor-icons/react';
 
 interface Props {
   items: BucketListItem[];
@@ -71,16 +71,16 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
       <h2 className="text-xl font-semibold text-sand-900 mb-4">My <span className="heading-accent">bucket list</span></h2>
 
       {/* Tabs */}
-      <div className="flex bg-sand-100 rounded-2xl p-1 mb-4">
+      <div className="flex bg-sand-100 rounded-[20px] p-1 mb-4">
         <button onClick={() => setTab('want_to_do')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
-            tab === 'want_to_do' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-500'
+          className={`flex-1 py-2.5 rounded-[12px] text-sm font-medium transition ${
+            tab === 'want_to_do' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-600'
           }`}>
           To explore ({items.filter(i => i.status === 'want_to_do').length})
         </button>
         <button onClick={() => setTab('done')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${
-            tab === 'done' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-500'
+          className={`flex-1 py-2.5 rounded-[12px] text-sm font-medium transition ${
+            tab === 'done' ? 'bg-white text-sand-900 shadow-sm' : 'text-sand-600'
           }`}>
           Visited ({items.filter(i => i.status === 'done').length})
         </button>
@@ -89,14 +89,14 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
       {/* Sort & Filter */}
       <div className="flex items-center gap-2 mb-4">
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="text-xs px-3 py-2 rounded-xl border border-sand-200 bg-white text-sand-700 focus:outline-none">
+          className="text-xs px-3 py-2 rounded-[12px] border border-sand-200 bg-white text-sand-700 focus:outline-none">
           <option value="recent">Recently added</option>
           <option value="priority">Priority</option>
           <option value="travel">Nearest</option>
           <option value="name">A-Z</option>
         </select>
         <button onClick={() => setShowFilters(!showFilters)}
-          className={`text-xs px-3 py-2 rounded-xl border transition ${
+          className={`text-xs px-3 py-2 rounded-full border transition ${
             showFilters || hasActiveFilters
               ? 'border-sand-500 text-sand-800 bg-sand-100' : 'border-sand-200 text-sand-600'
           }`}>
@@ -105,11 +105,11 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
       </div>
 
       {showFilters && (
-        <div className="bg-sand-100 rounded-2xl p-4 mb-4 space-y-3">
+        <div className="bg-sand-100 rounded-[20px] p-4 mb-4 space-y-3">
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Category</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Category</label>
             <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as Category | 'all')}
-              className="text-xs px-3 py-2 rounded-xl border border-sand-200 bg-white w-full">
+              className="text-xs px-3 py-2 rounded-[12px] border border-sand-200 bg-white w-full">
               <option value="all">All categories</option>
               {usedCategories.map(c => (
                 <option key={c} value={c}>{CATEGORY_INFO[c].label}</option>
@@ -117,7 +117,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Cost</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Cost</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterCost === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterCost('all')}>All</button>
@@ -128,7 +128,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Time needed</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Time needed</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterDuration === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterDuration('all')}>All</button>
@@ -139,7 +139,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Good for</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Good for</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterGroup === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterGroup('all')}>All</button>
@@ -150,7 +150,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Priority</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Priority</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterPriority === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterPriority('all')}>All</button>
@@ -161,7 +161,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Accessibility</label>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Accessibility</label>
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterDogFriendly ? 'active' : ''}`}
                 onClick={() => setFilterDogFriendly(!filterDogFriendly)}>Dog-friendly</button>
@@ -176,13 +176,13 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
           <button onClick={() => setShowMoreFilters(!showMoreFilters)}
             className="text-xs text-sand-600 font-medium inline-flex items-center gap-1">
             {showMoreFilters ? 'Less filters' : 'More filters'}
-            {showMoreFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {showMoreFilters ? <CaretUp size={12} /> : <CaretDown size={12} />}
           </button>
 
           {showMoreFilters && (
             <>
               <div>
-                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Setting</label>
+                <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Setting</label>
                 <div className="toggle-group">
                   <button className={`toggle-btn text-xs ${filterSetting === 'all' ? 'active' : ''}`}
                     onClick={() => setFilterSetting('all')}>All</button>
@@ -193,7 +193,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Weather</label>
+                <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Weather</label>
                 <div className="toggle-group">
                   <button className={`toggle-btn text-xs ${filterWeather === 'all' ? 'active' : ''}`}
                     onClick={() => setFilterWeather('all')}>All</button>
@@ -204,7 +204,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Season</label>
+                <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Season</label>
                 <div className="toggle-group">
                   <button className={`toggle-btn text-xs ${filterSeason === 'all' ? 'active' : ''}`}
                     onClick={() => setFilterSeason('all')}>All</button>
@@ -215,7 +215,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-medium text-sand-500 uppercase tracking-wider block mb-1">Time of day</label>
+                <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Time of day</label>
                 <div className="toggle-group">
                   <button className={`toggle-btn text-xs ${filterTimeOfDay === 'all' ? 'active' : ''}`}
                     onClick={() => setFilterTimeOfDay('all')}>All</button>
@@ -236,13 +236,13 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
       {/* Items */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="flex justify-center mb-3"><MapPin size={32} strokeWidth={1.5} className="text-sand-300" /></div>
-          <p className="text-sm text-sand-500 mb-4">
+          <div className="flex justify-center mb-3"><MapPin size={32} className="text-sand-300" /></div>
+          <p className="text-sm text-sand-700 mb-4">
             {tab === 'want_to_do' ? 'No places yet. Start adding some!' : 'Nothing completed yet. Get out there!'}
           </p>
           {tab === 'want_to_do' && (
             <button onClick={() => onNavigate({ name: 'add' })}
-              className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-xl text-sm font-medium">Add a place</button>
+              className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Add a place</button>
           )}
         </div>
       ) : (
@@ -258,7 +258,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                     <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs font-medium text-sand-500">{cat.label}</div>
+                    <div className="w-full h-full flex items-center justify-center text-xs font-medium text-sand-700">{cat.label}</div>
                   )}
                 </div>
                 {/* Content */}
@@ -279,7 +279,7 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
                   {item.status === 'done' && item.completionRating && (
                     <div className="mt-1.5 flex gap-0.5">
                       {Array.from({ length: item.completionRating }).map((_, i) => (
-                        <Star key={i} size={12} strokeWidth={1.5} className="text-amber-500 fill-amber-500" />
+                        <Star key={i} size={12} className="text-amber-500 fill-amber-500" />
                       ))}
                     </div>
                   )}

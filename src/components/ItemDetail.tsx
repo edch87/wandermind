@@ -3,12 +3,12 @@ import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEst
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { formatOpeningHours } from '../utils/openingHours';
 import {
-  Navigation,
+  NavigationArrow,
   Sun, CloudRain, CloudSun,
-  Clock, Coins, Users, Dog, Accessibility, Baby,
-  Flower2, Sunrise, MapPin, Star, ArrowRight, Trash2, Check, Pencil, X,
-  Building2, TreePine, RefreshCw,
-} from 'lucide-react';
+  Clock, Coins, Users, Dog, Wheelchair, Baby,
+  Flower, SunHorizon, MapPin, Star, ArrowRight, Trash, Check, PencilSimple, X,
+  Buildings, TreeEvergreen, ArrowsClockwise,
+} from '@phosphor-icons/react';
 
 interface Props {
   item: BucketListItem;
@@ -19,9 +19,9 @@ interface Props {
 
 const weatherIconEl = (suitability: string) => {
   switch (suitability) {
-    case 'good_weather': return <Sun size={16} strokeWidth={1.5} />;
-    case 'bad_weather_ideal': return <CloudRain size={16} strokeWidth={1.5} />;
-    default: return <CloudSun size={16} strokeWidth={1.5} />;
+    case 'good_weather': return <Sun size={16} />;
+    case 'bad_weather_ideal': return <CloudRain size={16} />;
+    default: return <CloudSun size={16} />;
   }
 };
 
@@ -118,13 +118,13 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           )}
           <button onClick={cancelEdit}
             className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm shadow-sm">
-            <X size={16} strokeWidth={1.5} />
+            <X size={16} />
           </button>
         </div>
 
         <div className="px-6 pt-5">
           <h2 className="text-lg font-semibold text-sand-900 mb-1">Edit: {draft.name}</h2>
-          <p className="text-xs text-sand-500 mb-5">{draft.address?.split(',').slice(0, 3).join(',')}</p>
+          <p className="text-xs text-sand-700 mb-5">{draft.address?.split(',').slice(0, 3).join(',')}</p>
 
           <Section label="Category">
             <div className="toggle-group">
@@ -138,9 +138,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           <Section label="Setting">
             <div className="toggle-group">
               {([
-                { val: 'indoor' as Setting, label: 'Indoor', icon: <Building2 size={16} strokeWidth={1.5} /> },
-                { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreePine size={16} strokeWidth={1.5} /> },
-                { val: 'mixed' as Setting, label: 'Mixed', icon: <RefreshCw size={16} strokeWidth={1.5} /> },
+                { val: 'indoor' as Setting, label: 'Indoor', icon: <Buildings size={16} /> },
+                { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreeEvergreen size={16} /> },
+                { val: 'mixed' as Setting, label: 'Mixed', icon: <ArrowsClockwise size={16} /> },
               ]).map(({ val, label, icon }) => (
                 <button key={val} className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
                   onClick={() => updateDraft({ setting: val })}>
@@ -153,9 +153,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           <Section label="Weather">
             <div className="toggle-group">
               {([
-                { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} strokeWidth={1.5} /> },
-                { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} strokeWidth={1.5} /> },
-                { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} strokeWidth={1.5} /> },
+                { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} /> },
+                { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} /> },
+                { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} /> },
               ]).map(({ val, label, icon }) => (
                 <button key={val} className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
                   onClick={() => updateDraft({ weatherSuitability: val })}>
@@ -214,15 +214,15 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             <div className="toggle-group">
               <button className={`toggle-btn ${draft.dogFriendly === true ? 'active' : ''}`}
                 onClick={() => updateDraft({ dogFriendly: draft.dogFriendly === true ? undefined : true })}>
-                <span className="inline-flex items-center gap-1.5"><Dog size={16} strokeWidth={1.5} /> Dog-friendly</span>
+                <span className="inline-flex items-center gap-1.5"><Dog size={16} /> Dog-friendly</span>
               </button>
               <button className={`toggle-btn ${draft.wheelchairAccessible === true ? 'active' : ''}`}
                 onClick={() => updateDraft({ wheelchairAccessible: draft.wheelchairAccessible === true ? undefined : true })}>
-                <span className="inline-flex items-center gap-1.5"><Accessibility size={16} strokeWidth={1.5} /> Wheelchair</span>
+                <span className="inline-flex items-center gap-1.5"><Wheelchair size={16} /> Wheelchair</span>
               </button>
               <button className={`toggle-btn ${draft.strollerFriendly === true ? 'active' : ''}`}
                 onClick={() => updateDraft({ strollerFriendly: draft.strollerFriendly === true ? undefined : true })}>
-                <span className="inline-flex items-center gap-1.5"><Baby size={16} strokeWidth={1.5} /> Stroller</span>
+                <span className="inline-flex items-center gap-1.5"><Baby size={16} /> Stroller</span>
               </button>
             </div>
           </Section>
@@ -240,14 +240,14 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             <textarea value={draft.personalNotes || ''} onChange={(e) => updateDraft({ personalNotes: e.target.value })}
               placeholder="Any notes about this place..."
               rows={2}
-              className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
+              className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
           </Section>
 
           <div className="flex gap-2 mt-2 mb-4">
             <button onClick={cancelEdit}
-              className="flex-1 py-3.5 rounded-2xl bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
+              className="flex-1 py-3.5 rounded-full bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
             <button onClick={handleSaveEdit}
-              className="flex-1 py-3.5 rounded-2xl bg-sand-900 text-sand-100 font-medium text-sm hover:bg-sand-800 transition">Save changes</button>
+              className="flex-1 py-3.5 rounded-full bg-sand-900 text-sand-100 font-medium text-sm hover:bg-sand-800 transition">Save changes</button>
           </div>
         </div>
       </div>
@@ -259,18 +259,18 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
   const timesDisplay = (item.bestTimesOfDay || []).map(t => TIME_OF_DAY_LABELS[t]).join(', ') || 'Any time';
 
   const infoRows: { icon: React.ReactNode; label: string }[] = [
-    { icon: <Navigation size={16} strokeWidth={1.5} />,
+    { icon: <NavigationArrow size={16} />,
       label: `${item.travelDistanceKm} km away` },
     { icon: weatherIconEl(item.weatherSuitability),
       label: item.weatherSuitability === 'good_weather' ? 'Best in good weather' : item.weatherSuitability === 'bad_weather_ideal' ? 'Great for bad weather' : 'Any weather' },
-    { icon: <Clock size={16} strokeWidth={1.5} />, label: DURATION_LABELS[item.durationEstimate] },
-    { icon: <Coins size={16} strokeWidth={1.5} />, label: COST_LABELS[item.costLevel] + (item.specificCost ? ` (~${item.specificCost})` : '') },
-    { icon: <Users size={16} strokeWidth={1.5} />, label: item.groupSuitability.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ') },
-    ...(item.dogFriendly !== undefined ? [{ icon: <Dog size={16} strokeWidth={1.5} />, label: item.dogFriendly ? 'Dog-friendly' : 'Not dog-friendly' }] : []),
-    ...(item.wheelchairAccessible !== undefined ? [{ icon: <Accessibility size={16} strokeWidth={1.5} />, label: item.wheelchairAccessible ? 'Wheelchair accessible' : 'Not accessible' }] : []),
-    ...(item.strollerFriendly !== undefined ? [{ icon: <Baby size={16} strokeWidth={1.5} />, label: item.strollerFriendly ? 'Stroller-friendly' : 'Not stroller-friendly' }] : []),
-    { icon: <Flower2 size={16} strokeWidth={1.5} />, label: seasonsDisplay },
-    ...(timesDisplay !== 'Any time' ? [{ icon: <Sunrise size={16} strokeWidth={1.5} />, label: timesDisplay }] : []),
+    { icon: <Clock size={16} />, label: DURATION_LABELS[item.durationEstimate] },
+    { icon: <Coins size={16} />, label: COST_LABELS[item.costLevel] + (item.specificCost ? ` (~${item.specificCost})` : '') },
+    { icon: <Users size={16} />, label: item.groupSuitability.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ') },
+    ...(item.dogFriendly !== undefined ? [{ icon: <Dog size={16} />, label: item.dogFriendly ? 'Dog-friendly' : 'Not dog-friendly' }] : []),
+    ...(item.wheelchairAccessible !== undefined ? [{ icon: <Wheelchair size={16} />, label: item.wheelchairAccessible ? 'Wheelchair accessible' : 'Not accessible' }] : []),
+    ...(item.strollerFriendly !== undefined ? [{ icon: <Baby size={16} />, label: item.strollerFriendly ? 'Stroller-friendly' : 'Not stroller-friendly' }] : []),
+    { icon: <Flower size={16} />, label: seasonsDisplay },
+    ...(timesDisplay !== 'Any time' ? [{ icon: <SunHorizon size={16} />, label: timesDisplay }] : []),
   ];
 
   return (
@@ -293,7 +293,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
 
       <div className="px-6 -mt-6 relative z-10">
         {/* Title card */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-sand-100 mb-4">
+        <div className="bg-white rounded-[20px] p-5 shadow-sm border border-sand-100 mb-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="badge text-xs" style={{ backgroundColor: cat.color + '15', color: cat.color }}>{cat.label}</span>
@@ -301,17 +301,17 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             </div>
             <button onClick={startEditing}
               className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-500 hover:text-sand-700 hover:bg-sand-200 transition">
-              <Pencil size={14} strokeWidth={1.5} />
+              <PencilSimple size={14} />
             </button>
           </div>
           <h2 className="text-xl font-semibold text-sand-900">{item.name}</h2>
-          <p className="text-xs text-sand-500 mt-1 inline-flex items-center gap-1">
-            <MapPin size={12} strokeWidth={1.5} /> {item.address?.split(',').slice(0, 3).join(',')}
+          <p className="text-xs text-sand-700 mt-1 inline-flex items-center gap-1">
+            <MapPin size={12} /> {item.address?.split(',').slice(0, 3).join(',')}
           </p>
         </div>
 
         {/* Info rows */}
-        <div className="bg-white rounded-2xl p-4 border border-sand-100 mb-4">
+        <div className="bg-white rounded-[20px] p-4 border border-sand-100 mb-4">
           <div className="space-y-3">
             {infoRows.map((row, i) => (
               <div key={i} className="flex items-center gap-3">
@@ -324,8 +324,8 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
 
         {/* Opening hours */}
         {item.openingHours && (
-          <div className="bg-sand-100 rounded-2xl p-4 mb-4">
-            <p className="text-[10px] font-medium text-sand-500 uppercase tracking-wider mb-2">Opening hours</p>
+          <div className="bg-sand-100 rounded-[20px] p-4 mb-4">
+            <p className="text-[10px] font-medium text-sand-700 uppercase tracking-wider mb-2">Opening hours</p>
             <div className="space-y-1">
               {formatOpeningHours(item.openingHours).split('\n').map((line, i) => (
                 <p key={i} className="text-sm text-sand-800">{line}</p>
@@ -336,22 +336,22 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
 
         {/* Notes */}
         {item.personalNotes && (
-          <div className="bg-sand-100 rounded-2xl p-4 mb-4">
-            <p className="text-[10px] font-medium text-sand-500 uppercase tracking-wider mb-1">Notes</p>
+          <div className="bg-sand-100 rounded-[20px] p-4 mb-4">
+            <p className="text-[10px] font-medium text-sand-700 uppercase tracking-wider mb-1">Notes</p>
             <p className="text-sm text-sand-800">{item.personalNotes}</p>
           </div>
         )}
 
         {/* Completion */}
         {item.status === 'done' && (
-          <div className="bg-forest-50 rounded-2xl p-4 mb-4">
+          <div className="bg-forest-50 rounded-[20px] p-4 mb-4">
             <p className="text-[10px] font-medium text-forest-600 uppercase tracking-wider mb-1">
               Completed {item.completedAt ? new Date(item.completedAt).toLocaleDateString() : ''}
             </p>
             {item.completionRating && (
               <div className="flex gap-1 mb-1">
                 {Array.from({ length: item.completionRating }).map((_, i) => (
-                  <Star key={i} size={14} strokeWidth={1.5} className="text-amber-500 fill-amber-500" />
+                  <Star key={i} size={14} className="text-amber-500 fill-amber-500" />
                 ))}
               </div>
             )}
@@ -362,22 +362,22 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
         {/* Actions */}
         <div className="space-y-2 mt-4">
           <button onClick={handleNavigate}
-            className="w-full py-3.5 rounded-2xl font-medium text-sm bg-sand-900 text-sand-100 hover:bg-sand-800 transition inline-flex items-center justify-center gap-2">
-            Navigate <ArrowRight size={16} strokeWidth={1.5} />
+            className="w-full py-3.5 rounded-full font-medium text-sm bg-sand-900 text-sand-100 hover:bg-sand-800 transition inline-flex items-center justify-center gap-2">
+            Navigate <ArrowRight size={16} />
           </button>
           {item.status === 'want_to_do' && (
             <button onClick={() => setShowComplete(true)}
-              className="w-full py-3.5 rounded-2xl font-medium text-sm bg-forest-500 text-white hover:bg-forest-600 transition inline-flex items-center justify-center gap-2">
-              Mark as done <Check size={16} strokeWidth={1.5} />
+              className="w-full py-3.5 rounded-full font-medium text-sm bg-forest-500 text-white hover:bg-forest-600 transition inline-flex items-center justify-center gap-2">
+              Mark as done <Check size={16} />
             </button>
           )}
           <button onClick={startEditing}
-            className="w-full py-3.5 rounded-2xl font-medium text-sm text-sand-700 border border-sand-200 hover:bg-sand-50 transition inline-flex items-center justify-center gap-2">
-            <Pencil size={16} strokeWidth={1.5} /> Edit details
+            className="w-full py-3.5 rounded-full font-medium text-sm text-sand-700 border border-sand-200 hover:bg-sand-50 transition inline-flex items-center justify-center gap-2">
+            <PencilSimple size={16} /> Edit details
           </button>
           <button onClick={() => setConfirmDelete(true)}
-            className="w-full py-3.5 rounded-2xl font-medium text-sm text-terra-500 border border-terra-500/20 hover:bg-terra-500/5 transition inline-flex items-center justify-center gap-2">
-            <Trash2 size={16} strokeWidth={1.5} /> Delete
+            className="w-full py-3.5 rounded-full font-medium text-sm text-terra-500 border border-terra-500/20 hover:bg-terra-500/5 transition inline-flex items-center justify-center gap-2">
+            <Trash size={16} /> Delete
           </button>
         </div>
       </div>
@@ -393,7 +393,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
                 {[1,2,3,4,5].map(n => (
                   <button key={n} onClick={() => setRating(n)}
                     className={`transition ${n <= rating ? 'text-amber-500' : 'text-sand-300'}`}>
-                    <Star size={24} strokeWidth={1.5} className={n <= rating ? 'fill-amber-500' : ''} />
+                    <Star size={24} className={n <= rating ? 'fill-amber-500' : ''} />
                   </button>
                 ))}
               </div>
@@ -403,13 +403,13 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               <textarea value={completionNotes} onChange={(e) => setCompletionNotes(e.target.value)}
                 placeholder="How was the experience?"
                 rows={2}
-                className="w-full px-4 py-3 border border-sand-200 rounded-2xl text-sm focus:outline-none focus:border-sand-500 resize-none" />
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm focus:outline-none focus:border-sand-500 resize-none" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowComplete(false)}
-                className="flex-1 py-3 rounded-2xl bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
+                className="flex-1 py-3 rounded-full bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
               <button onClick={handleMarkDone}
-                className="flex-1 py-3 rounded-2xl bg-forest-500 text-white font-medium text-sm">Save</button>
+                className="flex-1 py-3 rounded-full bg-forest-500 text-white font-medium text-sm">Save</button>
             </div>
           </div>
         </div>
@@ -420,12 +420,12 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
         <div className="fixed inset-0 bg-sand-900/50 flex items-center justify-center z-50 px-6">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
             <h3 className="text-lg font-semibold text-sand-900 mb-2">Delete this place?</h3>
-            <p className="text-sm text-sand-500 mb-5">This can't be undone.</p>
+            <p className="text-sm text-sand-700 mb-5">This can't be undone.</p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmDelete(false)}
-                className="flex-1 py-2.5 rounded-2xl bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
+                className="flex-1 py-2.5 rounded-full bg-sand-100 text-sand-600 font-medium text-sm">Cancel</button>
               <button onClick={() => onDelete(item.id)}
-                className="flex-1 py-2.5 rounded-2xl bg-terra-500 text-white font-medium text-sm">Delete</button>
+                className="flex-1 py-2.5 rounded-full bg-terra-500 text-white font-medium text-sm">Delete</button>
             </div>
           </div>
         </div>
