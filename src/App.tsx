@@ -16,7 +16,7 @@ import Settings from './components/Settings';
 type Screen =
   | { name: 'dashboard' }
   | { name: 'add' }
-  | { name: 'list' }
+  | { name: 'list'; initialTab?: 'want_to_do' | 'done' }
   | { name: 'detail'; itemId: string }
   | { name: 'recommend' }
   | { name: 'settings' };
@@ -177,6 +177,7 @@ export default function App() {
       {screen.name === 'list' && (
         <BucketList
           items={items}
+          initialTab={screen.initialTab}
           onSelectItem={(id) => setScreen({ name: 'detail', itemId: id })}
           onNavigate={(s) => navigate(s as Screen)}
         />

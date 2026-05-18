@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
 import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { Star, MapPin, CaretDown, CaretUp, Clock, Coins } from '@phosphor-icons/react';
+import PlaceholderImage from './PlaceholderImage';
 
 interface Props {
   items: BucketListItem[];
+  initialTab?: 'want_to_do' | 'done';
   onSelectItem: (id: string) => void;
   onNavigate: (s: { name: string }) => void;
 }
@@ -12,8 +14,8 @@ interface Props {
 type Tab = 'want_to_do' | 'done';
 type SortBy = 'recent' | 'priority' | 'travel' | 'name';
 
-export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
-  const [tab, setTab] = useState<Tab>('want_to_do');
+export default function BucketList({ items, initialTab, onSelectItem, onNavigate }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'want_to_do');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [filterCategory, setFilterCategory] = useState<Category | 'all'>('all');
   const [filterCost, setFilterCost] = useState<CostLevel | 'all'>('all');
@@ -253,13 +255,18 @@ export default function BucketList({ items, onSelectItem, onNavigate }: Props) {
               <button key={item.id} onClick={() => onSelectItem(item.id)}
                 className="w-full text-left card flex overflow-hidden">
                 {/* Image */}
-                <div className="w-24 h-24 flex-shrink-0 bg-sand-200">
+                <div className="w-24 h-24 flex-shrink-0 bg-sand-200 overflow-hidden">
                   {item.photoUrl ? (
                     <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs font-medium text-sand-700">{cat.label}</div>
-                  )}
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = 'none';
+                        const placeholder = img.nextElementSibling as HTMLElement | null;
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }} />
+                  ) : null}
+                  <PlaceholderImage category={item.category}
+                    className={item.photoUrl ? 'hidden' : ''} />
                 </div>
                 {/* Content */}
                 <div className="flex-1 p-3 min-w-0">

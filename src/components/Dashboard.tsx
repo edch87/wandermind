@@ -7,6 +7,7 @@ import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
   Feather, Shuffle, Plus, MapPin,
 } from '@phosphor-icons/react';
+import PlaceholderImage from './PlaceholderImage';
 
 interface Props {
   profile: UserProfile;
@@ -143,12 +144,19 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       {surprise && (
         <div className="mx-6 mb-5">
           <div className="card overflow-hidden">
-            {surprise.photoUrl && (
-              <div className="place-img-container h-32">
+            <div className="place-img-container h-32 overflow-hidden">
+              {surprise.photoUrl ? (
                 <img src={surprise.photoUrl} alt={surprise.name} className="place-img"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            )}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = 'none';
+                    const placeholder = img.nextElementSibling as HTMLElement | null;
+                    if (placeholder) placeholder.style.display = 'flex';
+                  }} />
+              ) : null}
+              <PlaceholderImage category={surprise.category}
+                className={surprise.photoUrl ? 'hidden' : ''} />
+            </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="badge bg-terra-500 text-white">Spontaneous pick!</span>
@@ -182,7 +190,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
             <div className="text-2xl font-semibold text-sand-900">{todoItems.length}</div>
             <div className="text-[11px] text-sand-700 mt-1">To explore</div>
           </button>
-          <button onClick={() => onNavigate({ name: 'list' })}
+          <button onClick={() => onNavigate({ name: 'list', initialTab: 'done' })}
             className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
             <div className="flex justify-center mb-1"><Feather size={18} className="text-forest-500" /></div>
             <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
@@ -201,13 +209,18 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
               return (
                 <button key={item.id} onClick={() => onNavigate({ name: 'detail', itemId: item.id })}
                   className="flex-shrink-0 w-40 card text-left">
-                  <div className="place-img-container h-24">
+                  <div className="place-img-container h-24 overflow-hidden">
                     {item.photoUrl ? (
                       <img src={item.photoUrl} alt={item.name} className="place-img"
-                        onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-medium text-sand-500 bg-sand-200">{cat.label}</div>
-                    )}
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = 'none';
+                          const placeholder = img.nextElementSibling as HTMLElement | null;
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }} />
+                    ) : null}
+                    <PlaceholderImage category={item.category}
+                      className={item.photoUrl ? 'hidden' : ''} />
                   </div>
                   <div className="p-3">
                     <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>
