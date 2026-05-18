@@ -121,6 +121,11 @@ export default function App() {
     );
   }
 
+  // Scroll to top on every screen change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [screen]);
+
   const navigate = (s: Screen) => setScreen(s);
 
   // Navigation bar component

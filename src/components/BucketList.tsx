@@ -286,7 +286,7 @@ export default function BucketList({ items, initialTab, onSelectItem, onNavigate
                   {item.status === 'done' && item.completionRating && (
                     <div className="mt-1.5 flex gap-0.5">
                       {Array.from({ length: item.completionRating }).map((_, i) => (
-                        <Star key={i} size={12} className="text-amber-500 fill-amber-500" />
+                        <Star key={i} size={12} weight="fill" className="text-amber-500" />
                       ))}
                     </div>
                   )}

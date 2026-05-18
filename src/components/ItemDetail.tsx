@@ -351,7 +351,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             {item.completionRating && (
               <div className="flex gap-1 mb-1">
                 {Array.from({ length: item.completionRating }).map((_, i) => (
-                  <Star key={i} size={14} className="text-amber-500 fill-amber-500" />
+                  <Star key={i} size={14} weight="fill" className="text-amber-500" />
                 ))}
               </div>
             )}
