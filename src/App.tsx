@@ -133,7 +133,10 @@ export default function App() {
   ];
 
   const NavBar = () => (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-2 py-1 z-50">
+    <nav
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-2 pt-2 z-50"
+      style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
+    >
       <div className="flex justify-around">
         {navItems.map(({ Icon, label, s }) => {
           const isActive = screen.name === s.name;
@@ -141,12 +144,12 @@ export default function App() {
             <button
               key={s.name}
               onClick={() => navigate(s)}
-              className={`flex flex-col items-center py-1.5 px-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center py-2.5 px-3 rounded-lg transition-colors min-w-[56px] ${
                 isActive ? 'text-sand-900' : 'text-sand-500 hover:text-sand-700'
               }`}
             >
-              <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
-              <span className="text-[10px] font-medium mt-0.5">{label}</span>
+              <Icon size={22} weight={isActive ? 'fill' : 'regular'} />
+              <span className="text-[10px] font-medium mt-1">{label}</span>
             </button>
           );
         })}
@@ -155,7 +158,7 @@ export default function App() {
   );
 
   return (
-    <div className="pb-16">
+    <div style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}>
       {screen.name === 'dashboard' && (
         <Dashboard
           profile={profile}
