@@ -3,7 +3,8 @@ import L from 'leaflet';
 import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import type { UserProfile, HereSearchResult } from '../types';
-import { Feather, MapPin, Target, BookOpen, Shuffle } from '@phosphor-icons/react';
+import { MapPin, Target, BookOpen, Shuffle } from '@phosphor-icons/react';
+import KiteIcon from './KiteIcon';
 
 interface Props {
   displayName: string;
@@ -132,7 +133,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     const firstName = displayName.split(' ')[0] || 'there';
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <Feather size={48} className="text-sand-900 mb-6" />
+        <KiteIcon size={48} className="text-sand-900 mb-6" />
         <h1 className="text-3xl font-semibold text-sand-900 mb-2">Welcome, {firstName}!</h1>
         <p className="text-sand-700 text-sm mb-10 max-w-xs leading-relaxed">
           Here's how Lark works — it only takes a minute.

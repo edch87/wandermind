@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem } from './types';
 import type { Session } from '@supabase/supabase-js';
-import { House, ClipboardText, Plus, Feather, Gear } from '@phosphor-icons/react';
+import { House, ClipboardText, Plus, Gear } from '@phosphor-icons/react';
+import KiteIcon from './components/KiteIcon';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -129,11 +130,11 @@ export default function App() {
   const navigate = (s: Screen) => setScreen(s);
 
   // Navigation bar component
-  const navItems: { Icon: typeof House; label: string; s: Screen }[] = [
+  const navItems: { Icon: React.ComponentType<{ size?: number; weight?: string }>; label: string; s: Screen }[] = [
     { Icon: House, label: 'Home', s: { name: 'dashboard' } },
     { Icon: ClipboardText, label: 'My List', s: { name: 'list' } },
     { Icon: Plus, label: 'Add', s: { name: 'add' } },
-    { Icon: Feather, label: 'Suggest', s: { name: 'recommend' } },
+    { Icon: KiteIcon, label: 'Suggest', s: { name: 'recommend' } },
     { Icon: Gear, label: 'Settings', s: { name: 'settings' } },
   ];
 

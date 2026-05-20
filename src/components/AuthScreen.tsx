@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { Feather } from '@phosphor-icons/react';
+import KiteIcon from './KiteIcon';
 
 interface Props {
   onAuthSuccess: () => void;
@@ -53,7 +53,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
       <div className="w-full max-w-xs">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <Feather size={40} className="text-sand-900" />
+            <KiteIcon size={40} className="text-sand-900" />
           </div>
           <h1 className="text-3xl font-semibold text-sand-900 mb-1">Lark</h1>
           <p className="text-sand-700 text-sm italic mb-3">An activity done for enjoyment or amusement</p>
