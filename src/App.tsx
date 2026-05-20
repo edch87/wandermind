@@ -130,7 +130,7 @@ export default function App() {
   const navigate = (s: Screen) => setScreen(s);
 
   // Navigation bar component
-  const navItems: { Icon: React.ComponentType<{ size?: number; weight?: string }>; label: string; s: Screen }[] = [
+  const navItems: { Icon: React.ElementType; label: string; s: Screen }[] = [
     { Icon: House, label: 'Home', s: { name: 'dashboard' } },
     { Icon: ClipboardText, label: 'My List', s: { name: 'list' } },
     { Icon: Plus, label: 'Add', s: { name: 'add' } },
