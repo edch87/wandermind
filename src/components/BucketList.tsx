@@ -255,7 +255,7 @@ export default function BucketList({ items, initialTab, onSelectItem, onNavigate
               <button key={item.id} onClick={() => onSelectItem(item.id)}
                 className="w-full text-left card flex overflow-hidden">
                 {/* Image */}
-                <div className="w-24 flex-shrink-0 bg-sand-200 overflow-hidden self-stretch">
+                <div className="w-24 flex-shrink-0 bg-sand-200 overflow-hidden self-stretch relative">
                   {item.photoUrl ? (
                     <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
                       onError={(e) => {
@@ -267,24 +267,20 @@ export default function BucketList({ items, initialTab, onSelectItem, onNavigate
                   ) : null}
                   <PlaceholderImage category={item.category}
                     className={item.photoUrl ? 'hidden' : ''} />
+                  {item.priority === 'high' && (
+                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 badge bg-terra-500 text-white text-[9px] px-2 py-0.5 whitespace-nowrap z-10">★ High</span>
+                  )}
                 </div>
                 {/* Content */}
-                <div className="flex-1 p-3 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
-                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        <span className="badge bg-sand-100 text-sand-700">{cat.label}</span>
-                        <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1"><Clock size={10} />{DURATION_LABELS[item.durationEstimate]}</span>
-                        <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1"><Coins size={10} />{COST_LABELS[item.costLevel]}</span>
-                      </div>
-                    </div>
-                    {item.priority === 'high' && (
-                      <span className="badge bg-terra-500 text-white flex-shrink-0">High</span>
-                    )}
+                <div className="flex-1 p-3 min-w-0 flex flex-col justify-center gap-1.5">
+                  <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
+                  <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
+                    <span className="badge bg-sand-100 text-sand-700 flex-shrink min-w-0 overflow-hidden whitespace-nowrap">{cat.label}</span>
+                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 flex-shrink-0 whitespace-nowrap"><Clock size={10} />{DURATION_LABELS[item.durationEstimate]}</span>
+                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 flex-shrink-0 whitespace-nowrap"><Coins size={10} />{COST_LABELS[item.costLevel]}</span>
                   </div>
                   {item.status === 'done' && item.completionRating && (
-                    <div className="mt-1.5 flex gap-0.5">
+                    <div className="flex gap-0.5">
                       {Array.from({ length: item.completionRating }).map((_, i) => (
                         <Star key={i} size={12} weight="fill" className="text-amber-500" />
                       ))}

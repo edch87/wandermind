@@ -114,7 +114,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             </div>
           ) : (
             <div className="place-img-container h-32 rounded-none">
-              <PlaceholderImage category={draft.category} />
+              <PlaceholderImage category={draft.category} className="absolute inset-0" />
             </div>
           )}
           <button onClick={cancelEdit}
@@ -285,7 +285,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           </div>
         ) : (
           <div className="place-img-container h-40 rounded-none">
-            <PlaceholderImage category={item.category} />
+            <PlaceholderImage category={item.category} className="absolute inset-0" />
           </div>
         )}
         <button onClick={onBack}
