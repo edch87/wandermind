@@ -267,17 +267,17 @@ export default function BucketList({ items, initialTab, onSelectItem, onNavigate
                   ) : null}
                   <PlaceholderImage category={item.category}
                     className={item.photoUrl ? 'hidden' : ''} />
-                  {item.priority === 'high' && (
-                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 badge bg-terra-500 text-white text-[9px] px-2 py-0.5 whitespace-nowrap z-10">★ High</span>
-                  )}
                 </div>
                 {/* Content */}
-                <div className="flex-1 p-3 min-w-0 flex flex-col justify-center gap-1.5">
+                <div className="flex-1 p-3 min-w-0 flex flex-col gap-1.5">
                   <h4 className="text-sm font-medium text-sand-900 truncate">{item.name}</h4>
-                  <div className="flex items-center gap-1.5 flex-nowrap overflow-hidden">
-                    <span className="badge bg-sand-100 text-sand-700 flex-shrink min-w-0 overflow-hidden whitespace-nowrap">{cat.label}</span>
-                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 flex-shrink-0 whitespace-nowrap"><Clock size={10} />{DURATION_LABELS[item.durationEstimate]}</span>
-                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 flex-shrink-0 whitespace-nowrap"><Coins size={10} />{COST_LABELS[item.costLevel]}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap content-start min-h-[50px]">
+                    {item.priority === 'high' && (
+                      <span className="badge bg-terra-500 text-white whitespace-nowrap">High</span>
+                    )}
+                    <span className="badge bg-sand-100 text-sand-700 whitespace-nowrap">{cat.label}</span>
+                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 whitespace-nowrap"><Clock size={10} />{DURATION_LABELS[item.durationEstimate]}</span>
+                    <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 whitespace-nowrap"><Coins size={10} />{COST_LABELS[item.costLevel]}</span>
                   </div>
                   {item.status === 'done' && item.completionRating && (
                     <div className="flex gap-0.5">
