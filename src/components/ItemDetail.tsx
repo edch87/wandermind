@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay, GroupType, Priority } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { formatOpeningHours } from '../utils/openingHours';
+import PlaceholderImage from './PlaceholderImage';
 import {
   NavigationArrow,
   Sun, CloudRain, CloudSun,
@@ -112,8 +113,8 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ) : (
-            <div className="h-32 bg-sand-200 flex items-center justify-center text-sm font-medium text-sand-500">
-              {CATEGORY_INFO[draft.category].label}
+            <div className="h-32">
+              <PlaceholderImage category={draft.category} />
             </div>
           )}
           <button onClick={cancelEdit}
@@ -283,7 +284,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
         ) : (
-          <div className="h-40 bg-sand-200 flex items-center justify-center text-sm font-medium text-sand-500">{cat.label}</div>
+          <div className="h-40">
+            <PlaceholderImage category={item.category} />
+          </div>
         )}
         <button onClick={onBack}
           className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm shadow-sm">

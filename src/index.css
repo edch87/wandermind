@@ -54,6 +54,9 @@ body {
 }
 
 .toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 7px 14px;
   border-radius: 9999px;
   border: 1.5px solid #E8D5BF;

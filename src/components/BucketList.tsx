@@ -255,7 +255,7 @@ export default function BucketList({ items, initialTab, onSelectItem, onNavigate
               <button key={item.id} onClick={() => onSelectItem(item.id)}
                 className="w-full text-left card flex overflow-hidden">
                 {/* Image */}
-                <div className="w-24 h-24 flex-shrink-0 bg-sand-200 overflow-hidden">
+                <div className="w-24 flex-shrink-0 bg-sand-200 overflow-hidden self-stretch">
                   {item.photoUrl ? (
                     <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
                       onError={(e) => {
