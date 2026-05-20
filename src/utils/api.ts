@@ -114,6 +114,12 @@ export async function fetchPlaceDetails(hereId: string): Promise<{
     }
     if (data.foodTypes) tags['cuisine'] = (data.foodTypes as { name: string }[]).map(f => f.name).join(';');
 
+    // Store raw HERE category data for direct inference (more reliable than OSM-translated tags)
+    if (cats.length > 0) {
+      tags['here_categories'] = cats.map(c => c.id).join(',');
+      tags['here_category_names'] = cats.map(c => c.name.toLowerCase()).join(',');
+    }
+
     return {
       categories: cats,
       openingHours: oh[0]?.text?.[0],

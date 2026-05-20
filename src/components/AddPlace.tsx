@@ -80,7 +80,7 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     const photoUrl = await fetchPlaceImage(searchTags, lat, lng);
 
     setLoadingMsg('Auto-categorising...');
-    const inferred = inferDefaults(tags);
+    const inferred = inferDefaults({ ...tags, name: result.title });
 
     setDraft({
       id: generateId(),
