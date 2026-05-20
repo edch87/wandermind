@@ -5,8 +5,9 @@ import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
-  Kite, Shuffle, Plus, MapPin,
+  Shuffle, Plus, MapPin,
 } from '@phosphor-icons/react';
+import KiteIcon from './KiteIcon';
 import PlaceholderImage from './PlaceholderImage';
 
 interface Props {
@@ -124,7 +125,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         <div className="flex gap-3">
           <button onClick={() => onNavigate({ name: 'recommend' })}
             className="flex-1 bg-sand-900 text-sand-100 rounded-[20px] py-4 text-center hover:bg-sand-800 transition">
-            <div className="flex justify-center mb-1"><Kite size={20} /></div>
+            <div className="flex justify-center mb-1"><KiteIcon size={20} /></div>
             <div className="text-xs font-medium">Suggest something</div>
           </button>
           <button onClick={handleSpontaneous}
@@ -192,7 +193,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
           </button>
           <button onClick={() => onNavigate({ name: 'list', initialTab: 'done' })}
             className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
-            <div className="flex justify-center mb-1"><Kite size={18} className="text-forest-500" /></div>
+            <div className="flex justify-center mb-1"><KiteIcon size={18} className="text-forest-500" /></div>
             <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
             <div className="text-[11px] text-sand-700 mt-1">Visited</div>
           </button>
@@ -233,7 +234,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       {/* Empty state */}
       {items.length === 0 && (
         <div className="text-center px-6 py-12">
-          <div className="flex justify-center mb-4"><Kite size={40} className="text-sand-400" /></div>
+          <div className="flex justify-center mb-4"><KiteIcon size={40} className="text-sand-400" /></div>
           <h3 className="text-lg font-semibold text-sand-900 mb-2">Your adventure starts here</h3>
           <p className="text-sm text-sand-700 mb-6">Add places you'd love to visit and we'll help you decide when to go.</p>
           <button onClick={() => onNavigate({ name: 'add' })}
