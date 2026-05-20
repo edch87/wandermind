@@ -113,7 +113,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ) : (
-            <div className="h-32">
+            <div className="place-img-container h-32 rounded-none">
               <PlaceholderImage category={draft.category} />
             </div>
           )}
@@ -284,7 +284,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
         ) : (
-          <div className="h-40">
+          <div className="place-img-container h-40 rounded-none">
             <PlaceholderImage category={item.category} />
           </div>
         )}
