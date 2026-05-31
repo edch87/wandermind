@@ -30,6 +30,8 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
   const [searching, setSearching] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [draft, setDraft] = useState<Partial<BucketListItem>>({});
+  // True when inference couldn't confidently pick a category — prompts the user to confirm.
+  const [categoryUncertain, setCategoryUncertain] = useState(false);
   const [urlMode, setUrlMode] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState('');
@@ -75,7 +77,8 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     const photoUrl = await fetchPlaceImage(searchTags, lat, lng);
 
     setLoadingMsg('Auto-categorising...');
-    const inferred = inferDefaults({ ...tags, name: result.title });
+    const { categoryUncertain: uncertain, ...inferred } = inferDefaults({ ...tags, name: result.title });
+    setCategoryUncertain(uncertain);
 
     setDraft({
       id: generateId(),
@@ -286,10 +289,15 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
 
         {/* Fields */}
         <Section label="Category">
+          {categoryUncertain && (
+            <p className="mb-2 text-xs text-amber-300 bg-amber-900/30 border border-amber-700/40 rounded-md px-2.5 py-1.5">
+              We weren't sure how to categorise this one. Please pick the best fit below.
+            </p>
+          )}
           <div className="toggle-group">
             {(Object.entries(CATEGORY_INFO) as [Category, { label: string; icon: string; color: string }][]).map(([key, info]) => (
               <button key={key} className={`toggle-btn text-xs ${draft.category === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ category: key })}>{info.label}</button>
+                onClick={() => { updateDraft({ category: key }); setCategoryUncertain(false); }}>{info.label}</button>
             ))}
           </div>
         </Section>

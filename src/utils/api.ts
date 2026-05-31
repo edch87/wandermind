@@ -162,15 +162,13 @@ export async function fetchPlaceDetails(hereId: string): Promise<{
     const tags: Record<string, string> = {};
     for (const cat of cats) {
       tags[`here_category_${cat.id}`] = cat.name;
-      // Map common HERE categories to OSM-like tag keys for inference.ts compatibility
-      const catId = cat.id;
-      if (catId.startsWith('100-')) tags['amenity'] = mapHereCatToOsmAmenity(catId);
-      if (catId.startsWith('200-')) tags['tourism'] = mapHereCatToOsmTourism(catId);
-      if (catId.startsWith('300-')) tags['leisure'] = mapHereCatToOsmLeisure(catId);
-      if (catId.startsWith('550-')) tags['leisure'] = 'park';
-      if (catId.startsWith('350-')) tags['sport'] = 'yes';
     }
     if (data.foodTypes) tags['cuisine'] = (data.foodTypes as { name: string }[]).map(f => f.name).join(';');
+    // Note: category inference now reads `here_categories`/`here_category_names` directly
+    // (see inference.ts Layer 1/2). We no longer synthesise OSM-style amenity/tourism/leisure
+    // tags from HERE IDs — that shim was built on HERE's old Places taxonomy and mislabelled
+    // common places (e.g. bars → museum). OSM tags remain only as a legacy fallback (Layer 4)
+    // for items saved before the HERE migration.
 
     // Store raw HERE category data for direct inference (more reliable than OSM-translated tags)
     if (cats.length > 0) {
@@ -186,37 +184,6 @@ export async function fetchPlaceDetails(hereId: string): Promise<{
   } catch {
     return null;
   }
-}
-
-// Map HERE category IDs to OSM-like amenity values for inference.ts
-function mapHereCatToOsmAmenity(catId: string): string {
-  if (catId === '100-1000-0000') return 'restaurant';
-  if (catId === '100-1000-0001') return 'restaurant'; // casual dining
-  if (catId === '100-1000-0002') return 'fast_food';
-  if (catId === '100-1000-0003') return 'cafe';
-  if (catId === '100-1000-0004') return 'pub';
-  if (catId === '100-1000-0007') return 'biergarten';
-  if (catId === '100-1000-0008') return 'bar';
-  if (catId === '100-1100-0010') return 'cinema';
-  if (catId === '100-1100-0000') return 'arts_centre';
-  return 'restaurant';
-}
-
-function mapHereCatToOsmTourism(catId: string): string {
-  if (catId === '200-2000-0011') return 'museum';
-  if (catId === '200-2000-0014') return 'gallery';
-  if (catId === '200-2000-0000') return 'attraction';
-  if (catId === '200-2300-0000') return 'zoo';
-  if (catId === '200-2000-0012') return 'viewpoint';
-  if (catId === '200-2200-0000') return 'theme_park';
-  return 'attraction';
-}
-
-function mapHereCatToOsmLeisure(catId: string): string {
-  if (catId === '300-3000-0000') return 'park';
-  if (catId === '300-3100-0000') return 'spa';
-  if (catId === '300-3200-0000') return 'swimming_area';
-  return 'park';
 }
 
 // ── Travel time via HERE Routing ──
