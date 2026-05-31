@@ -31,7 +31,7 @@ IDEAS.md         # Feature backlog — check before planning work
 ```
 
 ## Env vars
-`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` — see `.env.example`
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_HERE_API_KEY` — see `.env.example`
 
 ## Database
 Supabase Postgres with RLS. Two tables: `profiles` (snake_case columns) and `bucket_list_items`. Storage layer in `storage.ts` converts between camelCase (app) and snake_case (DB).

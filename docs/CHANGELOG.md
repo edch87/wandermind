@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-31
+- Fixed the "celebrity image" bug: `fetchPlaceImage` now geo-verifies Wikipedia fallback candidates and only accepts an article geotagged within 30 km of the place
+- Corrected stack docs (CLAUDE.md, TECHNICAL.md) to reflect that the app runs on the HERE APIs (search, geocoding, routing, tiles), not the original Nominatim/OSM/OSRM stack — the HERE migration had not been logged
+- Documented `VITE_HERE_API_KEY` env var
+- Cleaned up legacy stack references in code (removed dead `NominatimResult` alias, fixed stale OSRM/Nominatim comments); DB columns `osm_id`/`osm_tags` retained to avoid a migration
+- Added BACKLOG.md (prioritised, with status/effort/cost) and Lark_Business_Model.xlsx (3-year model + API cost comparison)
+
 ## 2026-05-16
 - Added project documentation: CLAUDE.md, docs/TECHNICAL.md, docs/CHANGELOG.md
 - Established docs/ folder structure for project documentation

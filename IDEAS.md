@@ -7,7 +7,7 @@
 ## UX & Flow Redesign
 
 - ~~**Clarify "time" means total door-to-door time**~~ ✅ Done — relabelled to "Total time, door to door?" with subtitle
-- ~~**Move transport mode out of profile/settings into the recommend flow**~~ ✅ Done — "How are you getting there?" in recommend flow, dynamic OSRM calculation
+- ~~**Move transport mode out of profile/settings into the recommend flow**~~ ✅ Done — "How are you getting there?" in recommend flow, dynamic HERE routing calculation
 - ~~**Move kids, dog, accessibility into the recommend flow**~~ ✅ Done — "Anything else?" section with dog/stroller/wheelchair toggles
 - ~~**Slim down profile/settings**~~ ✅ Done — only name + home location remain
 - ~~**Slim down Dashboard**~~ ✅ Done — transport switcher removed
@@ -21,7 +21,14 @@
 - **Future/someday list** — a way to save ideas that aren't location-specific yet or that are far away, separate from the main actionable bucket list
 - **Curated lists on Dashboard** — alongside "Recently added", show curated/themed lists like peaks, city visits, bars, restaurants etc. Could auto-generate from the user's categories or be hand-curated collections
 
+## Integrations
+
+- **Google Maps import**
+  - ~~(1) Parse long-form Google Maps URLs to extract coordinates and place name~~ ✅ Done — "Or paste a Google Maps link" on the Add a place screen; parses `!3d!4d`, `@lat,lng`, and `q=lat,lng`, reverse-geocodes via HERE, and reuses the normal review flow. Shortened `maps.app.goo.gl` links aren't supported (CORS).
+  - **(2) Bulk import from Google Takeout** — let users upload their exported saved-list CSV and bulk-add places. Raw Takeout CSV has only Title/Note/URL (no coordinates), so each row needs geocoding via HERE plus a review/confirm step before saving.
+  - Direct integration via the Google Maps Platform API stays out of scope (paid + needs server-side).
+
 ## Technical
 
-- ~~**Dynamic travel time by transport mode**~~ ✅ Done — batch OSRM calculation during recommend flow based on selected transport
+- ~~**Dynamic travel time by transport mode**~~ ✅ Done — batch HERE routing calculation during recommend flow based on selected transport
 - **Supabase auth URL configuration** — add Vercel domain to allowed redirect URLs (already noted)

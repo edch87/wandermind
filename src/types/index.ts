@@ -41,8 +41,8 @@ export interface BucketListItem {
   description?: string;
   latitude: number;
   longitude: number;
-  osmId?: string;
-  osmTags?: Record<string, string>;
+  osmId?: string;   // HERE place ID (legacy field name; DB column osm_id retained)
+  osmTags?: Record<string, string>;   // HERE-derived tags (legacy field name; DB column osm_tags retained)
   photoUrl?: string;
   address: string;
   country?: string;
@@ -95,7 +95,7 @@ export interface RecommendationConstraints {
   dogComing: boolean;
   needsAccessibility: boolean;
   strollerNeeded: boolean;
-  /** Override travel times per item (itemId → minutes one-way). Used for dynamic OSRM calculation. */
+  /** Override travel times per item (itemId → minutes one-way). Used for dynamic HERE routing calculation. */
   travelTimeOverrides?: Record<string, number>;
 }
 
@@ -134,7 +134,6 @@ export interface HereSearchResult {
 }
 
 /** @deprecated — kept for backward compatibility with old imports */
-export type NominatimResult = HereSearchResult;
 
 export const CATEGORY_INFO: Record<Category, { label: string; icon: string; color: string }> = {
   museum_gallery: { label: 'Museum & Gallery', icon: 'Landmark', color: '#7c3aed' },
