@@ -103,6 +103,39 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     setStep('review');
   };
 
+  const importFromUrl = async (raw: string) => {
+    const parsed = parseGoogleMapsUrl(raw);
+    if (!parsed) {
+      setUrlError(
+        "Couldn't find a location in that link. Paste a full Google Maps link from your browser's address bar (shortened maps.app.goo.gl links don't include coordinates).",
+      );
+      return;
+    }
+    setUrlError('');
+    setStep('loading');
+    setLoadingMsg('Looking up location...');
+
+    // Reverse-geocode for address details + a HERE place id (used by selectPlace
+    // to fetch categories, opening hours, etc.). Fall back to a bare pin if it fails.
+    const geo = await reverseGeocode(parsed.lat, parsed.lng);
+    const result: HereSearchResult = geo
+      ? {
+          ...geo,
+          // Prefer the name from the URL — reverse geocode often returns a street address
+          title: parsed.name || geo.title,
+          position: { lat: parsed.lat, lng: parsed.lng },
+        }
+      : {
+          id: '',
+          title: parsed.name || 'Pinned location',
+          address: { label: parsed.name || `${parsed.lat}, ${parsed.lng}` },
+          position: { lat: parsed.lat, lng: parsed.lng },
+          categories: [],
+        };
+
+    await selectPlace(result);
+  };
+
   const updateDraft = (updates: Partial<BucketListItem>) => {
     setDraft(prev => ({ ...prev, ...updates }));
   };
@@ -150,6 +183,31 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
             autoFocus
             className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
         </div>
+
+        {/* Import from a Google Maps link */}
+        {!urlMode ? (
+          <button onClick={() => setUrlMode(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-sand-600 hover:text-sand-900 underline mb-4 px-1">
+            <LinkSimple size={14} /> Or paste a Google Maps link
+          </button>
+        ) : (
+          <div className="mb-4 space-y-2">
+            <div className="flex gap-2">
+              <input type="text" value={urlInput}
+                onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && urlInput.trim()) importFromUrl(urlInput); }}
+                placeholder="Paste a Google Maps link..."
+                className="flex-1 px-4 py-3 bg-white border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
+              <button onClick={() => importFromUrl(urlInput)} disabled={!urlInput.trim()}
+                className="px-5 py-3 bg-sand-900 text-sand-100 rounded-[12px] text-sm font-medium hover:bg-sand-800 transition disabled:opacity-40">
+                Add
+              </button>
+            </div>
+            {urlError && <p className="text-xs text-red-600 px-1">{urlError}</p>}
+            <p className="text-[10px] text-sand-600 px-1">Open the place in Google Maps, copy the link from your browser's address bar, and paste it here.</p>
+          </div>
+        )}
+
         {searching && <p className="text-xs text-sand-600 mb-2 px-1">Searching...</p>}
         <div className="space-y-1">
           {results.map((r) => {

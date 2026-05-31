@@ -84,6 +84,64 @@ export async function reverseGeocode(lat: number, lon: number): Promise<HereSear
   }
 }
 
+// ── Google Maps URL parsing ──
+
+export interface ParsedMapUrl {
+  lat: number;
+  lng: number;
+  name?: string;
+}
+
+/**
+ * Extract coordinates (and a place name when present) from a Google Maps URL.
+ * Handles the common full-length formats. Does NOT resolve shortened
+ * maps.app.goo.gl / goo.gl links — those carry no coordinates and would need a
+ * server-side redirect to expand (browser fetch is blocked by CORS).
+ * Returns null when no coordinates can be found.
+ */
+export function parseGoogleMapsUrl(input: string): ParsedMapUrl | null {
+  if (!input || !input.trim()) return null;
+  const url = input.trim();
+
+  // Place name from /place/<name>/ segment (e.g. .../place/Eiffel+Tower/@...)
+  let name: string | undefined;
+  const placeMatch = url.match(/\/place\/([^/@?]+)/);
+  if (placeMatch) {
+    try {
+      name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim();
+    } catch {
+      name = placeMatch[1].replace(/\+/g, ' ').trim();
+    }
+    if (!name) name = undefined;
+  }
+
+  // Priority 1: data params !3d<lat>!4d<lng> — the actual pinned place location
+  const dataMatch = url.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (dataMatch) {
+    return { lat: parseFloat(dataMatch[1]), lng: parseFloat(dataMatch[2]), name };
+  }
+
+  // Priority 2: @lat,lng — map centre (usually matches the pin)
+  const atMatch = url.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]), name };
+  }
+
+  // Priority 3: query params q= / query= / ll= / destination= holding "lat,lng"
+  const qMatch = url.match(/[?&](?:q|query|ll|center|destination)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (qMatch) {
+    return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]), name };
+  }
+
+  // Bare "lat,lng" pasted on its own
+  const bareMatch = url.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+  if (bareMatch) {
+    return { lat: parseFloat(bareMatch[1]), lng: parseFloat(bareMatch[2]), name };
+  }
+
+  return null;
+}
+
 // ── Place details via HERE Lookup ──
 
 export async function fetchPlaceDetails(hereId: string): Promise<{
