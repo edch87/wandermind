@@ -20,9 +20,10 @@ All three complaints trace to specific code.
 |---|---|---|---|---|
 | Fix "celebrity image" bug | **P1** | S | €0 | `fetchPlaceImage` 3rd fallback blind-searches Wikipedia by place name (`generator=search`, limit 1) and grabs the first article's photo. Remove or tightly constrain this fallback so a venue named after a person stops returning that person's portrait. Cheapest, biggest visible win. |
 | Better placeholder when no image found | P1 | S | €0 | Replace bad-image risk with a clean branded map/category placeholder instead of a wrong photo. |
-| Add Google Places: Search + Photos (hybrid) | **P1** | M–L | Variable (~€1.1k/mo @ 10k MAU — see model) | Fixes "can't find places" (coverage) and "wrong/bad images" at once. Keep HERE/OSRM for tiles + routing to contain cost. |
+| Add Google Places Search (hybrid) | **P1** | M–L | Variable (~€1.1k/mo @ 10k MAU — see model) | Fixes "can't find places" (coverage). Returns the `place_id` we then reuse for photos/details. Keep HERE/OSRM for tiles + routing to contain cost. |
+| Add Google Places Photos | **P1** | M | Place Details ~€17/1k + Place Photo ~€7/1k | Photos bound to the venue by `place_id`, not name — kills the celebrity-mismatch bug and widens coverage. **Caching rule: store only the `place_id`; do NOT store photo references or images (Google ToS, references expire). Fetch a fresh reference via Place Details, then the photo, at display time.** Show `authorAttributions` when present. |
 | Improve HERE→category mapping | P2 | M | €0 | `fetchPlaceDetails` defaults unmapped categories to `restaurant`/`attraction`/`park`. Expand the mapping and stop silently defaulting. Lower value if moving to Google Places. |
-| Cache search + place-detail results | P2 | M | Saves API cost | Store resolved places in Supabase so repeat lookups don't re-hit the paid API. Directly lowers the Google bill in the model. |
+| Cache `place_id` + non-photo fields | P2 | M | Saves API cost | Store `place_id` and basic place fields in Supabase to cut repeat search/geocode calls. **Photos and photo references must NOT be cached** — refresh on view. |
 | Evaluate full Google migration | P3 | L | Highest (~€1.8k/mo @ 10k MAU) | Only if hybrid quality still falls short. Replaces tiles + routing too. |
 
 ## Monetisation & business model
