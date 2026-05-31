@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { searchPlaces, fetchPlaceDetails, calculateTravelTime, fetchPlaceImage } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -7,9 +7,9 @@ import type {
   WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay,
   GroupType, Priority
 } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, formatDuration } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import {
-  Car, Bicycle, Footprints, MapPin, MagnifyingGlass,
+  MapPin, MagnifyingGlass, LinkSimple,
   Buildings, TreeEvergreen, ArrowsClockwise,
   CloudSun, Sun, CloudRain,
   Dog, Wheelchair, Baby,
@@ -23,14 +23,6 @@ interface Props {
 
 type Step = 'search' | 'loading' | 'review';
 
-const transportIcon = (mode: string) => {
-  switch (mode) {
-    case 'car': return <Car size={16} />;
-    case 'bike': return <Bicycle size={16} />;
-    default: return <Footprints size={16} />;
-  }
-};
-
 export default function AddPlace({ profile, onSave, onBack }: Props) {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
@@ -38,6 +30,9 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
   const [searching, setSearching] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [draft, setDraft] = useState<Partial<BucketListItem>>({});
+  const [urlMode, setUrlMode] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlError, setUrlError] = useState('');
 
   const searchTimeout = useRef<number | null>(null);
 
@@ -222,13 +217,10 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
         <div className="mb-5">
           <h2 className="text-xl font-semibold text-sand-900">{draft.name}</h2>
           <p className="text-xs text-sand-700 mt-1">{draft.address?.split(',').slice(1, 3).join(',')}</p>
-          {draft.travelTimeMinutes! > 0 && (
+          {draft.travelDistanceKm != null && (
             <div className="flex items-center gap-3 mt-3">
               <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
-                {transportIcon(draft.transportMode || 'car')} {formatDuration(draft.travelTimeMinutes!)}
-              </span>
-              <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
-                <MapPin size={14} /> {draft.travelDistanceKm} km
+                <MapPin size={14} /> {draft.travelDistanceKm} km away
               </span>
             </div>
           )}
