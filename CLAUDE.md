@@ -15,8 +15,8 @@ React 19 + TypeScript + Tailwind 4 + Vite 8, Supabase (auth + Postgres + RLS), d
 ## Key constraints
 - **Free tier only** — no paid APIs, no paid hosting
 - **No server-side** — everything runs in the browser + Supabase
-- **All external APIs are free/open**: Nominatim, OSM, OSRM, Open-Meteo, Wikidata/Wikipedia, OpenStreetMap tiles
-- OSRM public server only supports `driving` profile; walk/bike times are calculated from driving distance + average speed
+- **APIs**: search, geocoding, routing and map tiles use **HERE** (freemium, needs `VITE_HERE_API_KEY`); weather (Open-Meteo) and images (Wikidata/Wikipedia) are free/open. HERE's free tier keeps this within the "free tier only" principle for now — see `BACKLOG.md` for the Google Places evaluation.
+- HERE routing maps modes to pedestrian/bicycle/car profiles (transit uses the separate Transit API); haversine ×1.3 with average speeds is the fallback
 
 ## Project structure
 ```

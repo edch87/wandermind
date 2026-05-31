@@ -1,7 +1,7 @@
 # Lark — Technical Documentation
 
 ## Overview
-Lark is a client-side React app with a Supabase backend. There is no custom server — all logic runs in the browser. External data comes from free, open APIs.
+Lark is a client-side React app with a Supabase backend. There is no custom server — all logic runs in the browser. Place data, geocoding, and routing come from the HERE APIs (freemium, requires a key); weather and images come from free, open APIs.
 
 ---
 
@@ -24,23 +24,27 @@ Lark is a client-side React app with a Supabase backend. There is no custom serv
 
 ## External APIs
 
-All free, no API keys required (except Supabase).
+HERE requires an API key (`VITE_HERE_API_KEY`); the rest are free with no key. All keys are client-side (HERE key restrictions should be set in the HERE console).
 
-| API | Base URL | Used for | Rate limits |
-|-----|----------|----------|-------------|
-| Nominatim | `nominatim.openstreetmap.org` | Place search + reverse geocoding | 1 req/sec (enforced in code) |
-| OSM API | `api.openstreetmap.org/api/0.6` | Fetching OSM tags (opening hours, attributes) | Fair use |
-| OSRM | `router.project-osrm.org` | Driving route distance/duration | Public demo server, driving profile only |
-| Open-Meteo | `api.open-meteo.com/v1/forecast` | 7-day weather forecast | No key needed |
+| API | Base URL | Used for | Notes |
+|-----|----------|----------|-------|
+| HERE Discover | `discover.search.hereapi.com/v1/discover` | POI search near a location | Used when lat/lng known |
+| HERE Geocode | `geocode.search.hereapi.com/v1/geocode` | Search without location context | Cities/addresses |
+| HERE Reverse Geocode | `revgeocode.search.hereapi.com/v1/revgeocode` | Coordinates → place | Used by Google Maps URL paste |
+| HERE Lookup | `lookup.search.hereapi.com/v1/lookup` | Place details + categories | Feeds inference.ts |
+| HERE Routing | `router.hereapi.com/v8/routes` | Travel time/distance (car, pedestrian, bicycle) | Per transport mode |
+| HERE Transit | `transit.router.hereapi.com/v8/routes` | Public-transport routing | Separate endpoint |
+| HERE Map Tiles | `maps.hereapi.com/v3/base` | Map tiles (Leaflet) | `explore.day` style |
+| HERE Static Map | `image.maps.hereapi.com` | Final fallback place image | Location-correct thumbnail |
+| Open-Meteo | `api.open-meteo.com/v1/forecast` | 7-day weather forecast | No key |
 | Wikidata | `wikidata.org/w/api.php` | Place images via P18 claim | Fair use |
-| Wikipedia | `{lang}.wikipedia.org/w/api.php` | Fallback place images | Fair use |
-| OSM Tiles | `tile.openstreetmap.org` | Map tiles (Leaflet) + fallback place image | Fair use |
+| Wikipedia | `{lang}.wikipedia.org/w/api.php` | Fallback place images (geo-verified) | Fair use |
 
-### OSRM notes
-The public OSRM server only reliably supports the `driving` profile. For walk and bike modes, the app fetches the driving route (for accurate road distance), then calculates duration using average speeds: walk 5 km/h (+20% distance adjustment), bike 15 km/h, car uses OSRM's duration directly. Haversine ×1.3 is the fallback if OSRM fails.
+### HERE routing notes
+The app maps transport modes to HERE profiles (walk → pedestrian, bike → bicycle, car → car, transit → the separate Transit API). If routing fails, it falls back to haversine straight-line distance ×1.3 with average speeds (walk 5, bike 15, car 60, transit 30 km/h). Travel times for the recommend flow are calculated in batches (concurrency 5).
 
 ### Place images
-Three-step waterfall: Wikidata P18 → Wikipedia page image → Wikipedia search → OpenStreetMap tile fallback.
+Four-step waterfall: Wikidata P18 → Wikipedia page image → **geo-verified** Wikipedia search → HERE static-map thumbnail. The Wikipedia search step only accepts a result whose article is geotagged within 30 km of the place's coordinates — this prevents venues named after people from returning that person's photo, and rejects same-name places elsewhere.
 
 ---
 
@@ -81,6 +85,7 @@ Uses snake_case in DB, camelCase in app. See `src/types/index.ts` for the full `
 |----------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
+| `VITE_HERE_API_KEY` | HERE Platform API key (search, geocoding, routing, tiles) |
 
 Set in `.env` locally. On Vercel, set in project environment variables. See `.env.example` for format.
 
@@ -117,7 +122,7 @@ Push to `main` on GitHub → Vercel auto-deploys. Config in `vercel.json`:
 | Onboarding | First-time setup (name, home location) |
 | Dashboard | Home screen, quick actions, recent items |
 | BucketList | Full list view with search/filter |
-| AddPlace | Search + add new places via Nominatim |
+| AddPlace | Search + add new places via HERE (or paste a Google Maps link) |
 | ItemDetail | View/edit a single item's details |
 | RecommendationFlow | Multi-step flow: date → time → group → energy → vibe → transport → accessibility → results |
 | Settings | User profile (name + home location only) |

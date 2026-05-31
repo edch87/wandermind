@@ -389,18 +389,30 @@ export async function fetchPlaceImage(tags: Record<string, string>, lat: number,
     } catch { /* fall through */ }
   }
 
-  // Try 3: Search Wikipedia by place name for an image
+  // Try 3: Search Wikipedia by place name, but only trust a result whose article
+  // is geotagged near the actual place. This prevents the old failure mode where a
+  // venue named after a person returned that person's photo (people have no coords),
+  // and rejects same-name places in other locations.
   try {
     const placeName = tags['name'] || '';
     if (placeName) {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=1&prop=pageimages&pithumbsize=400&format=json&origin=*`;
+      const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=5&prop=pageimages|coordinates&pithumbsize=400&format=json&origin=*`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const pages = data.query?.pages;
+        const pages = data.query?.pages as Record<string, {
+          thumbnail?: { source: string };
+          coordinates?: { lat: number; lon: number }[];
+        }> | undefined;
         if (pages) {
-          const page = Object.values(pages)[0] as { thumbnail?: { source: string } };
-          if (page?.thumbnail?.source) return page.thumbnail.source;
+          const MAX_KM = 30; // article must be geographically near the place
+          for (const page of Object.values(pages)) {
+            const coord = page.coordinates?.[0];
+            if (page.thumbnail?.source && coord) {
+              const distKm = haversineDistanceKm(lat, lng, coord.lat, coord.lon);
+              if (distKm <= MAX_KM) return page.thumbnail.source;
+            }
+          }
         }
       }
     }
