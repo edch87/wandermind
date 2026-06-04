@@ -257,7 +257,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
             <textarea value={draft.personalNotes || ''} onChange={(e) => updateDraft({ personalNotes: e.target.value })}
               placeholder="Any notes about this place..."
               rows={2}
-              className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
+              className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
           </Section>
 
           <div className="flex gap-2 mt-2 mb-4">
@@ -422,7 +422,7 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
               <textarea value={completionNotes} onChange={(e) => setCompletionNotes(e.target.value)}
                 placeholder="How was the experience?"
                 rows={2}
-                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm focus:outline-none focus:border-sand-500 resize-none" />
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base focus:outline-none focus:border-sand-500 resize-none" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowComplete(false)}

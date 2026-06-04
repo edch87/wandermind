@@ -117,7 +117,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
         <div>
           <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1.5 block">Your name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 focus:outline-none focus:border-sand-500 bg-white" />
+            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 focus:outline-none focus:border-sand-500 bg-white" />
         </div>
 
         <div>
@@ -131,7 +131,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
                   placeholder="Search..."
-                  className="flex-1 px-3 py-2.5 border border-sand-200 rounded-[12px] text-sm focus:outline-none focus:border-sand-500 bg-white" />
+                  className="flex-1 px-3 py-2.5 border border-sand-200 rounded-[12px] text-base focus:outline-none focus:border-sand-500 bg-white" />
                 <button onClick={handleSearchLocation}
                   className="px-4 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Search</button>
               </div>

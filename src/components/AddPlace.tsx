@@ -206,7 +206,7 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           <input type="text" value={query} onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search for a place..."
             autoFocus
-            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
+            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
         </div>
 
         {/* Import from a Google Maps link */}
@@ -222,7 +222,7 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
                 onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && urlInput.trim()) importFromUrl(urlInput); }}
                 placeholder="Paste a Google Maps link..."
-                className="flex-1 px-4 py-3 bg-white border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
+                className="flex-1 px-4 py-3 bg-white border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
               <button onClick={() => importFromUrl(urlInput)} disabled={!urlInput.trim()}
                 className="px-5 py-3 bg-sand-900 text-sand-100 rounded-[12px] text-sm font-medium hover:bg-sand-800 transition disabled:opacity-40">
                 Add
@@ -430,7 +430,7 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           <textarea value={draft.personalNotes || ''} onChange={(e) => updateDraft({ personalNotes: e.target.value })}
             placeholder="Any notes about this place..."
             rows={2}
-            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
+            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
         </Section>
 
         <button onClick={() => onSave(draft as BucketListItem)}
