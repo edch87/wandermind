@@ -36,15 +36,24 @@ A feed of things to do near the user (home or current location) that they can sa
 - Feed ranking reuses `recommendation.ts` scoring with live weather/time, so the feed is context-aware for free.
 - Dashboard curated lists (shipped) are the placement surface: discover and sponsored rails slot in alongside the user's own collections later.
 
+### Privacy & legal (Edward's decisions, 2026-06-04)
+
+- **No location tracking, ever.** The app's baseline stays "days out from home". Edward chose **option C** for travel use: a one-shot browser geolocation request on tap, used for that session only, never stored, never in the background (a web app can't background-track anyway). Typed-city geocoding (no permissions) is the fallback for users who decline the prompt. Feature itself stays deferred (P3 in backlog).
+- **Community layer is opt-out.** Users' saves feed the anonymous discover aggregate by default, with a clearly visible toggle in Settings and explicit disclosure in the privacy policy (lawful basis: legitimate interest). Only place + save count is ever exposed ("Saved by 12 people"), never who saved it, and a minimum save-count threshold prevents inferring a single user's saves near their home.
+- **Before public launch:** a plain-language privacy policy covering what's stored (name, home location, saved places), the opt-out community sharing, that location is never tracked, and the processors (Supabase, Vercel, HERE, Google, Open-Meteo — coordinates pass through search/routing calls transiently). Home address in `profiles` is the main GDPR-relevant personal data.
+
+### Supabase capacity (checked 2026-06-04)
+
+Free plan: 500 MB database, 5 GB egress/month, 50k auth MAU, project pauses after 1 week idle. At ~1–2 KB per item row, hundreds of thousands of saves fit; sponsored listings are negligible; discover cache ~25–50 KB per tile ≈ ~10k tiles (TTL eviction keeps it pruned). First real ceiling is monthly egress — keep feed queries paginated and select only needed columns. Next step is Pro ($25/mo, 8 GB DB, 250 GB egress); one sponsored listing covers it.
+
 ### Open questions
 
 - HERE ToS: maximum cache/retention period for discover results.
-- Community layer privacy: opt-out toggle? Minimum save-count threshold before a place appears (e.g. don't show "Saved by 1 person" near a home address)?
 - Sponsored pricing: flat monthly fee per listing per area; tiers by radius/category exclusivity. Model in `Lark_Business_Model.xlsx`.
 
 ### Rollout
 
 1. **Phase 0 (done):** curated list rails on Dashboard — the UI pattern everything else reuses.
-2. **Phase 1:** community layer + "Use my current location" (P2 in backlog, natural pairing).
+2. **Phase 1:** community layer, home-based radius. ("Use my current location" deferred — see privacy notes; pairs well here when it comes.)
 3. **Phase 2:** tile-cached HERE browse for cold start.
 4. **Phase 3:** sponsored listings table + manual sales; later "claim your business" self-serve.
