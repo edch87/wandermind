@@ -95,12 +95,13 @@ export interface RecommendationConstraints {
   travelFrom: 'home' | 'current';
   currentLatitude?: number;
   currentLongitude?: number;
-  transportMode: TransportMode;
+  /** All transport modes the user is open to. Effective travel time = min across these. */
+  transportModes: TransportMode[];
   dogComing: boolean;
   needsAccessibility: boolean;
   strollerNeeded: boolean;
-  /** Override travel times per item (itemId → minutes one-way). Used for dynamic HERE routing calculation. */
-  travelTimeOverrides?: Record<string, number>;
+  /** Per-mode travel time overrides (itemId → mode → minutes one-way) from HERE routing. */
+  travelTimeOverrides?: Record<string, Partial<Record<TransportMode, number>>>;
 }
 
 export interface WeatherForecast {

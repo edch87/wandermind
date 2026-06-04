@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
-import { getRecommendations, findCombos } from '../utils/recommendation';
+import { getRecommendations, findCombos, viableModes } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
 import {
   Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning,
@@ -18,8 +18,15 @@ const TIME_SNAPS = [
   { min: 120, label: '2 hrs' },
   { min: 180, label: '3 hrs' },
   { min: 240, label: 'Half day' },
-  { min: 480, label: 'Full day' },
+  { min: Infinity, label: 'Full day' },
 ];
+
+/** Walk auto-include cutoff for the UI batch fetch (must match recommendation.ts) */
+const WALK_AUTO_CUTOFF_KM = 1.5;
+
+const MODE_LABEL: Record<TransportMode, string> = {
+  car: 'car', bike: 'bike', walk: 'walk', transit: 'transit',
+};
 
 function TimeRangeSlider({ range, onChange }: { range: [number, number]; onChange: (r: [number, number]) => void }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -123,7 +130,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [energy, setEnergy] = useState<EnergyLevel>('surprise_me');
   const [vibes, setVibes] = useState<Vibe[]>(['flexible']);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
-  const [transportMode, setTransportMode] = useState<TransportMode>('car');
+  const [transportModes, setTransportModes] = useState<TransportMode[]>([profile.preferredTransport || 'car']);
   const [dogComing, setDogComing] = useState(false);
   const [needsAccessibility, setNeedsAccessibility] = useState(false);
   const [strollerNeeded, setStrollerNeeded] = useState(false);
@@ -131,10 +138,15 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [results, setResults] = useState<ScoredItem[]>([]);
   const [combos, setCombos] = useState<ReturnType<typeof findCombos>>([]);
   const [loadingMsg, setLoadingMsg] = useState('');
-  // Store calculated travel times so results can display them
-  const [travelOverrides, setTravelOverrides] = useState<Record<string, number>>({});
+  // Per-mode travel time overrides (itemId → mode → minutes one-way)
+  const [travelOverrides, setTravelOverrides] = useState<Record<string, Partial<Record<TransportMode, number>>>>({});
+  // Final constraints snapshot used to render results (so viableModes() matches what was scored)
+  const [resultConstraints, setResultConstraints] = useState<Parameters<typeof viableModes>[1] | null>(null);
 
   const toggleGroup = (g: GroupType) => setGroupTypes(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+  const toggleTransport = (m: TransportMode) => setTransportModes(prev =>
+    prev.includes(m) ? (prev.length > 1 ? prev.filter(x => x !== m) : prev) : [...prev, m]
+  );
   const toggleVibe = (v: Vibe) => {
     if (v === 'flexible') {
       setVibes(['flexible']);
@@ -157,42 +169,59 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
     const dayWeather = forecasts.find(f => f.date === targetDate) || forecasts[0] || null;
     setWeather(dayWeather);
 
-    // Calculate travel times for all candidate items based on selected transport mode
+    // Decide which modes to compute travel times for.
+    // Always include the user's selected modes; auto-include walk for any item under 1.5 km.
+    const candidates = items.filter(i => i.status === 'want_to_do');
+    const modesToCompute: TransportMode[] = [...transportModes];
+    const needsWalk = candidates.some(i => i.travelDistanceKm <= WALK_AUTO_CUTOFF_KM);
+    if (needsWalk && !modesToCompute.includes('walk')) modesToCompute.push('walk');
+
     setLoadingMsg('Calculating travel times...');
-    const candidateItems = items.filter(i => i.status === 'want_to_do').map(i => ({
-      id: i.id, latitude: i.latitude, longitude: i.longitude,
-    }));
-    const travelTimes = await calculateBatchTravelTimes(
-      profile.homeLatitude, profile.homeLongitude, candidateItems, transportMode
-    );
-    const overrides: Record<string, number> = {};
-    for (const [id, travel] of Object.entries(travelTimes)) {
-      overrides[id] = travel.durationMinutes;
+    const overrides: Record<string, Partial<Record<TransportMode, number>>> = {};
+    for (const mode of modesToCompute) {
+      // For walk, only route items under the cutoff to keep API calls down
+      const itemsForMode = mode === 'walk'
+        ? candidates.filter(i => i.travelDistanceKm <= WALK_AUTO_CUTOFF_KM)
+        : candidates;
+      const batch = itemsForMode.map(i => ({ id: i.id, latitude: i.latitude, longitude: i.longitude }));
+      const travelTimes = await calculateBatchTravelTimes(
+        profile.homeLatitude, profile.homeLongitude, batch, mode
+      );
+      for (const [id, travel] of Object.entries(travelTimes)) {
+        if (!overrides[id]) overrides[id] = {};
+        overrides[id][mode] = travel.durationMinutes;
+      }
     }
     setTravelOverrides(overrides);
 
     setLoadingMsg('Finding your best options...');
-    const timeMax = TIME_SNAPS[timeRange[1]].min;
+    const timeMax = TIME_SNAPS[timeRange[1]].min; // may be Infinity for Full day
     const timeMin = TIME_SNAPS[timeRange[0]].min;
-    const scored = getRecommendations(items, {
+    const finalConstraints = {
       date: targetDate,
       timeAvailableMinutes: timeMax,
-      timeMinMinutes: timeMin,
+      timeMinMinutes: isFinite(timeMin) ? timeMin : undefined,
       groupTypes,
       energy,
       vibes,
       maxCostLevel: maxCost,
-      travelFrom: 'home',
-      transportMode,
+      travelFrom: 'home' as const,
+      transportModes,
       dogComing,
       needsAccessibility,
       strollerNeeded,
       travelTimeOverrides: overrides,
-    }, dayWeather);
+    };
+    const scored = getRecommendations(items, finalConstraints, dayWeather);
     setResults(scored);
-    setCombos(findCombos(scored, timeMax));
+    setCombos(findCombos(scored, timeMax, finalConstraints));
+    setResultConstraints(finalConstraints);
     setStep('results');
   };
+
+  // Past 22:00 today → suggest switching to tomorrow
+  const now = new Date();
+  const isTodayLate = dateOffset === 0 && now.getHours() >= 22;
 
   const weekend = getWeekendOffsets();
 
@@ -219,22 +248,26 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                 onClick={() => setDateOffset(offset)}>{label}</button>
             ))}
           </div>
+          {isTodayLate && (
+            <p className="text-[11px] text-terra-600 mt-2">It's late — try Tomorrow for more options.</p>
+          )}
         </Section>
 
         <Section label="How are you getting there?">
           <div className="toggle-group">
             {transportOptions.map(({ mode, icon, label }) => (
-              <button key={mode} className={`toggle-btn ${transportMode === mode ? 'active' : ''}`}
-                onClick={() => setTransportMode(mode)}>
+              <button key={mode} className={`toggle-btn ${transportModes.includes(mode) ? 'active' : ''}`}
+                onClick={() => toggleTransport(mode)}>
                 <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
               </button>
             ))}
           </div>
+          <p className="text-[10px] text-sand-600 mt-1">Pick one or more. We'll show whichever fits each place best.</p>
         </Section>
 
         <Section label="How much time do you have?">
           <TimeRangeSlider range={timeRange} onChange={setTimeRange} />
-          <p className="text-[10px] text-sand-600 mt-1">Includes travel time there and back</p>
+          <p className="text-[10px] text-sand-600 mt-1">Total time door to door — includes travel both ways. Full day has no upper limit.</p>
         </Section>
 
         <Section label="Who's coming?">
@@ -375,7 +408,12 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         <div className="space-y-4">
           {top3.map((scored, idx) => {
             const { item, reasons } = scored;
-            const travelMin = travelOverrides[item.id] ?? item.travelTimeMinutes;
+            const modeOptions = resultConstraints
+              ? viableModes(item, resultConstraints).slice(0, 2)
+              : [{ mode: (transportModes[0] || 'car') as TransportMode, minutes: item.travelTimeMinutes }];
+            const travelLabel = modeOptions
+              .map(m => `${formatDuration(m.minutes)} by ${MODE_LABEL[m.mode]}`)
+              .join(' or ');
             const targetDate = getDateString(dateOffset);
             const hoursWarning = getOpeningHoursWarning(item.openingHours, targetDate);
             const nonHoursReasons = reasons.filter(r => !r.startsWith('Closed') && !r.startsWith('May be closed') && !r.startsWith('Only open') && !r.startsWith('Closes at') && !r.startsWith('Open until') && !r.startsWith('Opens at'));
@@ -400,7 +438,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
                   )}
                   <h3 className="font-semibold text-sand-900 text-base">{item.name}</h3>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="badge bg-sand-100 text-sand-700">{formatDuration(travelMin)} by {transportMode}</span>
+                    <span className="badge bg-sand-100 text-sand-700">{travelLabel}</span>
                     <span className="badge bg-sand-100 text-sand-700">{DURATION_LABELS[item.durationEstimate]}</span>
                     <span className="badge bg-sand-100 text-sand-700">{COST_LABELS[item.costLevel]}</span>
                   </div>
