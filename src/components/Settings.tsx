@@ -57,9 +57,11 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
     }
   };
 
+  const [shareSaves, setShareSaves] = useState(profile.shareSaves !== false);
+
   const handleSave = () => {
     onSave({ ...profile, displayName: name,
-      homeLatitude: homeLat, homeLongitude: homeLng, homeAddress });
+      homeLatitude: homeLat, homeLongitude: homeLng, homeAddress, shareSaves });
     onBack();
   };
 
@@ -144,6 +146,23 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
               <div ref={mapRef} className="w-full h-48 rounded-[20px] border border-sand-200" />
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1 block">Privacy</label>
+          <button onClick={() => setShareSaves(!shareSaves)}
+            className="w-full flex items-center justify-between px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-left">
+            <div className="flex-1 pr-3">
+              <div className="text-sm font-medium text-sand-900">Share my saves anonymously</div>
+              <div className="text-[11px] text-sand-600 mt-0.5">
+                Helps other larkers discover places. Only the place and a count are ever shown
+                ("Saved by 12 people") — never your name, notes, or anything else.
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full flex-shrink-0 transition-colors relative ${shareSaves ? 'bg-forest-500' : 'bg-sand-300'}`}>
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all ${shareSaves ? 'left-[22px]' : 'left-0.5'}`} />
+            </div>
+          </button>
         </div>
 
         <button onClick={handleSave}

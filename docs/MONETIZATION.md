@@ -20,15 +20,21 @@ A feed of things to do near the user (home or current location) that they can sa
 
 **Layer 1 — Community (organic, €0).** Places other Lark users have saved, aggregated within a radius. Shows only public fields: name, location, category, image, save count ("Saved by 12 people"). Personal notes and identities stay private. Needs a way around per-user RLS: either a `security definer` Postgres function or a small aggregate table (`public_places`) updated on save. Cold-start weakness: thin until there are users in an area. Gets better with every user, forever free.
 
-**Layer 2 — Tile-cached HERE browse (near €0).** For areas with little community data. The map is divided into ~5 km cells (geohash). The first user to open Discover in a cell triggers a handful of HERE discover/browse calls (one per category group); results are written to a `discover_cache` table in Supabase with a TTL of a few weeks. All later users in that cell read the cache. HERE freemium allows ~250k transactions/month, so cached tiles keep usage trivial even at thousands of MAU. **Verify HERE ToS on result-caching duration before building.**
+**Layer 2 — Wikidata notable places (€0, decided 2026-06-04).** For areas with little community data. One SPARQL query per category group (museums, historical, nature, parks/gardens, zoos, entertainment) against the Wikidata Query Service, centred on the user's home, ranked by **sitelink count** (number of Wikipedia language editions — a strong "people care about this place" proxy that stands in for ratings). Results include coordinates, category and a Commons image. Because Wikidata is **CC0 (public domain)**, results are legally cacheable in Supabase forever and one fetch can serve every user — the original "cost scales with new areas, not user count" design works here, at €0 at any scale. The map is divided into ~50 km cells; the first user in a cell triggers the queries, results land in `discover_cache`, everyone else reads the cache (refreshed after ~60 days only to pick up data improvements). Honest caveat: Wikidata covers *notable* places — excellent for sights/nature/museums/castles (the heart of a bucket list), thin for restaurants and small leisure spots, which the community layer covers instead.
+
+> **Why not HERE or Google in the feed (verified 2026-06-04):**
+> - HERE Platform Terms (Sept 2023) §8(j) cap caching at 30 days, and §8(l) explicitly prohibits "scaling one Request to serve multiple End Users" — a shared tile cache of HERE results is non-compliant. The originally designed HERE tile cache is therefore dead; HERE stays where it is today (search, routing, tiles, geocoding) and never enters the feed.
+> - Google Maps Platform terms allow storing only `place_id` (lat/lng max 30 days, ratings never) and prohibit building a database from Google content. A seeded "top-rated places" table copied from Google would violate ToS and risk the API key that add-place search and detail photos depend on. Rejected 2026-06-04.
+> - Documented fallback if Wikidata coverage proves insufficient: live HERE browse calls per visit (no caching) — ToS-clean, ~3 calls/visit, free to roughly 80k Discover sessions/month within the 250k freemium, but cost then scales with usage. OSM/Overpass (ODbL) remains the deep-coverage option at the price of a new tag-mapping layer.
 
 **Layer 3 — Sponsored (€0 cost, the revenue).** A `sponsored_listings` table: business, location, category, active dates, context rules (e.g. "show when raining", "family-friendly"). Injected into the feed and curated lists, always marked "Sponsored". No external API involved, pure margin.
 
 ### Cost guardrails
 
 - **No Google in the feed.** Google free tiers are small (5k searches, 1k photo media/month) and ToS forbids caching anything except `place_id`. A per-user feed would exhaust them in days. Google stays where it is now: add-place search and detail-view photos.
-- **Feed images use the free waterfall** (geo-verified Wikipedia → HERE static map → branded placeholder). Google photos only after save, on the detail view.
-- **All feed reads hit Supabase first.** External APIs are only called on cache miss, and the result is cached for everyone.
+- **No HERE in the feed either** (ToS, see above). HERE is only involved when a feed item is *saved* — the normal AddPlace flow then calculates routing as usual.
+- **Feed images come from Wikidata/Commons** (included in the SPARQL result) or the community item's stored image; branded placeholder otherwise. Google photos only after save, on the detail view.
+- **All feed reads hit Supabase first.** Wikidata is only called on cache miss, and the result is cached for everyone — which CC0 licensing permits.
 
 ### Reuse, not rebuild
 
@@ -48,12 +54,11 @@ Free plan: 500 MB database, 5 GB egress/month, 50k auth MAU, project pauses afte
 
 ### Open questions
 
-- HERE ToS: maximum cache/retention period for discover results.
+- ~~HERE ToS: maximum cache/retention period for discover results.~~ Resolved 2026-06-04: 30 days max and no serving one request to multiple users — HERE removed from the feed design entirely (see Layer 2 note).
 - Sponsored pricing: flat monthly fee per listing per area; tiers by radius/category exclusivity. Model in `Lark_Business_Model.xlsx`.
 
 ### Rollout
 
 1. **Phase 0 (done):** curated list rails on Dashboard — the UI pattern everything else reuses.
-2. **Phase 1:** community layer, home-based radius. ("Use my current location" deferred — see privacy notes; pairs well here when it comes.)
-3. **Phase 2:** tile-cached HERE browse for cold start.
-4. **Phase 3:** sponsored listings table + manual sales; later "claim your business" self-serve.
+2. **Phase 1 (decided 2026-06-04, building):** community layer + Wikidata layer together, home-based radius, shipped with the privacy bundle (Settings opt-out toggle, min save-count threshold). Placement: "Discover nearby" rail on the Dashboard as a teaser, "See all" opens a dedicated Discover screen. ("Use my current location" deferred — see privacy notes; pairs well here when it comes.)
+3. **Phase 2:** sponsored listings table + manual sales; later "claim your business" self-serve.

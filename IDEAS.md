@@ -20,6 +20,13 @@
 - **Sharing items between users** with "recommended by..." attribution (already planned)
 - **Future/someday list** — a way to save ideas that aren't location-specific yet or that are far away, separate from the main actionable bucket list
 - ~~**Curated lists on Dashboard**~~ ✅ Done — auto-generated rails: "Perfect for today" (weather-matched), "Quick wins", "Free to do", plus the user's three biggest categories with "See all" linking to the pre-filtered list. Hand-curated collections remain a future option.
+- **More curated rails** (discussed 2026-06-04 — Edward picked "Top of your list" to ship now; the rest stay here as options to avoid rail overload):
+  - "Top of your list" — high-priority items surfaced. **Chosen, in build.**
+  - "Looking good this weekend" — Sat/Sun forecast matched to outdoor items (forecast already fetched)
+  - "Gathering dust" — oldest unvisited saves resurfaced; the anti-rot nudge
+  - "In season now" / "Great this evening" — bestSeasons and bestTimesOfDay context rails
+  - "Close to home" / "Make a day of it" — travel-distance and full-day planning rails
+  - "With the dog" / "Family days" — group-suitability rails, shown only when relevant
 
 ## Integrations
 

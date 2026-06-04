@@ -98,6 +98,10 @@ export default function CuratedLists({ items, todayWeather, onNavigate }: Props)
     rails.push({ key: 'today', title: 'Perfect for today', items: perfectToday });
   }
 
+  // Personal list: high-priority items the user marked as most wanted
+  const topPriority = todo.filter(i => i.priority === 'high');
+  rails.push({ key: 'priority', title: 'Top of your list', items: topPriority });
+
   // Smart list: short activities
   const quickWins = todo.filter(i => i.durationEstimate === 'under_1h' || i.durationEstimate === '1_2h');
   rails.push({ key: 'quick', title: 'Quick wins', items: quickWins });

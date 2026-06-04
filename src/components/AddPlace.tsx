@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
@@ -19,11 +19,15 @@ interface Props {
   profile: UserProfile;
   onSave: (item: BucketListItem) => void;
   onBack: () => void;
+  /** When set (e.g. from the Discover feed), skip search and jump straight to the review step. */
+  initialPlace?: HereSearchResult;
+  /** Category hint from the discover feed — overrides inference so the user isn't re-asked. */
+  initialCategory?: Category;
 }
 
 type Step = 'search' | 'loading' | 'review';
 
-export default function AddPlace({ profile, onSave, onBack }: Props) {
+export default function AddPlace({ profile, onSave, onBack, initialPlace, initialCategory }: Props) {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<HereSearchResult[]>([]);
@@ -38,6 +42,12 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
 
   const searchTimeout = useRef<number | null>(null);
 
+  // Launched with a prefilled place (from the Discover feed): skip search, go straight to review
+  useEffect(() => {
+    if (initialPlace) selectPlace(initialPlace, initialCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSearch = async (q: string) => {
     setQuery(q);
     if (searchTimeout.current !== null) clearTimeout(searchTimeout.current);
@@ -50,7 +60,7 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     }, 1000);
   };
 
-  const selectPlace = async (result: HereSearchResult) => {
+  const selectPlace = async (result: HereSearchResult, categoryHint?: Category) => {
     setStep('loading');
     setResults([]);
     const lat = result.position.lat;
@@ -83,7 +93,13 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
 
     setLoadingMsg('Auto-categorising...');
     const { categoryUncertain: uncertain, ...inferred } = inferDefaults({ ...tags, name: result.title });
-    setCategoryUncertain(uncertain);
+    // A category hint (from the Discover feed) beats inference — no need to re-ask the user
+    if (categoryHint) {
+      inferred.category = categoryHint;
+      setCategoryUncertain(false);
+    } else {
+      setCategoryUncertain(uncertain);
+    }
 
     setDraft({
       id: generateId(),

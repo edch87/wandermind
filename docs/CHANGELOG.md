@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-06-04 (discover feed session)
+- **Organic discover feed shipped (Phase 1)**: "Discover nearby" rail on the Dashboard + dedicated Discover screen ("See all"), built from two free sources — anonymous community saves ("Saved by N people") and Wikidata notable places ranked by sitelink count (the legal stand-in for ratings). Tapping a card jumps straight to the AddPlace review step with the category prefilled.
+- **Design pivot, verified against live ToS**: HERE Platform Terms cap caching at 30 days and forbid serving one request to multiple users, killing the planned shared HERE tile cache; Google terms allow storing only `place_id`, killing a Google-rated seed list. Wikidata (CC0) replaces both for cold start — legally cacheable forever in the shared `discover_cache` table. Full reasoning in `docs/MONETIZATION.md`.
+- **Privacy bundle shipped in the same deploy** (as required by the 2026-06-04 decision): `share_saves` opt-out toggle in Settings ("Share my saves anonymously"), aggregate-only exposure via a security-definer function, and a 2-saver minimum threshold before a place becomes public.
+- New files: `src/utils/discover.ts` (data layer), `src/components/Discover.tsx` (screen + card), `supabase-migration-v4.sql` (run in the Supabase SQL editor: share_saves column, get_community_places function, discover_cache table)
+- New curated rail "Top of your list" (high-priority items) — chosen from a longer list of rail ideas now logged in IDEAS.md
+
 ## 2026-06-04 (later session)
 - Curated lists on the Dashboard: new `CuratedLists` component with smart context rails ("Perfect for today" weather-matched, "Quick wins" under 2h, "Free to do") plus the user's three biggest categories; rails appear only with 3+ items, capped at 10, sorted by priority then recency
 - Extracted shared `ItemRail` card-rail component; "Recently added" now uses it (removes duplicated card markup in Dashboard)

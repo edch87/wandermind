@@ -29,6 +29,7 @@ function profileFromDb(row: Record<string, unknown>): UserProfile {
     hasKids: (row.has_kids as boolean) || false,
     needsAccessibility: (row.needs_accessibility as boolean) || false,
     onboardingComplete: (row.onboarding_complete as boolean) || false,
+    shareSaves: row.share_saves !== false, // default true (opt-out)
   };
 }
 
@@ -44,6 +45,7 @@ function profileToDb(profile: UserProfile) {
     has_kids: profile.hasKids,
     needs_accessibility: profile.needsAccessibility,
     onboarding_complete: profile.onboardingComplete,
+    share_saves: profile.shareSaves !== false,
     updated_at: new Date().toISOString(),
   };
 }

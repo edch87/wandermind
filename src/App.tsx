@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
-import type { UserProfile, BucketListItem, Category } from './types';
+import type { UserProfile, BucketListItem, Category, HereSearchResult } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { House, ClipboardText, Plus, Gear } from '@phosphor-icons/react';
 import KiteIcon from './components/KiteIcon';
@@ -13,13 +13,15 @@ import BucketList from './components/BucketList';
 import ItemDetail from './components/ItemDetail';
 import RecommendationFlow from './components/RecommendationFlow';
 import Settings from './components/Settings';
+import Discover from './components/Discover';
 
 type Screen =
   | { name: 'dashboard' }
-  | { name: 'add' }
+  | { name: 'add'; initialPlace?: HereSearchResult; initialCategory?: Category }
   | { name: 'list'; initialTab?: 'want_to_do' | 'done'; initialCategory?: Category }
   | { name: 'detail'; itemId: string }
   | { name: 'recommend' }
+  | { name: 'discover' }
   | { name: 'settings' };
 
 export default function App() {
@@ -176,6 +178,8 @@ export default function App() {
       {screen.name === 'add' && (
         <AddPlace
           profile={profile}
+          initialPlace={screen.initialPlace}
+          initialCategory={screen.initialCategory}
           onSave={(item) => {
             handleSaveItem(item);
             setScreen({ name: 'list' });
@@ -206,6 +210,14 @@ export default function App() {
           items={items}
           onBack={() => setScreen({ name: 'dashboard' })}
           onViewItem={(id) => setScreen({ name: 'detail', itemId: id })}
+        />
+      )}
+      {screen.name === 'discover' && (
+        <Discover
+          profile={profile}
+          items={items}
+          onAddPlace={(place, category) => setScreen({ name: 'add', initialPlace: place, initialCategory: category })}
+          onBack={() => setScreen({ name: 'dashboard' })}
         />
       )}
       {screen.name === 'settings' && (

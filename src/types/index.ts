@@ -28,6 +28,9 @@ export interface UserProfile {
   hasKids: boolean;
   needsAccessibility: boolean;
   onboardingComplete: boolean;
+  /** Community layer opt-out: when true (default) the user's saves feed the
+   *  anonymous discover aggregate ("Saved by N people" — never who). */
+  shareSaves?: boolean;
 }
 
 export interface BucketListItem {

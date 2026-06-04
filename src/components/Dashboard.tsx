@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { UserProfile, BucketListItem, WeatherForecast } from '../types';
+import type { UserProfile, BucketListItem, WeatherForecast, HereSearchResult } from '../types';
 
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
+import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
+import { DiscoverCard } from './Discover';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
   Shuffle, Plus, MapPin,
@@ -15,7 +17,13 @@ import type { Category } from '../types';
 interface Props {
   profile: UserProfile;
   items: BucketListItem[];
-  onNavigate: (s: { name: string; itemId?: string; initialTab?: 'want_to_do' | 'done'; initialCategory?: Category }) => void;
+  onNavigate: (s: {
+    name: string;
+    itemId?: string;
+    initialTab?: 'want_to_do' | 'done';
+    initialCategory?: Category;
+    initialPlace?: HereSearchResult;
+  }) => void;
   onSaveProfile: (p: UserProfile) => void;
 }
 
@@ -23,10 +31,18 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
   const [weather, setWeather] = useState<WeatherForecast[]>([]);
   const [surprise, setSurprise] = useState<BucketListItem | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [discover, setDiscover] = useState<DiscoverPlace[]>([]);
 
   useEffect(() => {
     fetchWeatherForecast(profile.homeLatitude, profile.homeLongitude).then(setWeather);
   }, [profile.homeLatitude, profile.homeLongitude]);
+
+  // Discover teaser rail — session-cached in discover.ts, so this is cheap on re-renders
+  useEffect(() => {
+    let cancelled = false;
+    getDiscoverPlaces(profile, items).then(p => { if (!cancelled) setDiscover(p); });
+    return () => { cancelled = true; };
+  }, [profile, items]);
 
   const todoItems = items.filter(i => i.status === 'want_to_do');
   const doneItems = items.filter(i => i.status === 'done');
@@ -207,6 +223,27 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
 
       {/* Curated lists — smart context rails + biggest categories */}
       <CuratedLists items={items} todayWeather={todayWeather} onNavigate={onNavigate} />
+
+      {/* Discover nearby — organic feed teaser (community + Wikidata) */}
+      {discover.length > 0 && (
+        <div className="mb-6">
+          <div className="px-6 flex items-baseline justify-between mb-3">
+            <h3 className="text-sm font-semibold text-sand-900">Discover nearby</h3>
+            <button onClick={() => onNavigate({ name: 'discover' })}
+              className="text-xs text-sand-600 hover:text-sand-900 transition">
+              See all
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-6 pb-2 scrollbar-hide">
+            {discover.slice(0, 10).map(p => (
+              <div key={p.key} className="flex-shrink-0 w-40">
+                <DiscoverCard place={p}
+                  onAdd={() => onNavigate({ name: 'add', initialPlace: toSearchResult(p), initialCategory: p.category })} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {items.length === 0 && (
