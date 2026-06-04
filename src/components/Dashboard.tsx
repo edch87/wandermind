@@ -7,11 +7,11 @@ import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/
 import { DiscoverCard } from './Discover';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
-  Shuffle, Plus, MapPin,
+  Shuffle, Plus,
 } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
 import PlaceholderImage from './PlaceholderImage';
-import CuratedLists, { ItemRail } from './CuratedLists';
+import CuratedLists from './CuratedLists';
 import type { Category } from '../types';
 
 interface Props {
@@ -46,7 +46,6 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
 
   const todoItems = items.filter(i => i.status === 'want_to_do');
   const doneItems = items.filter(i => i.status === 'done');
-  const recentItems = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
   const todayWeather = weather[0];
   const outdoorCount = todoItems.filter(i => i.setting === 'outdoor' || i.setting === 'mixed').length;
@@ -114,6 +113,11 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         <h1 className="text-2xl font-semibold text-sand-900">
           Hello {profile.displayName}, let's go on a <span className="heading-accent">lark</span>
         </h1>
+        {items.length > 0 && (
+          <p className="text-xs text-sand-700 mt-1">
+            {todoItems.length} to explore · {doneItems.length} visited
+          </p>
+        )}
       </div>
 
       {/* Weather card */}
@@ -200,31 +204,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="px-6 mb-6">
-        <div className="flex gap-3">
-          <button onClick={() => onNavigate({ name: 'list' })}
-            className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
-            <div className="flex justify-center mb-1"><MapPin size={18} className="text-sand-600" /></div>
-            <div className="text-2xl font-semibold text-sand-900">{todoItems.length}</div>
-            <div className="text-[11px] text-sand-700 mt-1">To explore</div>
-          </button>
-          <button onClick={() => onNavigate({ name: 'list', initialTab: 'done' })}
-            className="flex-1 bg-white rounded-[20px] p-4 border border-sand-200 text-center hover:border-sand-400 transition">
-            <div className="flex justify-center mb-1"><KiteIcon size={18} className="text-forest-500" /></div>
-            <div className="text-2xl font-semibold text-forest-500">{doneItems.length}</div>
-            <div className="text-[11px] text-sand-700 mt-1">Visited</div>
-          </button>
-        </div>
-      </div>
-
-      {/* Recently added */}
-      <ItemRail title="Recently added" items={recentItems} onNavigate={onNavigate} />
-
-      {/* Curated lists — smart context rails + biggest categories */}
-      <CuratedLists items={items} todayWeather={todayWeather} onNavigate={onNavigate} />
-
-      {/* Discover nearby — organic feed teaser (community + Wikidata) */}
+      {/* Discover nearby — moved above the fold; organic feed teaser (community + Wikidata) */}
       {discover.length > 0 && (
         <div className="mb-6">
           <div className="px-6 flex items-baseline justify-between mb-3">
@@ -244,6 +224,9 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
           </div>
         </div>
       )}
+
+      {/* Curated lists — Top of your list, Recently added, smart context rails, 3 random category rails */}
+      <CuratedLists items={items} todayWeather={todayWeather} onNavigate={onNavigate} />
 
       {/* Empty state */}
       {items.length === 0 && (

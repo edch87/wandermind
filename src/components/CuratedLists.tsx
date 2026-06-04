@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { BucketListItem, WeatherForecast, Category } from '../types';
 import { CATEGORY_INFO } from '../types';
 import PlaceholderImage from './PlaceholderImage';
@@ -12,6 +13,17 @@ interface NavTarget {
 const MIN_RAIL_ITEMS = 3;
 const MAX_RAIL_ITEMS = 10;
 const MAX_CATEGORY_RAILS = 3;
+const MAX_RECENT_ITEMS = 5;
+
+/** Fisher-Yates shuffle, returns a new array. */
+function shuffled<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 } as const;
 
@@ -84,10 +96,27 @@ interface Props {
  * content — see docs/MONETIZATION.md.
  */
 export default function CuratedLists({ items, todayWeather, onNavigate }: Props) {
+  // Random ordering of all categories, fixed for this mount. Render-time filtering
+  // by eligibility picks the first 3 with enough items, so the random shuffle stays
+  // stable as items load while still giving a fresh mix each Dashboard mount.
+  const [categoryOrder] = useState<Category[]>(() =>
+    shuffled(Object.keys(CATEGORY_INFO) as Category[])
+  );
+
   const todo = items.filter(i => i.status === 'want_to_do');
   if (todo.length < MIN_RAIL_ITEMS) return null;
 
   const rails: { key: string; title: string; items: BucketListItem[]; seeAll?: NavTarget }[] = [];
+
+  // Personal list: high-priority items the user marked as most wanted
+  const topPriority = todo.filter(i => i.priority === 'high');
+  rails.push({ key: 'priority', title: 'Top of your list', items: topPriority });
+
+  // Recently added — uses created date, not priority, so sort differently
+  const recentItems = [...items]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, MAX_RECENT_ITEMS);
+  rails.push({ key: 'recent', title: 'Recently added', items: recentItems });
 
   // Smart list: weather-matched picks for today
   if (todayWeather) {
@@ -98,34 +127,34 @@ export default function CuratedLists({ items, todayWeather, onNavigate }: Props)
     rails.push({ key: 'today', title: 'Perfect for today', items: perfectToday });
   }
 
-  // Personal list: high-priority items the user marked as most wanted
-  const topPriority = todo.filter(i => i.priority === 'high');
-  rails.push({ key: 'priority', title: 'Top of your list', items: topPriority });
-
   // Smart list: short activities
-  const quickWins = todo.filter(i => i.durationEstimate === 'under_1h' || i.durationEstimate === '1_2h');
-  rails.push({ key: 'quick', title: 'Quick wins', items: quickWins });
+  const shortOnTime = todo.filter(i => i.durationEstimate === 'under_1h' || i.durationEstimate === '1_2h');
+  rails.push({ key: 'short', title: 'Short on time?', items: shortOnTime });
+
+  // Smart list: longer outings
+  const fullDayOut = todo.filter(i => i.durationEstimate === 'half_day' || i.durationEstimate === 'full_day');
+  rails.push({ key: 'full-day', title: 'Full day out', items: fullDayOut });
 
   // Smart list: free activities
   const freeToDo = todo.filter(i => i.costLevel === 'free');
   rails.push({ key: 'free', title: 'Free to do', items: freeToDo });
 
-  // Category collections: the user's biggest categories
+  // Category collections: 3 random categories that have enough items.
+  // Random ordering was fixed at mount, so picks are stable on re-render.
   const byCategory = new Map<Category, BucketListItem[]>();
   for (const item of todo) {
     const list = byCategory.get(item.category) ?? [];
     list.push(item);
     byCategory.set(item.category, list);
   }
-  const topCategories = [...byCategory.entries()]
-    .filter(([, list]) => list.length >= MIN_RAIL_ITEMS)
-    .sort((a, b) => b[1].length - a[1].length)
+  const selectedCategories = categoryOrder
+    .filter(c => (byCategory.get(c)?.length ?? 0) >= MIN_RAIL_ITEMS)
     .slice(0, MAX_CATEGORY_RAILS);
-  for (const [category, list] of topCategories) {
+  for (const category of selectedCategories) {
     rails.push({
       key: `cat-${category}`,
       title: CATEGORY_INFO[category].label,
-      items: list,
+      items: byCategory.get(category)!,
       seeAll: { name: 'list', initialCategory: category },
     });
   }
@@ -137,7 +166,7 @@ export default function CuratedLists({ items, todayWeather, onNavigate }: Props)
         .map(rail => (
           <ItemRail key={rail.key}
             title={rail.title}
-            items={sortForRail(rail.items).slice(0, MAX_RAIL_ITEMS)}
+            items={rail.key === 'recent' ? rail.items : sortForRail(rail.items).slice(0, MAX_RAIL_ITEMS)}
             onNavigate={onNavigate}
             onSeeAll={rail.seeAll ? () => onNavigate(rail.seeAll!) : undefined}
           />
