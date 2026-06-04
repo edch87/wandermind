@@ -92,7 +92,7 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
       {/* Sort & Filter */}
       <div className="flex items-center gap-2 mb-4">
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="text-xs px-3 py-2 rounded-[12px] border border-sand-200 bg-white text-sand-700 focus:outline-none">
+          className="text-base px-3 py-2 rounded-[12px] border border-sand-200 bg-white text-sand-700 focus:outline-none">
           <option value="recent">Recently added</option>
           <option value="priority">Priority</option>
           <option value="travel">Nearest</option>
@@ -112,7 +112,7 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
           <div>
             <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Category</label>
             <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as Category | 'all')}
-              className="text-xs px-3 py-2 rounded-[12px] border border-sand-200 bg-white w-full">
+              className="text-base px-3 py-2 rounded-[12px] border border-sand-200 bg-white w-full">
               <option value="all">All categories</option>
               {usedCategories.map(c => (
                 <option key={c} value={c}>{CATEGORY_INFO[c].label}</option>
