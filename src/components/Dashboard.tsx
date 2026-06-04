@@ -63,7 +63,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       vibes: ['flexible'],
       maxCostLevel: 'expensive',
       travelFrom: 'home',
-      transportMode: 'car',
+      transportModes: ['car'],
       dogComing: false,
       needsAccessibility: false,
       strollerNeeded: false,

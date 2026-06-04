@@ -138,9 +138,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
   const [results, setResults] = useState<ScoredItem[]>([]);
   const [combos, setCombos] = useState<ReturnType<typeof findCombos>>([]);
   const [loadingMsg, setLoadingMsg] = useState('');
-  // Per-mode travel time overrides (itemId → mode → minutes one-way)
-  const [travelOverrides, setTravelOverrides] = useState<Record<string, Partial<Record<TransportMode, number>>>>({});
-  // Final constraints snapshot used to render results (so viableModes() matches what was scored)
+  // Final constraints snapshot used to render results (so viableModes() matches what was scored).
+  // The travelTimeOverrides field inside this snapshot also serves as the per-item per-mode display source.
   const [resultConstraints, setResultConstraints] = useState<Parameters<typeof viableModes>[1] | null>(null);
 
   const toggleGroup = (g: GroupType) => setGroupTypes(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
@@ -192,7 +191,6 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         overrides[id][mode] = travel.durationMinutes;
       }
     }
-    setTravelOverrides(overrides);
 
     setLoadingMsg('Finding your best options...');
     const timeMax = TIME_SNAPS[timeRange[1]].min; // may be Infinity for Full day
