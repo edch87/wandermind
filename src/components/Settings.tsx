@@ -87,9 +87,14 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
         setRefreshStatus(`Matching ${i + 1} of ${todo.length}: ${item.name}`);
         const placeId = await findGooglePlaceId(item.name, item.latitude, item.longitude);
         if (placeId) {
-          await saveItem({ ...item, googlePlaceId: placeId });
-          matched++;
+          const saved = await saveItem({ ...item, googlePlaceId: placeId });
+          if (saved) matched++;
         }
+      }
+      if (matched === 0) {
+        setRefreshStatus('No places could be updated — saving to the database failed. Check that migration v3 has been run.');
+        setRefreshing(false);
+        return;
       }
       setRefreshStatus(`Matched ${matched} of ${todo.length} places. Reloading...`);
       setTimeout(() => window.location.reload(), 2000);

@@ -177,12 +177,15 @@ export async function getItems(): Promise<BucketListItem[]> {
   return data.map((row: Record<string, unknown>) => itemFromDb(row));
 }
 
-export async function saveItem(item: BucketListItem): Promise<void> {
+/** Returns true when the item was actually written to the database. */
+export async function saveItem(item: BucketListItem): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return false;
 
   const dbItem = itemToDb(item, user.id);
-  await supabase.from('bucket_list_items').upsert(dbItem);
+  const { error } = await supabase.from('bucket_list_items').upsert(dbItem);
+  if (error) console.error('saveItem failed:', error.message);
+  return !error;
 }
 
 export async function deleteItem(id: string): Promise<void> {
