@@ -31,6 +31,7 @@ The app runs on **HERE APIs** (`src/utils/api.ts`). The image and category compl
 | Item | Status | Priority | Effort | Cost | Notes |
 |---|---|---|---|---|---|
 | Discover feed with sponsored local listings | ⬜ | P1 | L | €0 build | Core revenue idea — businesses pay a flat monthly fee for context-matched placement (area, weather, group, time). Main driver in the model. **Design done 2026-06-04** — see `docs/MONETIZATION.md` (3 layers: community data, tile-cached HERE browse, sponsored table). |
+| Community-layer privacy bundle (ships WITH the discover feed) | ⬜ | P1 | S–M | €0 | Opt-out decided 2026-06-04: Settings toggle ("Share my saves anonymously"), privacy policy disclosure, and min save-count threshold must release in the same deploy as the community layer — not as a follow-up. Blocks the discover feed going live. |
 | Affiliate booking links (GetYourGuide / Viator) | ⬜ | P2 | M | €0 (revenue +) | ~8% commission, 30-day cookie. Passive, low-friction, complements listings. Add to bookable items. |
 | Stripe / payment integration | ⬜ | P2 | M | ~2–3% fees | Dependency for subscription and paid listings. |
 | Lark Premium subscription | ⬜ | P3 | M–L | €0 build | Multi-city trip planning, unlimited saves, offline, advanced filters. Recurring, high-margin. |
@@ -42,7 +43,7 @@ The app runs on **HERE APIs** (`src/utils/api.ts`). The image and category compl
 |---|---|---|---|---|---|
 | Supabase auth redirect URL config | ⬜ | P1 | S | €0 | Add the Vercel domain to allowed redirect URLs. Quick infra fix (dashboard step). |
 | Invite-only lock for F&F testing | 🔧 2026-06-04 | P1 | S | €0 | Code shipped: AuthScreen is sign-in only with an invite note. **Dashboard step still needed**: Supabase → Authentication → Sign In / Up → disable "Allow new users to sign up". New testers are created manually (Authentication → Users → Add user, with auto-confirm). |
-| "Use my current location" toggle | ⬜ | P2 | S–M | €0 | Home vs GPS start — great for holidays / nearby discovery. |
+| "Use my current location" toggle | ⬜ | P3 | S–M | €0 | Deferred 2026-06-04 — baseline stays home-based. When built: one-shot GPS on tap only, never stored, no tracking; or type-a-city fallback (no permissions). See `docs/MONETIZATION.md` privacy notes. |
 | Sharing items with "recommended by…" | ⬜ | P2 | M | €0 | Social loop; helps user growth, which the model depends on. |
 | Future / someday list | ⬜ | P3 | S–M | €0 | Non-location-specific saves, separate from the actionable list. |
 | Curated lists on Dashboard | ✅ 2026-06-04 | P3 | M | €0 | Shipped: smart context rails (Perfect for today, Quick wins, Free to do) + top-3 category collections, auto-generated, min 3 items per rail. Future placement surface for discover/sponsored content. |
