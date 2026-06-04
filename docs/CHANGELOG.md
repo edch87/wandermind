@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-06-04 (later session)
+- Curated lists on the Dashboard: new `CuratedLists` component with smart context rails ("Perfect for today" weather-matched, "Quick wins" under 2h, "Free to do") plus the user's three biggest categories; rails appear only with 3+ items, capped at 10, sorted by priority then recency
+- Extracted shared `ItemRail` card-rail component; "Recently added" now uses it (removes duplicated card markup in Dashboard)
+- Category rails link "See all" to My List pre-filtered: new `initialCategory` prop threaded through App → BucketList
+- New `docs/MONETIZATION.md`: revenue streams and the three-layer discover feed design (community layer from Supabase data, tile-cached HERE browse for cold start, sponsored listings table) with cost guardrails — no Google calls in the feed, free image waterfall only
+
 ## 2026-06-04
 - Added "Refresh place photos" tool in Settings: one-time backfill that matches existing items (saved pre-Google) to their Google `place_id` via one Text Search each, geo-verified within 1 km; already-matched items are skipped
 - Google Places hybrid integration: place search now uses Google Text Search (New) when `VITE_GOOGLE_MAPS_API_KEY` is set (HERE fallback kept); HERE remains for map tiles + routing

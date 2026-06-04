@@ -30,7 +30,7 @@ The app runs on **HERE APIs** (`src/utils/api.ts`). The image and category compl
 
 | Item | Status | Priority | Effort | Cost | Notes |
 |---|---|---|---|---|---|
-| Discover feed with sponsored local listings | ⬜ | P1 | L | €0 build | Core revenue idea — businesses pay a flat monthly fee for context-matched placement (area, weather, group, time). Main driver in the model. |
+| Discover feed with sponsored local listings | ⬜ | P1 | L | €0 build | Core revenue idea — businesses pay a flat monthly fee for context-matched placement (area, weather, group, time). Main driver in the model. **Design done 2026-06-04** — see `docs/MONETIZATION.md` (3 layers: community data, tile-cached HERE browse, sponsored table). |
 | Affiliate booking links (GetYourGuide / Viator) | ⬜ | P2 | M | €0 (revenue +) | ~8% commission, 30-day cookie. Passive, low-friction, complements listings. Add to bookable items. |
 | Stripe / payment integration | ⬜ | P2 | M | ~2–3% fees | Dependency for subscription and paid listings. |
 | Lark Premium subscription | ⬜ | P3 | M–L | €0 build | Multi-city trip planning, unlimited saves, offline, advanced filters. Recurring, high-margin. |
@@ -45,7 +45,7 @@ The app runs on **HERE APIs** (`src/utils/api.ts`). The image and category compl
 | "Use my current location" toggle | ⬜ | P2 | S–M | €0 | Home vs GPS start — great for holidays / nearby discovery. |
 | Sharing items with "recommended by…" | ⬜ | P2 | M | €0 | Social loop; helps user growth, which the model depends on. |
 | Future / someday list | ⬜ | P3 | S–M | €0 | Non-location-specific saves, separate from the actionable list. |
-| Curated lists on Dashboard | ⬜ | P3 | M | €0 | Themed collections (peaks, bars, museums). |
+| Curated lists on Dashboard | ✅ 2026-06-04 | P3 | M | €0 | Shipped: smart context rails (Perfect for today, Quick wins, Free to do) + top-3 category collections, auto-generated, min 3 items per rail. Future placement surface for discover/sponsored content. |
 | Bulk import from Google Takeout | ⬜ | P3 | M | €0 | Upload saved-list CSV, geocode + confirm each row. |
 
 ## Housekeeping

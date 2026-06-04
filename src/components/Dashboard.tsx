@@ -9,11 +9,13 @@ import {
 } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
 import PlaceholderImage from './PlaceholderImage';
+import CuratedLists, { ItemRail } from './CuratedLists';
+import type { Category } from '../types';
 
 interface Props {
   profile: UserProfile;
   items: BucketListItem[];
-  onNavigate: (s: { name: string; itemId?: string; initialTab?: 'want_to_do' | 'done' }) => void;
+  onNavigate: (s: { name: string; itemId?: string; initialTab?: 'want_to_do' | 'done'; initialCategory?: Category }) => void;
   onSaveProfile: (p: UserProfile) => void;
 }
 
@@ -201,35 +203,10 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       </div>
 
       {/* Recently added */}
-      {recentItems.length > 0 && (
-        <div className="mb-6">
-          <h3 className="px-6 text-sm font-semibold text-sand-900 mb-3">Recently added</h3>
-          <div className="flex gap-3 overflow-x-auto px-6 pb-2 scrollbar-hide">
-            {recentItems.map(item => (
-                <button key={item.id} onClick={() => onNavigate({ name: 'detail', itemId: item.id })}
-                  className="flex-shrink-0 w-40 card text-left">
-                  <div className="place-img-container h-24 overflow-hidden">
-                    {item.photoUrl ? (
-                      <img src={item.photoUrl} alt={item.name} className="place-img"
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          img.style.display = 'none';
-                          const placeholder = img.nextElementSibling as HTMLElement | null;
-                          if (placeholder) placeholder.style.display = 'flex';
-                        }} />
-                    ) : null}
-                    <PlaceholderImage category={item.category}
-                      className={item.photoUrl ? 'hidden' : ''} />
-                  </div>
-                  <div className="p-3">
-                    <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>
-                    <div className="text-[10px] text-sand-700 mt-1">{item.travelDistanceKm} km · {item.costLevel === 'free' ? 'Free' : item.costLevel}</div>
-                  </div>
-                </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <ItemRail title="Recently added" items={recentItems} onNavigate={onNavigate} />
+
+      {/* Curated lists — smart context rails + biggest categories */}
+      <CuratedLists items={items} todayWeather={todayWeather} onNavigate={onNavigate} />
 
       {/* Empty state */}
       {items.length === 0 && (

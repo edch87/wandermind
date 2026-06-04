@@ -7,6 +7,7 @@ import PlaceholderImage from './PlaceholderImage';
 interface Props {
   items: BucketListItem[];
   initialTab?: 'want_to_do' | 'done';
+  initialCategory?: Category;
   onSelectItem: (id: string) => void;
   onNavigate: (s: { name: string }) => void;
 }
@@ -14,10 +15,10 @@ interface Props {
 type Tab = 'want_to_do' | 'done';
 type SortBy = 'recent' | 'priority' | 'travel' | 'name';
 
-export default function BucketList({ items, initialTab, onSelectItem, onNavigate }: Props) {
+export default function BucketList({ items, initialTab, initialCategory, onSelectItem, onNavigate }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'want_to_do');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
-  const [filterCategory, setFilterCategory] = useState<Category | 'all'>('all');
+  const [filterCategory, setFilterCategory] = useState<Category | 'all'>(initialCategory ?? 'all');
   const [filterCost, setFilterCost] = useState<CostLevel | 'all'>('all');
   const [filterDuration, setFilterDuration] = useState<DurationEstimate | 'all'>('all');
   const [filterSetting, setFilterSetting] = useState<Setting | 'all'>('all');

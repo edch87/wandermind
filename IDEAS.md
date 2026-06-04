@@ -19,7 +19,7 @@
 - **"Use my current location" option** — let users switch from home-based to GPS-based recommendations. Great for when you're on holiday and want to find bucket list items nearby. Could be a toggle in the recommend flow: "Starting from: Home / Current location"
 - **Sharing items between users** with "recommended by..." attribution (already planned)
 - **Future/someday list** — a way to save ideas that aren't location-specific yet or that are far away, separate from the main actionable bucket list
-- **Curated lists on Dashboard** — alongside "Recently added", show curated/themed lists like peaks, city visits, bars, restaurants etc. Could auto-generate from the user's categories or be hand-curated collections
+- ~~**Curated lists on Dashboard**~~ ✅ Done — auto-generated rails: "Perfect for today" (weather-matched), "Quick wins", "Free to do", plus the user's three biggest categories with "See all" linking to the pre-filtered list. Hand-curated collections remain a future option.
 
 ## Integrations
 

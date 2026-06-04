@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
-import type { UserProfile, BucketListItem } from './types';
+import type { UserProfile, BucketListItem, Category } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { House, ClipboardText, Plus, Gear } from '@phosphor-icons/react';
 import KiteIcon from './components/KiteIcon';
@@ -17,7 +17,7 @@ import Settings from './components/Settings';
 type Screen =
   | { name: 'dashboard' }
   | { name: 'add' }
-  | { name: 'list'; initialTab?: 'want_to_do' | 'done' }
+  | { name: 'list'; initialTab?: 'want_to_do' | 'done'; initialCategory?: Category }
   | { name: 'detail'; itemId: string }
   | { name: 'recommend' }
   | { name: 'settings' };
@@ -187,6 +187,7 @@ export default function App() {
         <BucketList
           items={items}
           initialTab={screen.initialTab}
+          initialCategory={screen.initialCategory}
           onSelectItem={(id) => setScreen({ name: 'detail', itemId: id })}
           onNavigate={(s) => navigate(s as Screen)}
         />
