@@ -109,6 +109,33 @@ function categoryFromHereNames(hereCatNames: string): Category | null {
   return null;
 }
 
+// ── Layer 2b: Google place types (Places API New) ──
+// Google results carry their `types` array in tags['google_types'].
+// Keyword matching over the joined types string — robust against the long tail
+// of specific types (e.g. "fine_dining_restaurant", "art_gallery").
+// Generic types like "tourist_attraction" / "point_of_interest" deliberately
+// fall through to the name heuristics.
+function categoryFromGoogleTypes(googleTypes: string[]): Category | null {
+  if (googleTypes.length === 0) return null;
+  const t = googleTypes.join(',');
+  const has = (re: RegExp) => re.test(t);
+
+  if (has(/museum|art_gallery|planetarium/)) return 'museum_gallery';
+  if (has(/historical|monument|castle|palace|church|place_of_worship|synagogue|mosque|temple|cultural_landmark/)) return 'historical';
+  if (has(/zoo|aquarium|wildlife/)) return 'zoo_aquarium';
+  if (has(/amusement|movie_theater|performing_arts|concert|opera|bowling|casino|comedy|karaoke|night_club|arcade|theater/)) return 'entertainment';
+  if (has(/water_park|swimming|beach/)) return 'beach_water';
+  if (has(/hiking/)) return 'hiking_trails';
+  if (has(/ski|sports_|fitness|golf|stadium|climbing|skating|adventure/)) return 'active_adventure';
+  if (has(/\bspa\b|sauna|wellness|public_bath|massage|hot_spring/)) return 'wellness';
+  if (has(/national_park|natural_feature|observation_deck/)) return 'nature_landscape';
+  if (has(/botanical|garden|dog_park|playground|picnic/)) return 'park_garden';
+  if (/(^|,)park(,|$)/.test(t) || has(/state_park|city_park/)) return 'park_garden';
+  if (has(/restaurant|cafe|coffee|bar(_|,|$)|pub(_|,|$)|bakery|food|brew|wine|deli|ice_cream|market/)) return 'food_drink';
+  if (has(/locality|neighborhood|town_square|plaza/)) return 'neighbourhood_walks';
+  return null;
+}
+
 // ── Layer 3: Place name keyword heuristics (catches generic HERE "attraction" entries) ──
 function categoryFromName(name: string): Category | null {
   if (!name) return null;
@@ -171,6 +198,10 @@ export function classifyCategory(tags: Record<string, string>): CategoryMatch {
 
   const l2 = categoryFromHereNames(tags['here_category_names'] || '');
   if (l2) return { category: l2, matched: true };
+
+  const googleTypes = (tags['google_types'] || '').split(',').filter(Boolean);
+  const l2b = categoryFromGoogleTypes(googleTypes);
+  if (l2b) return { category: l2b, matched: true };
 
   const l3 = categoryFromName((tags['name'] || '').toLowerCase());
   if (l3) return { category: l3, matched: true };

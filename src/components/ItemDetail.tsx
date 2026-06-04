@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchGooglePlacePhoto } from '../utils/api';
 import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay, GroupType, Priority } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { formatOpeningHours } from '../utils/openingHours';
@@ -42,6 +43,21 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BucketListItem>({ ...item });
+  // Google photos can't be stored (ToS — URLs expire), so fetch a fresh one at
+  // display time. Falls back to the stored photoUrl until/unless it arrives.
+  const [livePhotoUrl, setLivePhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (item.googlePlaceId) {
+      fetchGooglePlacePhoto(item.googlePlaceId).then(url => {
+        if (active && url) setLivePhotoUrl(url);
+      });
+    }
+    return () => { active = false; };
+  }, [item.googlePlaceId]);
+
+  const photoUrl = livePhotoUrl || item.photoUrl;
 
   const cat = CATEGORY_INFO[item.category];
 
@@ -107,9 +123,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
       <div className="page-enter pb-24">
         {/* Hero */}
         <div className="relative">
-          {draft.photoUrl ? (
+          {(livePhotoUrl || draft.photoUrl) ? (
             <div className="place-img-container h-48 rounded-none">
-              <img src={draft.photoUrl} alt={draft.name} className="place-img"
+              <img src={livePhotoUrl || draft.photoUrl} alt={draft.name} className="place-img"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ) : (
@@ -278,9 +294,9 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
     <div className="page-enter pb-24">
       {/* Hero */}
       <div className="relative">
-        {item.photoUrl ? (
+        {photoUrl ? (
           <div className="place-img-container h-56 rounded-none">
-            <img src={item.photoUrl} alt={item.name} className="place-img"
+            <img src={photoUrl} alt={item.name} className="place-img"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
         ) : (

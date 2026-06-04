@@ -9,6 +9,25 @@ const HERE_ROUTE = 'https://router.hereapi.com/v8/routes';
 const HERE_TRANSIT = 'https://transit.router.hereapi.com/v8/routes';
 const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 
+// ── Google Places (New) — hybrid setup ──
+// Google handles place search, opening hours and photos (better coverage and
+// venue-bound images). HERE stays for map tiles + routing.
+// COST GUARD: each field mask below is pinned to one SKU tier on purpose.
+// Adding a field can silently bump the call into a pricier SKU — check
+// https://developers.google.com/maps/billing-and-pricing/pricing before changing.
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_PLACES = 'https://places.googleapis.com/v1';
+
+// Pro-tier fields only (5,000 free calls/month)
+const GOOGLE_SEARCH_FIELDS = [
+  'places.id',
+  'places.displayName',
+  'places.formattedAddress',
+  'places.location',
+  'places.types',
+  'places.addressComponents',
+].join(',');
+
 // HERE raster map tiles (for Leaflet) — exported for components
 export const HERE_TILE_URL = `https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/png8?style=explore.day&apiKey=${HERE_API_KEY}`;
 export const HERE_TILE_ATTRIBUTION = '&copy; HERE Technologies';
@@ -39,13 +58,86 @@ function mapHereItem(item: Record<string, unknown>): HereSearchResult | null {
   };
 }
 
+// ── Google Places mapping helpers ──
+
+interface GoogleAddressComponent {
+  longText?: string;
+  shortText?: string;
+  types?: string[];
+}
+
+function googleAddressPart(components: GoogleAddressComponent[], type: string, short = false): string | undefined {
+  const c = components.find(comp => (comp.types || []).includes(type));
+  return short ? c?.shortText : c?.longText;
+}
+
+function mapGooglePlace(place: Record<string, unknown>): HereSearchResult | null {
+  const loc = place.location as { latitude: number; longitude: number } | undefined;
+  const id = place.id as string | undefined;
+  if (!loc || !id) return null;
+
+  const comps = (place.addressComponents || []) as GoogleAddressComponent[];
+  const types = (place.types || []) as string[];
+  const displayName = (place.displayName as { text?: string } | undefined)?.text || '';
+
+  return {
+    id: '', // no HERE id — googlePlaceId identifies this result
+    googlePlaceId: id,
+    title: displayName,
+    address: {
+      label: (place.formattedAddress as string) || displayName,
+      city: googleAddressPart(comps, 'locality') || googleAddressPart(comps, 'postal_town') || googleAddressPart(comps, 'sublocality'),
+      state: googleAddressPart(comps, 'administrative_area_level_1'),
+      country: googleAddressPart(comps, 'country'),
+      countryCode: googleAddressPart(comps, 'country', true),
+    },
+    position: { lat: loc.latitude, lng: loc.longitude },
+    // Google place types ride along in `categories` so inference can read them
+    categories: types.map(t => ({ id: t, name: t.replace(/_/g, ' ') })),
+  };
+}
+
 /**
- * Search for places using HERE APIs.
- * When lat/lng are provided, uses the Discover API (best for POI search near a location).
- * Without lat/lng, uses the Geocode API (works globally for cities/addresses).
+ * Search for places. Uses Google Places Text Search (New) when a Google key is
+ * configured (better coverage); falls back to HERE otherwise.
  */
 export async function searchPlaces(query: string, lat?: number, lng?: number): Promise<HereSearchResult[]> {
   if (!query.trim() || query.length < 3) return [];
+  if (GOOGLE_API_KEY) return searchPlacesGoogle(query, lat, lng);
+  return searchPlacesHere(query, lat, lng);
+}
+
+async function searchPlacesGoogle(query: string, lat?: number, lng?: number): Promise<HereSearchResult[]> {
+  try {
+    const body: Record<string, unknown> = { textQuery: query, pageSize: 6 };
+    if (lat !== undefined && lng !== undefined) {
+      // Bias (not restrict) results towards the user's home area
+      body.locationBias = { circle: { center: { latitude: lat, longitude: lng }, radius: 50000 } };
+    }
+    const res = await fetch(`${GOOGLE_PLACES}/places:searchText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': GOOGLE_SEARCH_FIELDS,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const places = (data.places || []) as Record<string, unknown>[];
+    const results: HereSearchResult[] = [];
+    for (const place of places) {
+      const mapped = mapGooglePlace(place);
+      if (mapped) results.push(mapped);
+    }
+    return results;
+  } catch {
+    return [];
+  }
+}
+
+async function searchPlacesHere(query: string, lat?: number, lng?: number): Promise<HereSearchResult[]> {
   try {
     let url: string;
     if (lat !== undefined && lng !== undefined) {
@@ -182,6 +274,93 @@ export async function fetchPlaceDetails(hereId: string): Promise<{
       tags,
     };
   } catch {
+    return null;
+  }
+}
+
+// ── Google place details: opening hours + photos ──
+
+type GooglePeriod = {
+  open?: { day: number; hour: number; minute: number };
+  close?: { day: number; hour: number; minute: number };
+};
+
+const OSM_DAY_CODES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+/** Convert Google opening periods into the OSM-style string the app's parser understands. */
+function googlePeriodsToOsm(periods: GooglePeriod[] | undefined): string | undefined {
+  if (!periods || periods.length === 0) return undefined;
+  const pad = (n: number) => String(n ?? 0).padStart(2, '0');
+  const byDay: Record<number, string[]> = {};
+  for (const p of periods) {
+    if (!p.open) continue;
+    // A single open period with no close = open 24/7
+    if (!p.close && periods.length === 1) return '24/7';
+    const start = `${pad(p.open.hour)}:${pad(p.open.minute)}`;
+    const end = p.close ? `${pad(p.close.hour)}:${pad(p.close.minute)}` : '24:00';
+    (byDay[p.open.day] ||= []).push(`${start}-${end}`);
+  }
+  const parts: string[] = [];
+  for (let i = 1; i <= 7; i++) {
+    const day = i % 7; // Mo..Su order; Google uses 0 = Sunday
+    if (byDay[day]) parts.push(`${OSM_DAY_CODES[day]} ${byDay[day].join(',')}`);
+  }
+  return parts.length > 0 ? parts.join('; ') : undefined;
+}
+
+/**
+ * Fetch opening hours for a Google place. `regularOpeningHours` is an
+ * ENTERPRISE-tier field (only 1,000 free calls/month) — call this once per
+ * added place, never in a loop or at display time.
+ */
+export async function fetchGooglePlaceOpeningHours(placeId: string): Promise<string | undefined> {
+  if (!GOOGLE_API_KEY || !placeId) return undefined;
+  try {
+    const res = await fetch(`${GOOGLE_PLACES}/places/${encodeURIComponent(placeId)}`, {
+      headers: { 'X-Goog-Api-Key': GOOGLE_API_KEY, 'X-Goog-FieldMask': 'regularOpeningHours' },
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return googlePeriodsToOsm(data.regularOpeningHours?.periods as GooglePeriod[] | undefined);
+  } catch {
+    return undefined;
+  }
+}
+
+// Per Google ToS we persist ONLY the place_id. Photo references and photo URLs
+// expire and must not be stored — fetch fresh at display time. The in-memory
+// session cache below keeps repeat views within a session free.
+const googlePhotoCache = new Map<string, string | null>();
+
+/**
+ * Fetch a fresh photo URL for a Google place (2 API calls on first view per
+ * session: Place Details `photos` field + one photo media call — the media
+ * call is the scarce one at 1,000 free/month, so this is only used on the
+ * item detail view, not on list cards).
+ */
+export async function fetchGooglePlacePhoto(placeId: string): Promise<string | null> {
+  if (!GOOGLE_API_KEY || !placeId) return null;
+  const cached = googlePhotoCache.get(placeId);
+  if (cached !== undefined) return cached;
+  try {
+    const res = await fetch(`${GOOGLE_PLACES}/places/${encodeURIComponent(placeId)}`, {
+      headers: { 'X-Goog-Api-Key': GOOGLE_API_KEY, 'X-Goog-FieldMask': 'photos' },
+    });
+    if (!res.ok) { googlePhotoCache.set(placeId, null); return null; }
+    const data = await res.json();
+    const photoName = (data.photos as { name?: string }[] | undefined)?.[0]?.name;
+    if (!photoName) { googlePhotoCache.set(placeId, null); return null; }
+
+    const mediaRes = await fetch(
+      `${GOOGLE_PLACES}/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${GOOGLE_API_KEY}`,
+    );
+    if (!mediaRes.ok) { googlePhotoCache.set(placeId, null); return null; }
+    const media = await mediaRes.json();
+    const uri = (media.photoUri as string) || null;
+    googlePhotoCache.set(placeId, uri);
+    return uri;
+  } catch {
+    googlePhotoCache.set(placeId, null);
     return null;
   }
 }

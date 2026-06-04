@@ -42,6 +42,7 @@ export interface BucketListItem {
   latitude: number;
   longitude: number;
   osmId?: string;   // HERE place ID (legacy field name; DB column osm_id retained)
+  googlePlaceId?: string;   // Google place_id — the ONLY Google data we persist (ToS); photos fetched fresh at display time
   osmTags?: Record<string, string>;   // HERE-derived tags (legacy field name; DB column osm_tags retained)
   photoUrl?: string;
   address: string;
@@ -117,6 +118,8 @@ export interface ScoredItem {
 
 export interface HereSearchResult {
   id: string;
+  /** Set when the result came from Google Places — `categories` then holds Google place types. */
+  googlePlaceId?: string;
   title: string;
   address: {
     label: string;

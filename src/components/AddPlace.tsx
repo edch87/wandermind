@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { searchPlaces, fetchPlaceDetails, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -59,7 +59,12 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
     setLoadingMsg('Fetching place details...');
     let tags: Record<string, string> = {};
     let openingHours: string | undefined;
-    if (result.id) {
+    if (result.googlePlaceId) {
+      // Google result — its place types arrived with the search; one details call for opening hours
+      const googleTypes = (result.categories || []).map(c => c.id).join(',');
+      if (googleTypes) tags['google_types'] = googleTypes;
+      openingHours = await fetchGooglePlaceOpeningHours(result.googlePlaceId);
+    } else if (result.id) {
       const details = await fetchPlaceDetails(result.id);
       if (details) {
         tags = details.tags;
@@ -87,7 +92,8 @@ export default function AddPlace({ profile, onSave, onBack }: Props) {
       name: result.title,
       latitude: lat,
       longitude: lng,
-      osmId: result.id, // Store HERE place ID for future lookups
+      osmId: result.id || undefined, // HERE place ID (legacy field name)
+      googlePlaceId: result.googlePlaceId, // the only Google data we persist — photos are fetched fresh at display time (ToS)
       osmTags: tags,
       photoUrl,
       address: result.address.label,
