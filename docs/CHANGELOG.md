@@ -5,6 +5,7 @@
 ---
 
 ## 2026-06-04
+- Added "Refresh place photos" tool in Settings: one-time backfill that matches existing items (saved pre-Google) to their Google `place_id` via one Text Search each, geo-verified within 1 km; already-matched items are skipped
 - Google Places hybrid integration: place search now uses Google Text Search (New) when `VITE_GOOGLE_MAPS_API_KEY` is set (HERE fallback kept); HERE remains for map tiles + routing
 - New inference Layer 2b maps Google place `types` → Lark categories
 - Opening hours for Google places via one Place Details call at add time, converted to the existing OSM-style format

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION, GOOGLE_PLACES_ENABLED, findGooglePlaceId } from '../utils/api';
+import { getItems, saveItem } from '../utils/storage';
 import { supabase } from '../utils/supabase';
 import type { UserProfile, HereSearchResult } from '../types';
 
@@ -62,6 +63,42 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
     onBack();
   };
 
+  // One-time backfill: match places saved before the Google integration to
+  // their Google place_id so their detail pages get proper venue photos.
+  // One Text Search per unmatched place; already-matched places are skipped,
+  // so re-running is cheap and safe.
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshStatus, setRefreshStatus] = useState('');
+
+  const handleRefreshPlaces = async () => {
+    setRefreshing(true);
+    setRefreshStatus('Loading your places...');
+    try {
+      const items = await getItems();
+      const todo = items.filter(i => !i.googlePlaceId);
+      if (todo.length === 0) {
+        setRefreshStatus('All your places already have Google photos.');
+        setRefreshing(false);
+        return;
+      }
+      let matched = 0;
+      for (let i = 0; i < todo.length; i++) {
+        const item = todo[i];
+        setRefreshStatus(`Matching ${i + 1} of ${todo.length}: ${item.name}`);
+        const placeId = await findGooglePlaceId(item.name, item.latitude, item.longitude);
+        if (placeId) {
+          await saveItem({ ...item, googlePlaceId: placeId });
+          matched++;
+        }
+      }
+      setRefreshStatus(`Matched ${matched} of ${todo.length} places. Reloading...`);
+      setTimeout(() => window.location.reload(), 2000);
+    } catch {
+      setRefreshStatus('Something went wrong. Please try again.');
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="page-enter px-6 py-6 pb-24">
       <div className="flex items-center gap-3 mb-6">
@@ -106,6 +143,18 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
 
         <button onClick={handleSave}
           className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold hover:bg-sand-800 transition">Save changes</button>
+
+        {GOOGLE_PLACES_ENABLED && (
+          <div className="pt-4 border-t border-sand-200">
+            <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1 block">Place photos</label>
+            <p className="text-xs text-sand-700 mb-2">Match your saved places to Google for better photos on their detail pages. You only need to run this once.</p>
+            <button onClick={handleRefreshPlaces} disabled={refreshing}
+              className="w-full py-3 rounded-full text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition disabled:opacity-50">
+              {refreshing ? 'Matching places...' : 'Refresh place photos'}
+            </button>
+            {refreshStatus && <p className="text-[10px] text-sand-600 mt-2 text-center">{refreshStatus}</p>}
+          </div>
+        )}
 
         <div className="pt-4 border-t border-sand-200 space-y-3">
           <button onClick={async () => { await supabase.auth.signOut(); onSignOut(); }}

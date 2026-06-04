@@ -365,6 +365,43 @@ export async function fetchGooglePlacePhoto(placeId: string): Promise<string | n
   }
 }
 
+/** True when the Google Places integration is configured (key present). */
+export const GOOGLE_PLACES_ENABLED = !!GOOGLE_API_KEY;
+
+/**
+ * Find the Google place_id for an already-saved place by name + coordinates.
+ * Used by the one-time "Refresh place photos" tool in Settings to backfill
+ * items saved before the Google integration. One Text Search (Pro tier) per
+ * call. The top result is only accepted when it sits within 1 km of the
+ * stored coordinates, so a same-name venue in another city can't slip through.
+ */
+export async function findGooglePlaceId(name: string, lat: number, lng: number): Promise<string | null> {
+  if (!GOOGLE_API_KEY || !name.trim()) return null;
+  try {
+    const res = await fetch(`${GOOGLE_PLACES}/places:searchText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.location',
+      },
+      body: JSON.stringify({
+        textQuery: name,
+        pageSize: 1,
+        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000 } },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const place = (data.places || [])[0] as { id?: string; location?: { latitude: number; longitude: number } } | undefined;
+    if (!place?.id || !place.location) return null;
+    const distKm = haversineDistanceKm(lat, lng, place.location.latitude, place.location.longitude);
+    return distKm <= 1 ? place.id : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Travel time via HERE Routing ──
 
 // Average speeds (km/h) for fallback estimates
