@@ -65,17 +65,17 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'host not allowed' }, 400);
   }
 
-  // Follow redirects (Deno's fetch chases up to 20 by default). Use a common
-  // browser UA so Google returns the full canonical maps URL rather than a
-  // mobile shim.
+  // Follow redirects (Deno's fetch chases up to 20 by default).
+  // IMPORTANT: do NOT send a desktop-browser User-Agent here. For Chrome-class
+  // UAs, maps.app.goo.gl serves a 200 HTML interstitial that does the redirect
+  // in JavaScript — fetch can't see the destination. Bot/link-preview style
+  // UAs get a real HTTP 30x to the long www.google.com/maps URL, which is what
+  // we need to parse coordinates and the place name.
   try {
     const res = await fetch(parsed.toString(), {
       redirect: 'follow',
       headers: {
-        'user-agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-          '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        'accept-language': 'en-US,en;q=0.9',
+        'user-agent': 'Mozilla/5.0 (compatible; LarkLinkResolver/1.0; +https://wandermind-wine.vercel.app)',
       },
     });
     // We don't need the body — discard it to free the connection.
