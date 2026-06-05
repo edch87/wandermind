@@ -17,7 +17,7 @@ React 19 + TypeScript + Tailwind 4 + Vite 8, Supabase (auth + Postgres + RLS), d
 - **No server-side** — everything runs in the browser + Supabase
 - **APIs (hybrid)**: place search, opening hours and detail-view photos use **Google Places API (New)** (needs `VITE_GOOGLE_MAPS_API_KEY`; falls back to HERE search if unset). Map tiles, routing and reverse geocoding stay on **HERE** (`VITE_HERE_API_KEY`); weather (Open-Meteo) and stored images (Wikidata/Wikipedia) are free/open.
 - **Google cost guards**: field masks in `api.ts` are pinned to SKU tiers — do not add fields casually. Photos are fetched only on the item detail view (media calls have just 1,000 free/month). Per Google ToS, only `place_id` is persisted; photo URLs are fetched fresh at display time. The API key must stay referrer-restricted with daily quota caps in the Google Cloud console.
-- **Access**: app is invite-only during friends-and-family testing — public signups disabled in Supabase, accounts created manually in the dashboard.
+- **Access**: public sign-up is open for the round-2 friends-and-family test. The AuthScreen shows both sign-in and sign-up; Supabase still requires email confirmation before first login.
 - HERE routing maps modes to pedestrian/bicycle/car profiles (transit uses the separate Transit API); haversine ×1.3 with average speeds is the fallback
 
 ## Project structure
