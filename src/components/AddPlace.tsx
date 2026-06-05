@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -129,14 +129,34 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
   };
 
   const importFromUrl = async (raw: string) => {
-    const parsed = parseGoogleMapsUrl(raw);
+    setUrlError('');
+    let working = raw.trim();
+
+    // Mobile share links (maps.app.goo.gl / goo.gl) have to be expanded first.
+    // The browser can't follow the redirect (CORS), so we round-trip through
+    // the resolve-maps-link Supabase Edge Function.
+    if (isGoogleMapsShortUrl(working)) {
+      setStep('loading');
+      setLoadingMsg('Expanding share link...');
+      const expanded = await resolveGoogleMapsShortUrl(working);
+      if (!expanded) {
+        setStep('search');
+        setUrlError(
+          "Couldn't expand that share link. Check your connection and try again, or paste a Google Maps link from a browser instead.",
+        );
+        return;
+      }
+      working = expanded;
+    }
+
+    const parsed = parseGoogleMapsUrl(working);
     if (!parsed) {
+      setStep('search');
       setUrlError(
-        "Couldn't find a location in that link. Paste a full Google Maps link from your browser's address bar (shortened maps.app.goo.gl links don't include coordinates).",
+        "Couldn't find a location in that link. Make sure it's a Google Maps share link or a maps.google.com URL.",
       );
       return;
     }
-    setUrlError('');
     setStep('loading');
     setLoadingMsg('Looking up location...');
 

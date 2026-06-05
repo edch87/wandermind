@@ -18,6 +18,10 @@ const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 const GOOGLE_PLACES = 'https://places.googleapis.com/v1';
 
+// Supabase env — used by the share-link resolver (resolve-maps-link Edge Function)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
 // Pro-tier fields only (5,000 free calls/month)
 const GOOGLE_SEARCH_FIELDS = [
   'places.id',
@@ -185,10 +189,46 @@ export interface ParsedMapUrl {
 }
 
 /**
- * Extract coordinates (and a place name when present) from a Google Maps URL.
- * Handles the common full-length formats. Does NOT resolve shortened
- * maps.app.goo.gl / goo.gl links — those carry no coordinates and would need a
- * server-side redirect to expand (browser fetch is blocked by CORS).
+ * Returns true for Google Maps share-link short URLs (maps.app.goo.gl etc.).
+ * These have to be expanded to a long URL before parseGoogleMapsUrl can read
+ * them; see resolveGoogleMapsShortUrl below.
+ */
+export function isGoogleMapsShortUrl(input: string): boolean {
+  if (!input) return false;
+  const s = input.trim().toLowerCase();
+  return /^(https?:\/\/)?(maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/[a-z]+\/maps)\//.test(s);
+}
+
+/**
+ * Expand a maps.app.goo.gl / goo.gl short link to its full Google Maps URL
+ * by calling the resolve-maps-link Supabase Edge Function. The browser can't
+ * follow the redirect itself (CORS), so this is the necessary detour.
+ * Returns the expanded URL, or null if the function fails or env isn't set.
+ */
+export async function resolveGoogleMapsShortUrl(shortUrl: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/resolve-maps-link`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ url: shortUrl }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data?.expandedUrl === 'string' ? data.expandedUrl : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract coordinates (and a place name when present) from a full Google Maps
+ * URL. Short links (maps.app.goo.gl / goo.gl) must be expanded first via
+ * resolveGoogleMapsShortUrl — this parser only handles the long form.
  * Returns null when no coordinates can be found.
  */
 export function parseGoogleMapsUrl(input: string): ParsedMapUrl | null {
