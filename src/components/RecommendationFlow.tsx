@@ -6,6 +6,7 @@ import { getRecommendations, findCombos, viableModes } from '../utils/recommenda
 import { getOpeningHoursWarning } from '../utils/openingHours';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
 import { DiscoverCard } from './Discover';
+import { getSuppressedIds, recordShown } from '../utils/recentShown';
 import {
   Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning,
   User, Heart, Users, House,
@@ -152,6 +153,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [results, setResults] = useState<ScoredItem[]>([]);
   const [combos, setCombos] = useState<ReturnType<typeof findCombos>>([]);
+  /** Item IDs suppressed within this session by "Show me different". */
+  const [sessionSuppressed, setSessionSuppressed] = useState<string[]>([]);
   const [loadingMsg, setLoadingMsg] = useState('');
   // Final constraints snapshot used to render results (so viableModes() matches what was scored).
   // The travelTimeOverrides field inside this snapshot also serves as the per-item per-mode display source.
@@ -175,6 +178,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
 
   const handleGetRecommendations = async () => {
     setStep('loading');
+    // Fresh submit — clear in-session suppression (the localStorage one persists).
+    setSessionSuppressed([]);
 
     // Fetch weather
     setLoadingMsg('Checking the weather...');
@@ -224,12 +229,31 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
       needsAccessibility,
       strollerNeeded,
       travelTimeOverrides: overrides,
+      suppressedIds: getSuppressedIds(),
     };
     const scored = getRecommendations(items, finalConstraints, dayWeather);
     setResults(scored);
     setCombos(findCombos(scored, timeMax, finalConstraints));
     setResultConstraints(finalConstraints);
+    recordShown(scored.slice(0, 3).map(s => s.item.id));
     setStep('results');
+  };
+
+  /** Re-score with the current top results pushed into the session suppression list. */
+  const handleShowDifferent = () => {
+    if (!resultConstraints) return;
+    const currentTopIds = results.slice(0, 3).map(s => s.item.id);
+    const newSession = Array.from(new Set([...sessionSuppressed, ...currentTopIds]));
+    setSessionSuppressed(newSession);
+    const updatedConstraints = {
+      ...resultConstraints,
+      suppressedIds: Array.from(new Set([...getSuppressedIds(), ...newSession])),
+    };
+    const rescored = getRecommendations(items, updatedConstraints, weather);
+    setResults(rescored);
+    setCombos(findCombos(rescored, updatedConstraints.timeAvailableMinutes, updatedConstraints));
+    setResultConstraints(updatedConstraints);
+    recordShown(rescored.slice(0, 3).map(s => s.item.id));
   };
 
   // Past 22:00 today → suggest switching to tomorrow
@@ -511,6 +535,12 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
                 <strong>{combos[0].itemA.name}</strong> → {combos[0].walkingMinutes} min walk → <strong>{combos[0].itemB.name}</strong>
               </p>
             </div>
+          )}
+          {results.length > top3.length && (
+            <button onClick={handleShowDifferent}
+              className="w-full py-3 rounded-full bg-sand-100 text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-200 transition inline-flex items-center justify-center gap-2">
+              <Shuffle size={14} /> Show me different ideas
+            </button>
           )}
         </div>
       )}

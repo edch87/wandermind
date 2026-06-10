@@ -102,6 +102,8 @@ export interface RecommendationConstraints {
   strollerNeeded: boolean;
   /** Per-mode travel time overrides (itemId → mode → minutes one-way) from HERE routing. */
   travelTimeOverrides?: Record<string, Partial<Record<TransportMode, number>>>;
+  /** Item IDs to soft-penalise (recently shown or in-session "show different"). */
+  suppressedIds?: string[];
 }
 
 export interface WeatherForecast {

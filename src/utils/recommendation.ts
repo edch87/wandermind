@@ -333,6 +333,11 @@ export function getRecommendations(
     if (item.costLevel === 'free') { score += 5; reasons.push('Free!'); }
     else if (item.costLevel === 'cheap') score += 3;
 
+    // Recently-shown soft penalty — keeps top-of-list rotating across sessions.
+    if (constraints.suppressedIds?.includes(item.id)) {
+      score -= 10;
+    }
+
     // Opening hours warning
     const hoursWarning = getOpeningHoursWarning(item.openingHours, constraints.date);
     if (hoursWarning) {
@@ -351,6 +356,32 @@ export function getRecommendations(
   });
 
   scored.sort((a, b) => b.score - a.score);
+
+  // "Surprise me" — weighted random pick from the top 20 placed at the top of
+  // the list. Higher-scoring items are still more likely to be picked, but
+  // the user gets a different mix every time.
+  if (constraints.energy === 'surprise_me' && scored.length > 1) {
+    const poolSize = Math.min(20, scored.length);
+    const pool = scored.slice(0, poolSize);
+    const rest = scored.slice(poolSize);
+    const pickCount = Math.min(5, pool.length);
+    const picked: ScoredItem[] = [];
+    const remaining = [...pool];
+    while (picked.length < pickCount && remaining.length > 0) {
+      // Weight by score, with a floor of 1 so negative-scoring items can still appear.
+      const totalWeight = remaining.reduce((sum, s) => sum + Math.max(s.score, 1), 0);
+      let r = Math.random() * totalWeight;
+      let idx = 0;
+      for (let i = 0; i < remaining.length; i++) {
+        r -= Math.max(remaining[i].score, 1);
+        if (r <= 0) { idx = i; break; }
+      }
+      picked.push(remaining[idx]);
+      remaining.splice(idx, 1);
+    }
+    return [...picked, ...remaining, ...rest];
+  }
+
   return scored;
 }
 
