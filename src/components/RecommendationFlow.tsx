@@ -304,7 +304,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
         <Section label="What's your vibe?">
           <div className="toggle-group">
             {([
-              { val: 'flexible' as Vibe, icon: <ArrowsLeftRight size={14} />, label: "I'm flexible" },
+              { val: 'flexible' as Vibe, icon: <ArrowsLeftRight size={14} />, label: 'Open to anything' },
               { val: 'foodie' as Vibe, icon: <ForkKnife size={14} />, label: 'Foodie' },
               { val: 'curious' as Vibe, icon: <Lightbulb size={14} />, label: 'Curious' },
               { val: 'outdoorsy' as Vibe, icon: <Tree size={14} />, label: 'Outdoorsy' },
@@ -318,7 +318,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-sand-600 mt-1">Pick one or more, or stay flexible</p>
+          <p className="text-[10px] text-sand-600 mt-1">Pick one or more to filter, or stay open to anything</p>
         </Section>
 
         <Section label="Max budget?">

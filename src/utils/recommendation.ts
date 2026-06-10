@@ -174,9 +174,19 @@ export function getRecommendations(
 
   const remainingSlots = isToday ? getRemainingSlotsToday(now) : null;
 
+  // Build allowed categories from selected vibes (hard filter).
+  // 'flexible' = no restriction. If only flexible (or empty), all categories pass.
+  const activeVibes = constraints.vibes.filter(v => v !== 'flexible');
+  const allowedCategories: Set<Category> | null = activeVibes.length > 0
+    ? new Set(activeVibes.flatMap(v => VIBE_CATEGORIES[v as Exclude<Vibe, 'flexible'>]))
+    : null;
+
   // Step 1: Hard filters
   const candidates = items.filter(item => {
     if (item.status !== 'want_to_do') return false;
+
+    // Vibe filter — if user picked specific vibes, item category must match one of them
+    if (allowedCategories && !allowedCategories.has(item.category)) return false;
 
     // Travel + activity must fit within the (possibly capped) max
     const travel = effectiveTravel(item, constraints);
@@ -302,14 +312,10 @@ export function getRecommendations(
       reasons.push(`Best time of year to visit`);
     }
 
-    // Vibe match
-    const activeVibes = constraints.vibes.filter(v => v !== 'flexible');
-    if (activeVibes.length > 0) {
-      const vibeCategories = activeVibes.flatMap(v => VIBE_CATEGORIES[v as Exclude<Vibe, 'flexible'>]);
-      if (vibeCategories.includes(item.category)) {
-        score += 10;
-        reasons.push('Matches your vibe');
-      }
+    // Vibe is now a hard filter (see step 1) — no score adjustment needed here.
+    // Surface that the match was intentional in the reasons list.
+    if (allowedCategories) {
+      reasons.push('Matches your vibe');
     }
 
     // Energy fit (soft)
