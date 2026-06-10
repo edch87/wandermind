@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
-import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem } from '../types';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem, Category, HereSearchResult } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
 import { getRecommendations, findCombos, viableModes } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
+import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
+import { DiscoverCard } from './Discover';
 import {
   Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning,
   User, Heart, Users, House,
@@ -100,6 +102,11 @@ interface Props {
   items: BucketListItem[];
   onBack: () => void;
   onViewItem: (id: string) => void;
+  onNavigate: (s: {
+    name: string;
+    initialPlace?: HereSearchResult;
+    initialCategory?: Category;
+  }) => void;
 }
 
 type Step = 'input' | 'loading' | 'results';
@@ -122,8 +129,16 @@ function getWeekendOffsets(): { sat: number; sun: number } {
   return { sat: satOffset, sun: satOffset + 1 };
 }
 
-export default function RecommendationFlow({ profile, items, onBack, onViewItem }: Props) {
+export default function RecommendationFlow({ profile, items, onBack, onViewItem, onNavigate }: Props) {
   const [step, setStep] = useState<Step>('input');
+  const [discover, setDiscover] = useState<DiscoverPlace[]>([]);
+
+  // Lazy-load the discover rail for the empty state — session-cached, so cheap.
+  useEffect(() => {
+    let cancelled = false;
+    getDiscoverPlaces(profile, items).then(p => { if (!cancelled) setDiscover(p); });
+    return () => { cancelled = true; };
+  }, [profile, items]);
   const [dateOffset, setDateOffset] = useState(0);
   const [timeRange, setTimeRange] = useState<[number, number]>([0, 4]); // indices into TIME_SNAPS
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
@@ -395,13 +410,38 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem 
       )}
 
       {top3.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-300" /></div>
-          <p className="text-sm text-sand-600 mb-2">No matches for these filters.</p>
-          <p className="text-xs text-sand-600 mb-4">Try widening your time or budget, or add more places!</p>
-          <button onClick={() => setStep('input')}
-            className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Adjust filters</button>
-        </div>
+        <>
+          <div className="text-center py-12">
+            <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-300" /></div>
+            <p className="text-sm text-sand-600 mb-2">No matches for these filters.</p>
+            <p className="text-xs text-sand-600 mb-4">Try widening your time or budget, or add more places.</p>
+            <button onClick={() => setStep('input')}
+              className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Adjust filters</button>
+          </div>
+
+          {discover.length > 0 && (
+            <div className="-mx-6">
+              <div className="px-6 flex items-baseline justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-sand-900">Need more ideas?</h3>
+                  <p className="text-[11px] text-sand-600">Nearby places to add to your list</p>
+                </div>
+                <button onClick={() => onNavigate({ name: 'discover' })}
+                  className="text-xs text-sand-600 hover:text-sand-900 transition">
+                  See all
+                </button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto px-6 pb-2 scrollbar-hide">
+                {discover.slice(0, 10).map(p => (
+                  <div key={p.key} className="flex-shrink-0 w-40">
+                    <DiscoverCard place={p}
+                      onAdd={() => onNavigate({ name: 'add', initialPlace: toSearchResult(p), initialCategory: p.category })} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="space-y-4">
           {top3.map((scored, idx) => {

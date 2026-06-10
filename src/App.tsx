@@ -210,6 +210,7 @@ export default function App() {
           items={items}
           onBack={() => setScreen({ name: 'dashboard' })}
           onViewItem={(id) => setScreen({ name: 'detail', itemId: id })}
+          onNavigate={(s) => navigate(s as Screen)}
         />
       )}
       {screen.name === 'discover' && (
