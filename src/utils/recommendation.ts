@@ -385,7 +385,32 @@ export function getRecommendations(
   return scored;
 }
 
-// Combo detection: find pairs of top items within 2km of each other
+/** Categories that slot into any outing — short, low-commitment fillers. */
+const COMBO_FILLERS: Category[] = ['food_drink', 'park_garden', 'neighbourhood_walks'];
+/** Cultural anchors that pair sensibly with each other (museum + historical site, etc.). */
+const COMBO_CULTURAL: Category[] = ['museum_gallery', 'historical'];
+/** Outdoor anchors that pair sensibly with each other (nature + beach, hike + nature view, etc.). */
+const COMBO_OUTDOOR: Category[] = ['nature_landscape', 'hiking_trails', 'beach_water'];
+
+/**
+ * Whether two categories form a sensible "do both in one outing" combo.
+ * Rules:
+ *  1. Same category never combines (no dinner-then-dinner, no museum-then-museum).
+ *  2. A filler (food/park/walk) pairs with anything else.
+ *  3. Two cultural anchors pair (museum + historical).
+ *  4. Two outdoor anchors pair (hike + beach, nature + hike).
+ *  5. Everything else (e.g. spa + active adventure, museum + hike) is rejected.
+ */
+function combosAreCompatible(a: Category, b: Category): boolean {
+  if (a === b) return false;
+  if (COMBO_FILLERS.includes(a) || COMBO_FILLERS.includes(b)) return true;
+  if (COMBO_CULTURAL.includes(a) && COMBO_CULTURAL.includes(b)) return true;
+  if (COMBO_OUTDOOR.includes(a) && COMBO_OUTDOOR.includes(b)) return true;
+  return false;
+}
+
+// Combo detection: find pairs of top items within 2km of each other AND
+// in compatible categories (see combosAreCompatible).
 export function findCombos(
   scored: ScoredItem[],
   timeAvailable: number,
@@ -399,6 +424,10 @@ export function findCombos(
     for (let j = i + 1; j < top.length; j++) {
       const a = top[i].item;
       const b = top[j].item;
+
+      // Category compatibility — skip nonsense pairs (two restaurants, museum + hike, etc.)
+      if (!combosAreCompatible(a.category, b.category)) continue;
+
       const dist = haversineDistance(a.latitude, a.longitude, b.latitude, b.longitude);
 
       if (dist < 2) {
