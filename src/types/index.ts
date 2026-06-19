@@ -1,7 +1,7 @@
 export type Category =
   | 'museum_gallery' | 'historical' | 'nature_landscape' | 'park_garden'
   | 'hiking_trails' | 'beach_water' | 'active_adventure' | 'food_drink'
-  | 'entertainment' | 'wellness' | 'zoo_aquarium' | 'event_festival'
+  | 'nightlife' | 'entertainment' | 'wellness' | 'zoo_aquarium' | 'event_festival'
   | 'neighbourhood_walks';
 
 export type Setting = 'indoor' | 'outdoor' | 'mixed';
@@ -153,6 +153,7 @@ export const CATEGORY_INFO: Record<Category, { label: string; icon: string; colo
   beach_water: { label: 'Beach & Water', icon: 'Waves', color: '#0284c7' },
   active_adventure: { label: 'Active & Adventure', icon: 'Flame', color: '#dc2626' },
   food_drink: { label: 'Food & Drink', icon: 'UtensilsCrossed', color: '#ea580c' },
+  nightlife: { label: 'Nightlife', icon: 'Martini', color: '#9d174d' },
   entertainment: { label: 'Entertainment', icon: 'Ticket', color: '#c026d3' },
   wellness: { label: 'Wellness', icon: 'Heart', color: '#0d9488' },
   zoo_aquarium: { label: 'Zoo & Aquarium', icon: 'PawPrint', color: '#65a30d' },

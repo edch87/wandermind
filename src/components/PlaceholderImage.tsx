@@ -1,7 +1,7 @@
 import type { Category } from '../types';
 import {
   Buildings, CastleTurret, Mountains, Tree, Waves, Lightning,
-  ForkKnife, Ticket, Heart, PawPrint, Confetti, PersonSimpleWalk,
+  ForkKnife, Martini, Ticket, Heart, PawPrint, Confetti, PersonSimpleWalk,
 } from '@phosphor-icons/react';
 
 interface Props {
@@ -22,6 +22,7 @@ const CATEGORY_PLACEHOLDER: Record<Category, {
   beach_water:         { Icon: Waves,              bg: 'from-sky-100 to-sky-200',       iconColor: '#0284c7' },
   active_adventure:    { Icon: Lightning,          bg: 'from-red-100 to-red-200',       iconColor: '#dc2626' },
   food_drink:          { Icon: ForkKnife,          bg: 'from-orange-100 to-orange-200', iconColor: '#ea580c' },
+  nightlife:           { Icon: Martini,            bg: 'from-rose-100 to-rose-200',     iconColor: '#9d174d' },
   entertainment:       { Icon: Ticket,             bg: 'from-fuchsia-100 to-fuchsia-200', iconColor: '#c026d3' },
   wellness:            { Icon: Heart,              bg: 'from-teal-100 to-teal-200',     iconColor: '#0d9488' },
   zoo_aquarium:        { Icon: PawPrint,            bg: 'from-lime-100 to-lime-200',     iconColor: '#65a30d' },

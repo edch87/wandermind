@@ -1,0 +1,3291 @@
+[
+  {
+    "key": "curated-munich-alpines-museum",
+    "name": "Alpines Museum",
+    "latitude": 48.13525,
+    "longitude": 11.58903,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Praterinsel 5, 80538 München",
+    "description": "",
+    "url": "http://www.alpines-museum.de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Alpines_Museum_M%C3%BCnchen_neu_08.jpg",
+    "wikidataQid": "Q520455"
+  },
+  {
+    "key": "curated-munich-alte-pinakothek",
+    "name": "Alte Pinakothek",
+    "latitude": 48.14832,
+    "longitude": 11.56998,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Barer Straße 27",
+    "description": "Contains hundreds of great European masterworks dating from the fourteenth to the eighteenth centuries, including the largest Rubens collection in the world.",
+    "url": "http://www.pinakothek.de/en/alte-pinakothek",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Alte_Pinakothek_2009.jpg",
+    "wikidataQid": "Q154568"
+  },
+  {
+    "key": "curated-munich-bayerisches-nationalmuseum",
+    "name": "Bayerisches Nationalmuseum",
+    "latitude": 48.1434,
+    "longitude": 11.59112,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "—One of the most important cultural history museums in Europe, housing a large collection of European artifacts from the Middle Ages until early 20th century.",
+    "url": "http://www.bayerisches-nationalmuseum.de/Engl/b.htm",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Mueprinzregstrbnatmus20012018c85.jpg"
+  },
+  {
+    "key": "curated-munich-bier-und-oktoberfestmuseum",
+    "name": "Bier- und Oktoberfestmuseum",
+    "latitude": 48.13529,
+    "longitude": 11.58024,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Sterneckerstrasse 2",
+    "description": "",
+    "url": "http://www.bier-und-oktoberfestmuseum.de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-bmw-welt-and-museum",
+    "name": "BMW Welt and Museum",
+    "latitude": 48.17728,
+    "longitude": 11.55637,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Am Olympiapark 1",
+    "description": "A exhibition and museum complex to one of the best and most famous German car. A must see not only for the automobile enthusiast but also for the architecture aficionado.",
+    "url": "http://www.bmw-welt.com/en/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ce/BMW_Welt%2C_M%C3%BAnich%2C_Alemania16.jpg",
+    "wikidataQid": "Q699614"
+  },
+  {
+    "key": "curated-munich-bmw-museum",
+    "name": "BMW-Museum",
+    "latitude": 48.17659,
+    "longitude": 11.55912,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Am Olympiapark 2, 80809 München",
+    "description": "",
+    "url": "http://www.bmw-welt.com/de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/71/4_cilindros_y_museo_BMW%2C_M%C3%BAnich%2C_Alemania_2012-04-28%2C_DD_02.JPG",
+    "wikidataQid": "Q703212"
+  },
+  {
+    "key": "curated-munich-deutsches-museum",
+    "name": "Deutsches Museum",
+    "latitude": 48.12992,
+    "longitude": 11.58345,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Museumsinsel 1",
+    "description": "One of the greatest scientific and technical museums in the world, visited by roughly 1.5 million visitors per year. Topics range from aviation to brewing, from computer sciences to bridge building.",
+    "url": "http://www.deutsches-museum.de/e_index.htm",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "half_day",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/14/Deutsches_Museum_Portrait_4.jpg",
+    "wikidataQid": "Q131617"
+  },
+  {
+    "key": "curated-munich-deutsches-museum-flugwerft-oberschlei-heim",
+    "name": "Deutsches Museum Flugwerft Oberschleißheim",
+    "latitude": 48.2461,
+    "longitude": 11.55757,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Effnerstraße 18, 85764 Oberschleißheim",
+    "description": "",
+    "url": "http://www.deutsches-museum.de/flugwerft/information/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Rockwell-MBB_X-31_%40_Deutsche_Museum_Flugwerft_Schlei%C3%9Fheim.jpg",
+    "wikidataQid": "Q1000654"
+  },
+  {
+    "key": "curated-munich-deutsches-museum-verkehrszentrum",
+    "name": "Deutsches Museum Verkehrszentrum",
+    "latitude": 48.13298,
+    "longitude": 11.54324,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Am Bavariapark 5",
+    "description": "The division of Deutsches Museum devoted entirely to all kinds of means of transportation. It is housed in the former halls of the Münchner Messe (Munich's trade fairs), dating back to early 1900s.",
+    "url": "http://www.deutsches-museum.de/verkehrszentrum/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Verkehrszentrum%2C_Deutsches_Museum%2C_2023-03-17.jpg",
+    "wikidataQid": "Q1372880"
+  },
+  {
+    "key": "curated-munich-glyptothek",
+    "name": "Glyptothek",
+    "latitude": 48.14659,
+    "longitude": 11.56584,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Königsplatz 3",
+    "description": "Another of King Ludwig's large collections is contained in the Glyptothek: one of the greatest Greek and Roman sculpture collections in all of Germany. The collection is based around a core of sculptures, the Aeginetes, excavated by English and German explorers.",
+    "url": "http://www.antike-am-koenigsplatz.mwn.de/glyptothek/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Glyptothek_in_M%C3%BCnchen_in_2013.jpg",
+    "wikidataQid": "Q162077"
+  },
+  {
+    "key": "curated-munich-haus-der-kunst",
+    "name": "Haus der Kunst",
+    "latitude": 48.14412,
+    "longitude": 11.58596,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "—An exhibition hall that flaunts its National Socialist architectural design, presents ever-changing graphic arts exhibitions.",
+    "url": "http://www.hausderkunst.de",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Haus_der_Kunst_-_Munich_-_2013.jpg",
+    "wikidataQid": "Q697782"
+  },
+  {
+    "key": "curated-munich-jagd-und-fischereimuseum",
+    "name": "Jagd und Fischereimuseum",
+    "latitude": 48.1384,
+    "longitude": 11.57146,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Neuhauser Str. 2, 80331 München (Fussgängerzone)",
+    "description": "",
+    "url": "http://www.jagd-fischerei-museum.de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Deutsches_Jagd-_und_Fischereimuseum_M%C3%BCnchen_-_DSC08679.jpg"
+  },
+  {
+    "key": "curated-munich-j-disches-museum",
+    "name": "Jüdisches Museum",
+    "latitude": 48.1343,
+    "longitude": 11.5723,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "St.-Jakobs-Platz 16",
+    "description": "",
+    "url": "http://www.juedisches-museum-muenchen.de/home.html?L=1",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/J%C3%BCdisches_Zentrum_am_Jakobsplatz_M%C3%BCnchen_1.jpg"
+  },
+  {
+    "key": "curated-munich-lenbachhaus",
+    "name": "Lenbachhaus",
+    "latitude": 48.14696,
+    "longitude": 11.56354,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Luisenstraße 33",
+    "description": "A very important stop for Expressionist art lovers, this impressive collection in the former villa of Munich aristocracy includes numerous famous examples of the artistic group known as Der Blaue Reiter ('The Blue Rider').",
+    "url": "http://www.lenbachhaus.de/?L=1",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/42/2013-05-04_Lenbachhaus_Muenchen-8.jpg",
+    "wikidataQid": "Q262234"
+  },
+  {
+    "key": "curated-munich-museum-brandhorst",
+    "name": "Museum Brandhorst",
+    "latitude": 48.14783,
+    "longitude": 11.57401,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Theresienstraße 35a",
+    "description": "Most recent addition to Munich's museum district. A collection of modern and contemporary art including paintings, sculptures and installations with a focus on the artists Andy Warhol and Cy Twombly.",
+    "url": "http://www.pinakothek.de/en/museum-brandhorst",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/14/Museum_Brandhorst_June_2014_02.JPG",
+    "wikidataQid": "Q258597"
+  },
+  {
+    "key": "curated-munich-museum-of-man-and-nature",
+    "name": "Museum of Man and Nature",
+    "latitude": 48.16026,
+    "longitude": 11.50374,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Schloss Nymphenburg",
+    "description": "The museum gives modern, lively exhibitions suitable for visitors of all ages and education levels.",
+    "url": "http://www.musmn.de/starteng.htm {{dead link|April 2016}}",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/30/M%C3%BCnchen_-_Museum_Mensch_und_Natur_%28Zugang_aus_dem_Schlossrondell%29.JPG",
+    "wikidataQid": "Q1954475"
+  },
+  {
+    "key": "curated-munich-museum-villa-stuck",
+    "name": "Museum Villa Stuck",
+    "latitude": 48.14057,
+    "longitude": 11.59955,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Prinzregentenstraße 60",
+    "description": "The neoclassicistic mansion is the former residence of Munich artist Franz von Stuck. Today the historic house museum shows the former owners works and features changing exhibitions of other works, but the building itself is worth a visit.",
+    "url": "http://www.villastuck.de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Mueprinzregentenstr60042018c85.jpg",
+    "wikidataQid": "Q264573"
+  },
+  {
+    "key": "curated-munich-mvg-museum",
+    "name": "MVG Museum",
+    "latitude": 48.10281,
+    "longitude": 11.60166,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Ständlerstraße 20",
+    "description": "The museum focuses on the development of the public transportation network in Munich, with several historic trams and buses on display, in a building that used to be a part of the main tram repair and assembly shop.",
+    "url": "http://www.mvg-mobil.de/museum/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ea/MVG_Museum_M%C3%BCnchen.JPG",
+    "wikidataQid": "Q280024"
+  },
+  {
+    "key": "curated-munich-m-nchner-stadtmuseum-munich-city-museum",
+    "name": "Münchner Stadtmuseum (Munich City Museum)",
+    "latitude": 48.13514,
+    "longitude": 11.57256,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "St.-Jakobs-Platz 1",
+    "description": "Apart from the permanent exhibitions Typically Munich! and National Socialism in Munich - Codes of Remembrance, the Münchner Stadtmuseum presents exhibitions on contemporary and civil history, photography, musical instruments and puppetry/fairground amusement.",
+    "url": "http://www.muenchner-stadtmuseum.de",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c3/M%C3%BCnchen_Stadtmuseum.JPG",
+    "wikidataQid": "Q452685"
+  },
+  {
+    "key": "curated-munich-neue-pinakothek",
+    "name": "Neue Pinakothek",
+    "latitude": 48.14997,
+    "longitude": 11.57094,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Barer Straße 29",
+    "description": "The Neue Pinakothek's collection includes 19th European paintings and sculptures, and has also been recently renovated. Perhaps the most popular of the Pinakotheks, there is also a very nice cafe here.",
+    "url": "http://www.pinakothek.de/en/neue-pinakothek",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/68/Neuepinakothek.JPG",
+    "wikidataQid": "Q170152"
+  },
+  {
+    "key": "curated-munich-ns-dokumentationszentrum-m-nchen",
+    "name": "NS-Dokumentationszentrum München",
+    "latitude": 48.14544,
+    "longitude": 11.56737,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Brienner Straße 34",
+    "description": "",
+    "url": "http://www.ns-dokumentationszentrum-muenchen.de/zentrum",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Wzwz_mun_lvs_dok_1.jpg"
+  },
+  {
+    "key": "curated-munich-palaeontological-museum-munich",
+    "name": "Palaeontological Museum Munich",
+    "latitude": 48.14763,
+    "longitude": 11.56363,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Richard-Wagner-Straße 10",
+    "description": "The museums features several sceletons of dinosaurs, e.g. Archaeopteryx, Triceratops or Saber-toothed Cat, and other special exhibitions. Another attraction is the beautiful architecture of the museum itself.",
+    "url": "http://www.palmuc.de/bspg/index.php?option=com_content&view=article&id=90&Itemid=144",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/86/M%C3%BCnchen_-_Pal%C3%A4ontologisches_Museum.jpg",
+    "wikidataQid": "Q473832"
+  },
+  {
+    "key": "curated-munich-pinakothek-der-moderne",
+    "name": "Pinakothek der Moderne",
+    "latitude": 48.1472,
+    "longitude": 11.57212,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Barer Straße 40",
+    "description": "Features 20th and 21st century art. Go there if you're interested in modern art. The building's architecture is quite interesting.",
+    "url": "http://www.pinakothek.de/en/pinakothek-der-moderne",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/df/Pinakothek_der_Moderne_Nord.jpg",
+    "wikidataQid": "Q250195"
+  },
+  {
+    "key": "curated-munich-staatliche-antikensammlungen",
+    "name": "Staatliche Antikensammlungen",
+    "latitude": 48.1452,
+    "longitude": 11.56498,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Königsplatz, 80333 München",
+    "description": "",
+    "url": "http://www.antike-am-koenigsplatz.mwn.de/antikensammlung/index.html",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Munich_-_Trojan_wooden_horse_at_K%C3%B6nigsplatz_-_5440.jpg",
+    "wikidataQid": "Q707981"
+  },
+  {
+    "key": "curated-munich-staatliches-museum-gyptischer-kunst",
+    "name": "Staatliches Museum Ägyptischer Kunst",
+    "latitude": 48.1472,
+    "longitude": 11.5687,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Arcisstraße 16 , 80333 München",
+    "description": "",
+    "url": "http://www.aegyptisches-museum-muenchen.de/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Staatliches_Museum_%C3%84gyptischer_Kunst_und_HFF.jpg",
+    "wikidataQid": "Q464872"
+  },
+  {
+    "key": "curated-munich-state-mineralogical-collection",
+    "name": "State Mineralogical Collection",
+    "latitude": 48.14804,
+    "longitude": 11.57249,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Theresienstraße 41",
+    "description": "The collection shows minerals, including diamonds, emeralds and other gemstones as well as some meteorites. Moreover, the museum describes the development and characteristics of certain minerals.",
+    "url": "http://mineralogische.staatssammlung.userweb.mwn.de/ {{dead link|April 2016}}",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-toy-museum",
+    "name": "Toy Museum",
+    "latitude": 48.13681,
+    "longitude": 11.57696,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Marienplatz 15",
+    "description": "",
+    "url": "http://www.spielzeugmuseum-muenchen.de",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Spielzeugmuseum_M%C3%BCnchen_22.jpg"
+  },
+  {
+    "key": "curated-munich-valentin-karlstadt-mus-um",
+    "name": "Valentin-Karlstadt-Musäum",
+    "latitude": 48.13497,
+    "longitude": 11.58172,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Tal 50, 80331 München",
+    "description": "",
+    "url": "http://www.valentin-musaeum.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Isartor.jpg",
+    "wikidataQid": "Q264209"
+  },
+  {
+    "key": "curated-munich-visitors-centre-and-plane-spotting-hill",
+    "name": "Visitors centre and plane spotting hill",
+    "latitude": 48.35493,
+    "longitude": 11.77232,
+    "category": "museum_gallery",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Historical planes on display, and a 28m high hill with a view over the runway.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-altes-rathaus",
+    "name": "Altes Rathaus",
+    "latitude": 48.13687,
+    "longitude": 11.57712,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Built in 1474 and rebuilt after World War II to its original state. Today it houses a toy museum (Spielzeugmuseum). Outside you will find a statue of Juliet (Romeo's Juliet), a present from Munich's sister city, Verona.",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Altes_Rathaus_M%C3%BCnchen_Ostseite.jpg"
+  },
+  {
+    "key": "curated-munich-andechs-monastery",
+    "name": "Andechs Monastery",
+    "latitude": 47.974648,
+    "longitude": 11.182763,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "If you miss the Oktoberfest, it is worth travelling to the holy mountain of Andechs. It's a monastery up a hill from the Ammersee. When you are there have a look at the old monastery church and the gardens before focusing on the excellent beer.",
+    "setting": "mixed",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/49/Andechs%2C_Kloster_Andechs-HB-04.jpg",
+    "wikidataQid": "Q259971"
+  },
+  {
+    "key": "curated-munich-angel-of-peace-monument",
+    "name": "Angel of Peace Monument",
+    "latitude": 48.141356,
+    "longitude": 11.59697,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Europaplatz 1",
+    "description": "The Friedensengel monument marks the entrance of the Bogenhausen neighborhood at the Isar. The statue on top of 44 m high structure depicts Nike, the Greek goddess of victory.",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Muenchen-_Friedensenangel.JPG",
+    "wikidataQid": "Q504642"
+  },
+  {
+    "key": "curated-munich-asamkirche",
+    "name": "Asamkirche",
+    "latitude": 48.13522,
+    "longitude": 11.56954,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Rococo architect and sculptor Egid Quirin Asam built this amazingly ornate church right next door to his own house. His brother, Cosmas Damian, did all the frescoes. The church is dedicated to St John Nepomuk, a Bohemian monk was thrown into the river Vltava.",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c1/St.-Johann-Nepomuk-Kirche_M%C3%BCnchen_02.jpg"
+  },
+  {
+    "key": "curated-munich-blutenburg-castle",
+    "name": "Blutenburg Castle",
+    "latitude": 48.1637,
+    "longitude": 11.4567,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Seldweg 15",
+    "description": "Blutenburg Castle is an old ducal country seat. It was built 1438-39 as a hunting lodge for Albert III, Duke of Bavaria. 1488 a chapel was added, which is a splendid masterpiece of late Gothic style.",
+    "url": "http://www.blutenburg.de/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Aerial_image_of_the_Blutenburg_Castle_%28view_from_the_southeast%29.jpg",
+    "wikidataQid": "Q702533"
+  },
+  {
+    "key": "curated-munich-frauenkirche",
+    "name": "Frauenkirche",
+    "latitude": 48.13871,
+    "longitude": 11.57354,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "It is the largest Gothic brick church north of the Alps and the largest hall church (naves of equal height) of the world. The Frauenkirche is topped by two copper onion-domed towers recognizable from a distance.",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/da/Frauenkirche_Munich_-_View_from_Peterskirche_Tower2.jpg",
+    "wikidataQid": "Q167193"
+  },
+  {
+    "key": "curated-munich-herz-jesu-church",
+    "name": "Herz Jesu Church",
+    "latitude": 48.15636,
+    "longitude": 11.52874,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Romanstraße 6",
+    "description": "Located between Rotkreuzplatz and Nymphenburg Canal, this modern Roman Catholic church was erected between 1997 and 2000, after the previous church had been destroyed by a fire in 1994. Right now, this is one of the most frequently visited churches in Munich. The church consists …",
+    "url": "http://www.herzjesu-muenchen.de/index3.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/48/Herz-Jesu-Kirche_Munich_September_2014_02.JPG",
+    "wikidataQid": "Q879736"
+  },
+  {
+    "key": "curated-munich-k-nigsplatz",
+    "name": "Königsplatz",
+    "latitude": 48.14606,
+    "longitude": 11.56427,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Königsplatz",
+    "description": "The Königsplatz is a wide open square, surrounded by European classicist buildings. Planned as the \"Athens on the Isar\", it was originally framed on three sides by the Doric Propylaea (Propyläen), the Ionic Glyphothek, and the Corinthian Antikensammlung.",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/93/K%C3%B6nigsplatz_-_Propyl%C3%A4en_und_Glyptothek.jpg",
+    "wikidataQid": "Q561084"
+  },
+  {
+    "key": "curated-munich-maximilianeum",
+    "name": "Maximilianeum",
+    "latitude": 48.13635,
+    "longitude": 11.59399,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Max-Planck-Straße 1",
+    "description": "The Maximilianeum was built 1857-1874 under King Max II. After the reconstruction made necessary by the destruction of 70% of the building by Allied bombings during World War II, the Bavarian parliament moved into the building in 1949.",
+    "url": "https://www.bayern.landtag.de/de/39.php",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/The_Maximilianeum_Building_2012.jpg",
+    "wikidataQid": "Q266759"
+  },
+  {
+    "key": "curated-munich-memorial-for-georg-elser",
+    "name": "Memorial for Georg Elser",
+    "latitude": 48.15091,
+    "longitude": 11.5767,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Georg-Elser-Platz",
+    "description": "This is a light installation in honor of Georg Elser, who tried to assassinate Adolf Hitler at 8 Nov 1939 during a speech at Bürgerbräukeller.",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/28/Georg-Elser-Platz_Muenchen.jpg"
+  },
+  {
+    "key": "curated-munich-michaelskirche",
+    "name": "Michaelskirche",
+    "latitude": 48.13897,
+    "longitude": 11.57043,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The largest Renaissance church north of the Alps was built between 1583-1599 thanks to Duke Wilhelm V, called The Pious.",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-m-ller-sches-volksbad",
+    "name": "Müller´sches Volksbad",
+    "latitude": 48.13229,
+    "longitude": 11.58764,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Rosenheimer Straße 1, 81667 München;",
+    "description": "",
+    "url": "http://www.swm.de/de/produkte/mbaeder/hallenbaeder/volksbad.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/Wzwz_m_lehel_volksbad_02.jpg"
+  },
+  {
+    "key": "curated-munich-nordfriedhof",
+    "name": "Nordfriedhof",
+    "latitude": 48.17552,
+    "longitude": 11.60302,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Ungererstraße 130",
+    "description": "Nordfriedhof is known for its many formerly famous patrons like Johannes \"Jopi\" Heesters, its impressive funeral home and morgue, and a so called grove of honor for the victims of the World War II allied air raids.",
+    "url": "http://www.muenchen.de/rathaus/Stadtverwaltung/Referat-fuer-Gesundheit-und-Umwelt/Friedhof_und_Bestattung/SFM/Nordfriedhof.html",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Aerial_image_of_Nordfriedhof_in_Munich_%28view_from_the_south%29.jpg",
+    "wikidataQid": "Q1030655"
+  },
+  {
+    "key": "curated-munich-nymphenburg-palace",
+    "name": "Nymphenburg Palace",
+    "latitude": 48.15823,
+    "longitude": 11.50329,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Schloss Nymphenburg",
+    "description": "In the beginning it was one of the smaller residential palaces, now it is the biggest Baroque palace in Germany. It is possible to enter the palace.",
+    "url": "http://www.schloss-nymphenburg.de/englisch/palace/index.htm",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Image-Schloss_Nymphenburg_Munich_CC_edit3.jpg",
+    "wikidataQid": "Q131631"
+  },
+  {
+    "key": "curated-munich-old-south-cemetery",
+    "name": "Old South Cemetery",
+    "latitude": 48.12767,
+    "longitude": 11.56523,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Thalkirchner Straße 17",
+    "description": "The Old South Cemetery was established in 1563 as plague cemetery. From 1788 to 1868 is was Munich's single collective burial ground - making it the last resting-place for many famous Munich residents of that time.",
+    "url": "http://www.muenchen.de/rathaus/Stadtverwaltung/Referat-fuer-Gesundheit-und-Umwelt/Friedhof_und_Bestattung/SFM/Alter_Sued.html {{dead link|April 2016}}",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-peterskirche",
+    "name": "Peterskirche",
+    "latitude": 48.13651,
+    "longitude": 11.57598,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Munich's first parish church was started in the twelfth century, but ongoing additions and renovations have kept artists busy for centuries. During a city fire in 1327, the church was damaged and in 1607, the tower (called Alter Peter) was struck by lightning.",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/South_Facade_19-05-20_443.jpg"
+  },
+  {
+    "key": "curated-munich-residenz",
+    "name": "Residenz",
+    "latitude": 48.14096,
+    "longitude": 11.5798,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Residenzstraße 1",
+    "description": "",
+    "url": "http://www.residenz-muenchen.de",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Wittelsbacherbrunnen_Residenz_Muenchen-2.jpg",
+    "wikidataQid": "Q27478655"
+  },
+  {
+    "key": "curated-munich-schloss-schlei-heim",
+    "name": "Schloss Schleißheim",
+    "latitude": 48.24883,
+    "longitude": 11.56102,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The palace is a jewel of Baroque architecture.",
+    "url": "http://www.schloesser.bayern.de/englisch/palace/uebers/schl_ges.htm",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Oberschlei%C3%9Fheim_Pumpenhaus.jpg",
+    "wikidataQid": "Q98644748"
+  },
+  {
+    "key": "curated-munich-st-boniface-s-abbey",
+    "name": "St. Boniface's Abbey",
+    "latitude": 48.14407,
+    "longitude": 11.56424,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Karlstraße 34",
+    "description": "The Benedictine abbey was founded in 1835 by Bavarian King Ludwig I. to re-strengthen the country's spiritual life. Destroyed during World War II,it was only partially rebuilt. The abbey contains the tomb of King Ludwig I.",
+    "url": "http://www.sankt-bonifaz.de/bonifaz.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Basilika_St._Bonifaz_in_M%C3%BCnchen.jpg",
+    "wikidataQid": "Q279303"
+  },
+  {
+    "key": "curated-munich-st-paul-s-church",
+    "name": "St. Paul's church",
+    "latitude": 48.13644,
+    "longitude": 11.55223,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "St.-Pauls-Platz 10",
+    "description": "The Roman Catholic St. Paul's church is the second largest church in Munich.",
+    "url": "http://www.erzbistum-muenchen.de/Pfarrei/Page010890.aspx",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/St._Paul_in_der_Maxvorstadt%2C_M%C3%BCnchen.jpg",
+    "wikidataQid": "Q247638"
+  },
+  {
+    "key": "curated-munich-statue-of-bavaria-and-hall-of-fame",
+    "name": "Statue of Bavaria and Hall of Fame",
+    "latitude": 48.1307,
+    "longitude": 11.54593,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Theresienhöhe 16",
+    "description": "",
+    "url": "http://www.schloesser.bayern.de/englisch/palace/objects/mu_ruhm.htm",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Bavaria_2.jpg",
+    "wikidataQid": "Q117323380"
+  },
+  {
+    "key": "curated-munich-theatinerkirche",
+    "name": "Theatinerkirche",
+    "latitude": 48.14209,
+    "longitude": 11.57667,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The church is beautifully ornate and is probably the most eye-catching building in town, because its architecture departs dramatically from the rest of Munich's buildings.",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Exterior_of_Theatinerkirche%2C_Munich.jpg"
+  },
+  {
+    "key": "curated-munich-viktualienmarkt",
+    "name": "Viktualienmarkt",
+    "latitude": 48.135357,
+    "longitude": 11.57618,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "This large open-air market sells everything from soup to nuts. Just off Marienplatz, here generations of market families continue to hawk their wares from the same location. There are open-air fruit and vegetable stands similar to those scattered around the city, as well as close…",
+    "url": "http://www.viktualienmarkt.de",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Viki-Markt.Maibaum.JPG",
+    "wikidataQid": "Q686629"
+  },
+  {
+    "key": "curated-munich-waldfriedhof-cemetery",
+    "name": "Waldfriedhof cemetery",
+    "latitude": 48.1024,
+    "longitude": 11.4917,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Fürstenrieder Straße 288",
+    "description": "Waldfriedhof is Munich's largest cemetery and a beautiful park. Especially the newer southern part of this woodland cemetery has some impressive architecture scattered in a landscpade park.",
+    "url": "http://www.muenchen.de/rathaus/Stadtverwaltung/Referat-fuer-Gesundheit-und-Umwelt/Friedhof_und_Bestattung/SFM/Waldfriedhof.html",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-walking-man",
+    "name": "Walking Man",
+    "latitude": 48.15639,
+    "longitude": 11.58439,
+    "category": "historical",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/48/Walking_Man_-_Panorama_II.jpg",
+    "wikidataQid": "Q2542466"
+  },
+  {
+    "key": "curated-munich-flaucher-isar-beaches-and-islands",
+    "name": "''Flaucher'' Isar beaches and islands",
+    "latitude": 48.107617,
+    "longitude": 11.558729,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The banks of and islands in the Isar at Flaucher are the second most important place (after the English Garden) to relax outside during summertime. Being located outside of Mittlerer Ring urban express-way, it is allowed to barbecue here.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Karte_Flaucher_M%C3%BCnchen.png",
+    "wikidataQid": "Q1427434"
+  },
+  {
+    "key": "curated-munich-botanical-garden",
+    "name": "Botanical Garden",
+    "latitude": 48.16334,
+    "longitude": 11.50046,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Menzinger Straße 65",
+    "description": "",
+    "url": "http://www.botmuc.de/en/",
+    "setting": "mixed",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Aerial_image_of_the_Botanical_Garden_Munich-Nymphenburg_%28view_from_the_west%29.jpg",
+    "wikidataQid": "Q707660"
+  },
+  {
+    "key": "curated-munich-chinese-tower",
+    "name": "Chinese Tower",
+    "latitude": 48.1526,
+    "longitude": 11.59204,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Munich_English_Gardens_-_Chinese_Tower_Beer_Garden_-_August_2006.jpg",
+    "wikidataQid": "Q3995164"
+  },
+  {
+    "key": "curated-munich-fr-hlingsanlagen",
+    "name": "Frühlingsanlagen",
+    "latitude": 48.12581,
+    "longitude": 11.57474,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Eduard-Schmid-Straße",
+    "description": "Relax at the banks of the Isar in the recultivated Frühlingsanlagen and treat yourself with a cold and tasty local beer. On warm summer evenings the place is busy with people, partying at the river and enjoying life.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "half_day",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-hofgarten",
+    "name": "Hofgarten",
+    "latitude": 48.1427,
+    "longitude": 11.58,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The ,,Hofgarten\" (courtyard garden) is located just north of the Residenz building, at Odeonsplatz. This is a splendid royal garden, inspired by Versailles, with a nice pavillion in the middle, where tango dancers gather each Thursday.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bf/M%C3%BCnchen_Hofgartentempel.jpg",
+    "wikidataQid": "Q707673"
+  },
+  {
+    "key": "curated-munich-langwied-lake",
+    "name": "Langwied Lake",
+    "latitude": 48.1967,
+    "longitude": 11.4169,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Kreuzkapellenstraße 89",
+    "description": "The Langwied lake area comprises of Langwied lake itself, Lußsee lake, and Birkensee lake.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "2_3h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-maximiliananlagen",
+    "name": "Maximiliananlagen",
+    "latitude": 48.139459,
+    "longitude": 11.596388,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Shared between the area and the neighboring district of Haidhausen, the Maximiliananlagen are a park along the banks of the Isar around the Friedensengel monument. Though close to the river, swimming here is not possible as the bank is very steep here.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-monopteros",
+    "name": "Monopteros",
+    "latitude": 48.14988,
+    "longitude": 11.5909,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The Monopteros is a small neo-classical Greek temple on a hilltop, built in 1836 in the English Garden. It provides a great few over the park and Munich.",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Monopteros%2C_Munich_-_DSC07101.JPG"
+  },
+  {
+    "key": "curated-munich-old-botanic-garden",
+    "name": "Old Botanic Garden",
+    "latitude": 48.14179,
+    "longitude": 11.56438,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Sophienstraße",
+    "description": "In 1804-1814 originally built to be a botanical garden, Old Botanic Garden was rearranged to serve as a park in 1914. It used to be the site of the Glass Palace (Glaspalast) from its construction in 1854 until this exhibition center burned down in 1931.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-olympiaberg",
+    "name": "Olympiaberg",
+    "latitude": 48.1699,
+    "longitude": 11.5517,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Martin-Luther-King-Weg",
+    "description": "If there is a concert in the Olympic Stadium and you didn't manage to get tickets (or you think they are too expensive) climb on the hill across the stream. You will have a great view on the stadium and hear all the music.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Olympiaberg2006.jpg",
+    "wikidataQid": "Q124150300"
+  },
+  {
+    "key": "curated-munich-olympiapark",
+    "name": "Olympiapark",
+    "latitude": 48.1715,
+    "longitude": 11.5518,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "This vast park was created for the 1972 Summer Olympics and is still a vibrant place for outdoor activities, sports and cultural events.",
+    "url": "http://www.olympiapark.de/en/home/",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d1/M%C3%BCnchen_-_Olympische_Bauten.jpg",
+    "wikidataQid": "Q383296"
+  },
+  {
+    "key": "curated-munich-olympiaturm",
+    "name": "Olympiaturm",
+    "latitude": 48.1744,
+    "longitude": 11.55375,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Spiridon-Louis-Ring 7",
+    "description": "",
+    "url": "http://www.olympiapark.de/en/home/tours-sightseeing/sightseeing/olympic-tower/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Olympiaturm%2C_M%C3%BAnich%2C_Alemania_2012-04-28%2C_DD_20.JPG",
+    "wikidataQid": "Q599148"
+  },
+  {
+    "key": "curated-munich-park-at-fr-ttmaning-hill",
+    "name": "Park at Fröttmaning Hill",
+    "latitude": 48.21415,
+    "longitude": 11.6304,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The park is located across the autobahn from Allianz Arena. The wind energy plant at the top of the hill is its most visible landmark from afar.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-rowing-at-oberschlei-heim-regatta-course",
+    "name": "Rowing at Oberschleißheim Regatta Course",
+    "latitude": 48.2432,
+    "longitude": 11.5162,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The regatta course was a venue for the 1972 Summer Olympics. There are several professional rowing events every year, but the course is open for the public as well.",
+    "url": "http://www.regatta-muenchen.de/en/",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Regattastrecke_Oberschlei%C3%9Fheim.jpg",
+    "wikidataQid": "Q872352"
+  },
+  {
+    "key": "curated-munich-westpark",
+    "name": "Westpark",
+    "latitude": 48.1226,
+    "longitude": 11.5182,
+    "category": "park_garden",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "The park was designed for the International Garden Festival 1983. With its landscaped hills, valleys, lakes, and streams, it imitates the pre-alpine lands just south of Munich. The lake stage in the park is regularly used for concerts and for an open-air cinema.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-dav-kletter-und-boulderzentrum-m-nchen-thalkirchen",
+    "name": "DAV Kletter- und Boulderzentrum München / Thalkirchen",
+    "latitude": 48.10713,
+    "longitude": 11.54605,
+    "category": "active_adventure",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Thalkirchner Straße 207, 81371 München",
+    "description": "",
+    "url": "http://www.kletterzentrum-muenchen.de/index.php",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Kletterzentrum_Thalkirchen_04.jpg",
+    "wikidataQid": "Q97317439"
+  },
+  {
+    "key": "curated-munich-andechser-am-dom",
+    "name": "Andechser Am Dom",
+    "latitude": 48.13839,
+    "longitude": 11.5746,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Weinstraße 7a",
+    "description": "This is a good place to stop off if you are going to visit the Frauenkirche. Andechs beers are all brewed at the Klosterbrauerei Andechs, which also is a fun day trip in itself and all the beers are world-class. The brewpub is much smaller than most similar places and seating is …",
+    "url": "http://www.andechser-am-dom.de",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Muefrauenmazari022022.jpg"
+  },
+  {
+    "key": "curated-munich-augustiner-sch-tzengarten",
+    "name": "Augustiner Schützengarten",
+    "latitude": 48.1045,
+    "longitude": 11.5347,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Zielstattstraße 6",
+    "description": "",
+    "url": "http://www.augustiner-schuetzengarten.de/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ]
+  },
+  {
+    "key": "curated-munich-augustinerkeller",
+    "name": "Augustinerkeller",
+    "latitude": 48.143525,
+    "longitude": 11.551985,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Arnulfstraße 52",
+    "description": "",
+    "url": "http://www.augustinerkeller.de/en.htm {{dead link|April 2016}}",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/80/2013_Augustiner_beermat.JPG",
+    "wikidataQid": "Q19834972"
+  },
+  {
+    "key": "curated-munich-sammlung-caf-luitpold",
+    "name": "Café Luitpold",
+    "latitude": 48.14299,
+    "longitude": 11.57506,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Brienner Strasse 11, 80333 München",
+    "description": "",
+    "url": "http://www.luitpoldblock.de/sammlung/info/index.htm",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "under_1h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "couple",
+      "family",
+      "friends",
+      "solo"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Cafe_Luitpold_M%C3%BCnchen_um_1900_cropped.jpg",
+    "wikidataQid": "Q1025633"
+  },
+  {
+    "key": "curated-munich-caf-vorhoelzer-forum",
+    "name": "Café Vorhoelzer Forum",
+    "latitude": 48.14829,
+    "longitude": 11.56768,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Arcisstraße 21",
+    "description": "The café is located at the top floor of the TUM's main building, with canvas chairs and live DJing at some afternoons on the big rooftop outdoor area. On a clear day you have a great panorama of Munich with the Bavarian Alps in the background.",
+    "url": "https://www.facebook.com/Cafe.Vorhoelzer",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-elisabethmarkt",
+    "name": "Elisabethmarkt",
+    "latitude": 48.15682,
+    "longitude": 11.57435,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "A smaller, less touristy and cheaper alternative to the Viktualienmarkt in the Altstadt, it has cute stalls, a good selection of fruits, vegetables and delicacies, a quaint beergarten seasonally and an original feel.",
+    "url": "http://www.muenchen.de/Marktplatz/Markets/12598/02aelisabethmarkt.html",
+    "setting": "outdoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "under_1h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/47/Elisabethmarkt_Muenchen.jpg",
+    "wikidataQid": "Q319310"
+  },
+  {
+    "key": "curated-munich-haxnbauer-im-scholastikahaus",
+    "name": "Haxnbauer im Scholastikahaus",
+    "latitude": 48.13751,
+    "longitude": 11.5785,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Sparkassenstraße 6",
+    "description": "Haxnbauer is a restaurant where you can taste Schweinhaxe. While ordering the waiter brings several knuckles with prices on them so that you could choose which you like best.",
+    "url": "http://kuffler.de/de/muenchen/haxnbauer/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4c/GER_%E2%80%94_BY_%E2%80%93_Oberbayern_%E2%80%94_M%C3%BCnchen_%E2%80%94_Stadtbezirk_1_%E2%80%94_Altstadt_%E2%80%94_Sparkassenstr._6_%E2%80%94_EG_%28Haxnbauer_%C2%B7_K%C3%BCche%29_%E2%80%94_2005-05-07_%E2%80%94_Mattes.jpg"
+  },
+  {
+    "key": "curated-munich-hirschgarten",
+    "name": "Hirschgarten",
+    "latitude": 48.14956,
+    "longitude": 11.51106,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Hirschgarten 1",
+    "description": "Europe’s biggest beer garden with 8,000 seats serves beer from not only one supplier but from two different Bavarian breweries. Its most prominent feature (apart from its size) is a mini-zoo with deer and wild boars.",
+    "url": "http://www.hirschgarten.com/beer-garden-munich-the-biggest-beer-garden-in-muenchen-and-bavaria-koeniglicher-hirschgarten-munich.html",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Hirschgarten-muenchen.jpg",
+    "wikidataQid": "Q261850"
+  },
+  {
+    "key": "curated-munich-hofbr-uhaus",
+    "name": "Hofbräuhaus",
+    "latitude": 48.13758,
+    "longitude": 11.58015,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Am Platzl 9",
+    "description": "Hofbräuhaus, Munich's (and maybe the world's) most famous brewpub, moved to its current location in 1644. It opened to the public after 1830. Nowadays, the embodiment of Bavarian beer culture.",
+    "url": "http://www.hofbraeuhaus.de/en/index_en.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/Hofbrauhaus.JPG",
+    "wikidataQid": "Q152971"
+  },
+  {
+    "key": "curated-munich-insel-m-hle",
+    "name": "Insel Mühle",
+    "latitude": 48.1764,
+    "longitude": 11.46129,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Von-Kahr-Straße 87",
+    "description": "Insel Mühle is idylically located on an island in the river Würm. Up to 800 people can enjoy their Augustiner beer in this very traditional beer garden.",
+    "url": "http://www.inselmuehle-muenchen.com/index.php/de/biergarten",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/24/Inselm%C3%BChle-bjs091226-04.jpg",
+    "wikidataQid": "Q56508162"
+  },
+  {
+    "key": "curated-munich-l-wenbr-ukeller",
+    "name": "Löwenbräukeller",
+    "latitude": 48.148384,
+    "longitude": 11.558469,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Nymphenburgerstraße 2",
+    "description": "The traditional beer garden with an adjoining beer hall is one of the most famous among foreign travellers.",
+    "url": "http://www.loewenbraeukeller.com/en/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/87/Die_Gartenlaube_%281888%29_b_333.jpg",
+    "wikidataQid": "Q874045"
+  },
+  {
+    "key": "curated-munich-max-emanuel-brauerei",
+    "name": "Max Emanuel Brauerei",
+    "latitude": 48.152729,
+    "longitude": 11.57642,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Adalbertstraße 33",
+    "description": "This hidden beer garden in the heart of the Maxvorstadt district is very popular among the locals. It's the place where students and professors of the nearby universities gather to have a few beers and a friendly chat among the shade of chestnut trees.",
+    "url": "http://www.max-emanuel-brauerei.de/biergarten/bier_index.html {{dead link|April 2016}}",
+    "setting": "mixed",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-nockherberg-beer-garden",
+    "name": "Nockherberg beer garden",
+    "latitude": 48.1213,
+    "longitude": 11.583,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Hochstraße 77",
+    "description": "Munich's holy mountain Nockherberg is well known for its strong beer festival in March. The beautiful beer garden with 3000 seats is open year round (weather permitting) and serves Paulaner beer.",
+    "url": "http://www.nockherberg.com/biergarten.html",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Nockherberg_M%C3%BCnchen_Paulaner_Biergarten.jpg",
+    "wikidataQid": "Q256487"
+  },
+  {
+    "key": "curated-munich-park-caf",
+    "name": "Park Café",
+    "latitude": 48.14244,
+    "longitude": 11.56467,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Sophienstraße 7",
+    "description": "",
+    "url": "http://www.parkcafe089.de/index.php?s=&la=en {{dead link|April 2016}}",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Park_Cafe.jpg",
+    "wikidataQid": "Q41181356"
+  },
+  {
+    "key": "curated-munich-tantris",
+    "name": "Tantris",
+    "latitude": 48.16982,
+    "longitude": 11.58823,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Johann-Fichte-Straße 7",
+    "description": "With one of Germany's best chefs at the helm, expect to be impressed with an array of delectable dishes at Tantris. Consistently ranked one of the top five dining establishment in the country, prepare to pay a high price for nouvelle cuisine.",
+    "url": "http://www.tantris.de/home.php",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "expensive",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Tantris_abends_mod.jpg",
+    "wikidataQid": "Q876820"
+  },
+  {
+    "key": "curated-munich-viktualienmarkt-beer-garden",
+    "name": "Viktualienmarkt beer garden",
+    "latitude": 48.13527,
+    "longitude": 11.57642,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Viktualienmarkt 6",
+    "description": "Viktualienmarkt beer garden.",
+    "url": "http://www.biergarten-viktualienmarkt.com/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/44/Viki-Markt.Biergarten.JPG",
+    "wikidataQid": "Q686629"
+  },
+  {
+    "key": "curated-munich-waldwirtschaft-gro-hesselohe",
+    "name": "Waldwirtschaft Großhesselohe",
+    "latitude": 48.06662,
+    "longitude": 11.53937,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Georg-Kalb-Straße 3",
+    "description": "As this beer garden is located near Munich's high-society suburb Grünwald, chances are good to see at least a local celebrity.",
+    "url": "http://www.waldwirtschaft.de/",
+    "setting": "mixed",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/97/Waldwirtschaft_6887b.JPG",
+    "wikidataQid": "Q2542026"
+  },
+  {
+    "key": "curated-munich-wei-es-br-uhaus",
+    "name": "Weißes Bräuhaus",
+    "latitude": 48.13645,
+    "longitude": 11.57846,
+    "category": "food_drink",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Tal 7",
+    "description": "Very rustic ambience and a great spot for the traditional Weißbier and Weißwurstfrühstuck",
+    "url": "http://www.weisses-brauhaus.de",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-backstage",
+    "name": "Backstage",
+    "latitude": 48.14488,
+    "longitude": 11.52198,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Friedenheimer Brücke 7",
+    "description": "",
+    "url": "http://www.backstage.eu/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/de/c/cd/Logo_Kulturzentrum_Backstage.png",
+    "wikidataQid": "Q1456276"
+  },
+  {
+    "key": "curated-munich-cafe-kosmos",
+    "name": "Cafe Kosmos",
+    "latitude": 48.14244,
+    "longitude": 11.56007,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Dachauerstraße 7",
+    "description": "During the day Cafe Kosmos really is a café, but changes into a bar when it gets dark outside. Space is very limited (especially because it gets really full on weekends) and the interior looks as if it were collected at back yard sales.",
+    "url": "http://www.cafe-kosmos.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ]
+  },
+  {
+    "key": "curated-munich-jazzclub-unterfahrt",
+    "name": "Jazzclub Unterfahrt",
+    "latitude": 48.13541,
+    "longitude": 11.60089,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Einsteinstraße 42",
+    "description": "Jazz club that specializes in great jazz performances.",
+    "url": "http://www.unterfahrt.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ],
+    "wikidataQid": "Q1424325"
+  },
+  {
+    "key": "curated-munich-milla-club",
+    "name": "Milla Club",
+    "latitude": 48.12892,
+    "longitude": 11.56793,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Holzstraße 28",
+    "description": "You have to hold on to your drink in this club - not only because of the (almost) daily live performances of predominantly local bands, but especially due to the oblique floor. Guests are sitting on worn out couches or wooden chairs in this narrow but long club.",
+    "url": "http://www.milla-club.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ]
+  },
+  {
+    "key": "curated-munich-muffatwerk",
+    "name": "Muffatwerk",
+    "latitude": 48.13301,
+    "longitude": 11.58967,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Zellstraße 4",
+    "description": "This \"art factory\" in the heart of Munich has a truly inspired club and a concert hall with café. From the classic \"Into Something Friday\" or an \"Exclusive Line-Up\", the Muffatwerk always has something \"great\" to offer. And if you get tired from dancing you can treat yourself to …",
+    "url": "http://www.muffatwerk.de/en/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Muemuffatwerk042017c85.jpg",
+    "wikidataQid": "Q1951759"
+  },
+  {
+    "key": "curated-munich-negroni-bar",
+    "name": "Negroni Bar",
+    "latitude": 48.13052,
+    "longitude": 11.59743,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Sedanstr. 9,  81667 München",
+    "description": "",
+    "url": "http://www.negronibar.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ]
+  },
+  {
+    "key": "curated-munich-sauna",
+    "name": "Sauna",
+    "latitude": 48.14354,
+    "longitude": 11.55787,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Marsstraße 22",
+    "description": "The Sauna is a new but already well established club in the local scene.",
+    "url": "http://s-a-u-n-a.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ]
+  },
+  {
+    "key": "curated-munich-zephyr-bar",
+    "name": "Zephyr Bar",
+    "latitude": 48.12888,
+    "longitude": 11.57642,
+    "category": "nightlife",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Baaderstraße 68",
+    "description": "Despite its modest appearance, the Zephyr Bar is one of the best cocktail bars in Munich with an award-winning cocktail mixer.",
+    "url": "http://www.zephyr-bar.de/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends"
+    ]
+  },
+  {
+    "key": "curated-munich-allianz-arena-football-stadium",
+    "name": "Allianz Arena football stadium",
+    "latitude": 48.2188,
+    "longitude": 11.62472,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Werner-Heisenberg-Allee 25",
+    "description": "Allianz Arena is the homestead of the wold famous FC Bayern Munich.",
+    "url": "http://www.allianz-arena.de/en/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "expensive",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Allianz_Arena_2008-02-09.jpg",
+    "wikidataQid": "Q127429"
+  },
+  {
+    "key": "curated-munich-bavaria-film-studios",
+    "name": "Bavaria Film Studios",
+    "latitude": 48.0668,
+    "longitude": 11.5491,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Bavariafilmplatz 7",
+    "description": "The Bavaria Film Studios were founded in Geiselgasteig, just outside Munich's city limits, in 1919 by the film producer Peter Ostermayr. Alfred Hitchcock made his first film, \"The Pleasure Garden\" in 1925.",
+    "url": "http://www.filmstadt.de/en.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "wikidataQid": "Q648034"
+  },
+  {
+    "key": "curated-munich-bayern-munich-football-training",
+    "name": "Bayern Munich football training",
+    "latitude": 48.101843,
+    "longitude": 11.572754,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Säbener Straße 51-57",
+    "description": "If you aren't able to get tickets to a game at Allianz Arena, you can catch a glimpse at Germany's top football team at their training grounds and acquire autographs of some of the world's best football players. There is a public training at least once a week.",
+    "url": "http://www.fcbayern.telekom.de/en/club/saebener-strasse/",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8d/FC_Bayern_M%C3%BCnchen_logo_%282024%29.svg",
+    "wikidataQid": "Q15789"
+  },
+  {
+    "key": "curated-munich-cinema",
+    "name": "Cinema",
+    "latitude": 48.1483,
+    "longitude": 11.55307,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Nymphenburger Straße 31",
+    "description": "Among Munich's leading motion picture houses, screening exclusively original version English language films.",
+    "url": "http://www.cinema-muenchen.com/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/91/CINEMA_Eingang.jpg",
+    "wikidataQid": "Q29878919"
+  },
+  {
+    "key": "curated-munich-museum-lichtspiele",
+    "name": "Museum-Lichtspiele",
+    "latitude": 48.13092,
+    "longitude": 11.58741,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Lilienstrasse 2, 81669 München",
+    "description": "",
+    "url": "http://muenchen.movietown.eu/",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "1_2h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/11/2021_Lilienstra%C3%9Fe_2_Museumslichtspiele_6.jpg",
+    "wikidataQid": "Q1954465"
+  },
+  {
+    "key": "curated-munich-m-nchner-volkstheater",
+    "name": "Münchner Volkstheater",
+    "latitude": 48.14788,
+    "longitude": 11.56042,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Brienner Straße 50",
+    "description": "Why not jump in at the deep end and trying to learn German the hard way - watching a play. The Volkstheater is different from other Munich theaters inasmuch as the directors tend to produce classical plays in a very modern (sometimes shocking) way.",
+    "url": "http://www.muenchner-volkstheater.de/index.php",
+    "setting": "indoor",
+    "weatherSuitability": "bad_weather_ideal",
+    "durationEstimate": "2_3h",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ]
+  },
+  {
+    "key": "curated-munich-nationaltheater",
+    "name": "Nationaltheater",
+    "latitude": 48.13964,
+    "longitude": 11.57909,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "Shows ballet and opera performances almost every night. The Bavarian State Opera is said by critics to be one of the best in the world.",
+    "url": "http://www.bayerische.staatsoper.de/866-ZmxhZz0xJmw9ZW4-~Staatsoper~bso_aktuell~aktuelles.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "expensive",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/de/Nationaltheater.jpg"
+  },
+  {
+    "key": "curated-munich-prinzregententheater",
+    "name": "Prinzregententheater",
+    "latitude": 48.139344,
+    "longitude": 11.605691,
+    "category": "entertainment",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Prinzregentenplatz 12",
+    "description": "'Prinzregententheater is one of the most important stages in Munich. It is the home of the Bavarian Drama Academy. The focus of the shows lies on opera and musical.",
+    "url": "http://www.prinzregententheater.de/de/willkommen.html",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "expensive",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "evening"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Muenchen_Prinzregententheater-1.JPG",
+    "wikidataQid": "Q456586"
+  },
+  {
+    "key": "curated-munich-sea-life",
+    "name": "Sea Life",
+    "latitude": 48.17384,
+    "longitude": 11.55609,
+    "category": "zoo_aquarium",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Willi-Daume-Platz 1",
+    "description": "A large aquarium featuring over 30 tanks and aquatic life ranging from local river dwellers all the way to the grand Mediterranean Ocean tank.",
+    "url": "http://www.olympiapark.de/en/home/olympic-park/event-locations/sea-life/",
+    "setting": "indoor",
+    "weatherSuitability": "any",
+    "durationEstimate": "2_3h",
+    "costLevel": "cheap",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/55/M%C3%BCnchen_-_Sea_Life.JPG",
+    "wikidataQid": "Q2261873"
+  },
+  {
+    "key": "curated-munich-tierpark-hellabrunn",
+    "name": "Tierpark Hellabrunn",
+    "latitude": 48.100658,
+    "longitude": 11.551321,
+    "category": "zoo_aquarium",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "Tierparkstraße 30",
+    "description": "Founded in 1911 and built to present animals in their habitat. Today very popular with schools and families.",
+    "url": "http://www.tierpark-hellabrunn.de/munich-zoo.html?L=1",
+    "setting": "mixed",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "half_day",
+    "costLevel": "moderate",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family",
+      "kids"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Tierpark_Hellabrunn_18.jpg"
+  },
+  {
+    "key": "curated-munich-g-rtnerplatz",
+    "name": "Gärtnerplatz",
+    "latitude": 48.13171,
+    "longitude": 11.57605,
+    "category": "neighbourhood_walks",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "1_2h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/34/G%C3%A4rtnerplatz_vom_Theater.jpg",
+    "wikidataQid": "Q1558849"
+  },
+  {
+    "key": "curated-munich-regensburg",
+    "name": "Regensburg",
+    "latitude": 49.02039,
+    "longitude": 12.09734,
+    "category": "neighbourhood_walks",
+    "city": "Munich",
+    "country": "Germany",
+    "description": "A beautiful mediaeval city at the shores of the river Danube. It's historical city center is a UNESCO World Heritage Site in its entirety.",
+    "setting": "mixed",
+    "weatherSuitability": "any",
+    "durationEstimate": "full_day",
+    "costLevel": "free",
+    "bestSeasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "bestTimesOfDay": [
+      "any"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Unter_den_Schwibb%C3%B6gen_1_Regensburg_2012.JPG",
+    "wikidataQid": "Q41277364"
+  },
+  {
+    "key": "curated-munich-surfing-on-the-eisbach",
+    "name": "Surfing on the Eisbach",
+    "latitude": 48.1438,
+    "longitude": 11.5878,
+    "category": "neighbourhood_walks",
+    "city": "Munich",
+    "country": "Germany",
+    "address": "near ''Haus der Kunst''",
+    "description": "Who needs the ocean or a beach when you can surf in the Englischer Garten? Near Haus der Kunst, the Eisbach creates a standing wave. During the summer time, there are always a lot of surfers at this spot.",
+    "setting": "outdoor",
+    "weatherSuitability": "good_weather",
+    "durationEstimate": "under_1h",
+    "costLevel": "free",
+    "bestSeasons": [
+      "any"
+    ],
+    "bestTimesOfDay": [
+      "morning",
+      "afternoon"
+    ],
+    "groupSuitability": [
+      "solo",
+      "couple",
+      "friends",
+      "family"
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Eisbachwelle_am_8.2.2019.jpg"
+  }
+]

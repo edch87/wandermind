@@ -17,7 +17,7 @@ const VIBE_CATEGORIES: Record<Exclude<Vibe, 'flexible'>, Category[]> = {
   foodie: ['food_drink'],
   curious: ['museum_gallery', 'historical', 'neighbourhood_walks'],
   outdoorsy: ['hiking_trails', 'nature_landscape', 'park_garden', 'beach_water'],
-  playful: ['entertainment', 'zoo_aquarium', 'event_festival', 'active_adventure', 'beach_water'],
+  playful: ['entertainment', 'nightlife', 'zoo_aquarium', 'event_festival', 'active_adventure', 'beach_water'],
   unwind: ['wellness', 'food_drink', 'park_garden'],
   explore: ['neighbourhood_walks', 'nature_landscape', 'hiking_trails'],
 };
@@ -42,8 +42,8 @@ const ENERGY_TRAVEL_CAP: Record<EnergyLevel, number> = {
 type Tier = 'quick' | 'local' | 'outing' | 'adventure';
 
 const TIER_FAVOURED: Record<Tier, Category[]> = {
-  quick:     ['food_drink', 'neighbourhood_walks', 'park_garden'],
-  local:     ['museum_gallery', 'food_drink', 'park_garden', 'wellness', 'entertainment', 'historical'],
+  quick:     ['food_drink', 'nightlife', 'neighbourhood_walks', 'park_garden'],
+  local:     ['museum_gallery', 'food_drink', 'nightlife', 'park_garden', 'wellness', 'entertainment', 'historical'],
   outing:    ['hiking_trails', 'nature_landscape', 'zoo_aquarium', 'beach_water', 'historical', 'museum_gallery'],
   adventure: ['active_adventure', 'hiking_trails', 'nature_landscape', 'beach_water', 'zoo_aquarium'],
 };
@@ -52,7 +52,7 @@ const TIER_PENALISED: Record<Tier, Category[]> = {
   quick:     ['active_adventure', 'hiking_trails', 'zoo_aquarium', 'nature_landscape'],
   local:     [],
   outing:    [],
-  adventure: ['food_drink', 'neighbourhood_walks'],
+  adventure: ['food_drink', 'nightlife', 'neighbourhood_walks'],
 };
 
 function tierForBudget(totalMinutes: number): Tier {

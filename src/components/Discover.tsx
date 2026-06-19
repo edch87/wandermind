@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile, BucketListItem, Category, HereSearchResult } from '../types';
 import { CATEGORY_INFO } from '../types';
-import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
+import { getDiscoverPlaces, toSearchResult, SOFT_HEART_MIN_SAVES, type DiscoverPlace } from '../utils/discover';
 import PlaceholderImage from './PlaceholderImage';
-import { UsersThree, Sparkle, MapPin } from '@phosphor-icons/react';
+import { Heart, MapPin } from '@phosphor-icons/react';
 
 interface Props {
   profile: UserProfile;
@@ -12,9 +12,16 @@ interface Props {
   onBack: () => void;
 }
 
+/**
+ * Card surface for a discover entry. Source ('curated' / 'community' / 'wikidata')
+ * is intentionally invisible — the card looks identical regardless. The only
+ * social signal we surface is a soft heart for places that 3+ other larkers
+ * have already saved, regardless of source.
+ */
 export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: () => void }) {
+  const showHeart = (place.saveCount ?? 0) >= SOFT_HEART_MIN_SAVES;
   return (
-    <button onClick={onAdd} className="card text-left w-full">
+    <button onClick={onAdd} className="card text-left w-full relative">
       <div className="place-img-container h-28 overflow-hidden">
         {place.imageUrl ? (
           <img src={place.imageUrl} alt={place.name} loading="lazy" className="place-img"
@@ -26,27 +33,30 @@ export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: ()
             }} />
         ) : null}
         <PlaceholderImage category={place.category} className={place.imageUrl ? 'hidden' : ''} />
+        {showHeart && (
+          <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm"
+               title={`${place.saveCount} larkers have saved this`}>
+            <Heart size={13} weight="fill" color="#c14a2f" />
+          </div>
+        )}
       </div>
       <div className="p-3">
         <div className="text-xs font-medium text-sand-900 truncate">{place.name}</div>
         <div className="text-[10px] text-sand-700 mt-1 flex items-center gap-1">
           <MapPin size={10} /> ~{place.distanceKm} km
         </div>
-        <div className="mt-2">
-          {place.source === 'community' ? (
-            <span className="badge bg-forest-500/10 text-forest-500 inline-flex items-center gap-1">
-              <UsersThree size={11} /> Saved by {place.saveCount}
-            </span>
-          ) : (
-            <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1">
-              <Sparkle size={11} /> {CATEGORY_INFO[place.category].label}
-            </span>
-          )}
-        </div>
       </div>
     </button>
   );
 }
+
+/** Display order for category sections — matches the order in the Lark type system. */
+const CATEGORY_ORDER: Category[] = [
+  'museum_gallery', 'historical', 'nature_landscape', 'park_garden',
+  'hiking_trails', 'beach_water', 'active_adventure',
+  'food_drink', 'nightlife', 'entertainment', 'wellness',
+  'zoo_aquarium', 'event_festival', 'neighbourhood_walks',
+];
 
 export default function Discover({ profile, items, onAddPlace, onBack }: Props) {
   const [places, setPlaces] = useState<DiscoverPlace[]>([]);
@@ -61,10 +71,14 @@ export default function Discover({ profile, items, onAddPlace, onBack }: Props) 
     return () => { cancelled = true; };
   }, [profile, items]);
 
-  const categoriesPresent = [...new Set(places.map(p => p.category))];
+  const categoriesPresent = CATEGORY_ORDER.filter(c => places.some(p => p.category === c));
   const filtered = filter === 'all' ? places : places.filter(p => p.category === filter);
-  const community = filtered.filter(p => p.source === 'community');
-  const notable = filtered.filter(p => p.source === 'wikidata');
+
+  // Group by category and render a section per category, in CATEGORY_ORDER.
+  const sections = categoriesPresent
+    .filter(c => filter === 'all' || c === filter)
+    .map(c => ({ category: c, items: filtered.filter(p => p.category === c) }))
+    .filter(s => s.items.length > 0);
 
   const handleAdd = (p: DiscoverPlace) => onAddPlace(toSearchResult(p), p.category);
 
@@ -79,7 +93,7 @@ export default function Discover({ profile, items, onAddPlace, onBack }: Props) 
           </h2>
         </div>
         <p className="text-xs text-sand-700 mt-2">
-          Ideas within 100 km of home — tap one to review and save it.
+          Ideas within 150 km of home — tap one to review and save it.
         </p>
       </div>
 
@@ -110,23 +124,14 @@ export default function Discover({ profile, items, onAddPlace, onBack }: Props) 
         </div>
       )}
 
-      {!loading && community.length > 0 && (
-        <div className="mb-6">
-          <h3 className="px-6 text-sm font-semibold text-sand-900 mb-3">Loved by other larkers</h3>
+      {!loading && sections.map(s => (
+        <div key={s.category} className="mb-6">
+          <h3 className="px-6 text-sm font-semibold text-sand-900 mb-3">{CATEGORY_INFO[s.category].label}</h3>
           <div className="grid grid-cols-2 gap-3 px-6">
-            {community.map(p => <DiscoverCard key={p.key} place={p} onAdd={() => handleAdd(p)} />)}
+            {s.items.map(p => <DiscoverCard key={p.key} place={p} onAdd={() => handleAdd(p)} />)}
           </div>
         </div>
-      )}
-
-      {!loading && notable.length > 0 && (
-        <div className="mb-6">
-          <h3 className="px-6 text-sm font-semibold text-sand-900 mb-3">Worth knowing about</h3>
-          <div className="grid grid-cols-2 gap-3 px-6">
-            {notable.map(p => <DiscoverCard key={p.key} place={p} onAdd={() => handleAdd(p)} />)}
-          </div>
-        </div>
-      )}
+      ))}
 
       {!loading && filtered.length === 0 && (
         <div className="text-center px-6 py-12">

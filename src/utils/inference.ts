@@ -25,6 +25,7 @@ const CATEGORY_DEFAULTS: Record<Category, Omit<InferredDefaults, 'category' | 'c
   beach_water:         { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'free',     bestSeasons: ['summer'], bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','family','kids'] },
   active_adventure:    { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: '2_3h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
   food_drink:          { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '1_2h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends','family'] },
+  nightlife:           { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '1_2h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends'] },
   entertainment:       { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '2_3h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['afternoon'], groupSuitability: ['couple','friends','family','kids'] },
   wellness:            { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: 'half_day', costLevel: 'expensive',bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple'] },
   zoo_aquarium:        { setting: 'mixed',   weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['couple','friends','family','kids'] },
@@ -51,10 +52,12 @@ function categoryFromHereIds(hereCats: string[]): Category | null {
   // Historical — 300-3200 religious places (churches), historic building & castle
   if (pre('300-3200-') || has('300-3000-0025') || has('300-3000-0030')) return 'historical';
 
-  // Food & drink — all 100 (restaurants, cafes, food halls, coffee), nightlife bars/biergarten, winery, brewery
+  // Food & drink — all 100 (restaurants, cafes, food halls, coffee), plus biergarten and brewery (per Lark rule)
   if (pre('100-')) return 'food_drink';
-  if (has('200-2000-0011') || has('200-2000-0012') || has('200-2000-0019')) return 'food_drink';
   if (has('300-3000-0065') || has('300-3000-0350')) return 'food_drink';
+
+  // Nightlife — bars, pubs, night clubs (200-2000 family)
+  if (has('200-2000-0011') || has('200-2000-0012') || has('200-2000-0019')) return 'nightlife';
 
   // Entertainment — cinema (200-2100), theatre/music/culture (200-2200), nightlife/live music, amusement park
   if (pre('200-2100-') || pre('200-2200-')) return 'entertainment';
@@ -105,7 +108,12 @@ function categoryFromHereNames(hereCatNames: string): Category | null {
   if (/national park|nature reserve|nature park|forest/.test(hereCatNames)) return 'nature_landscape';
   if (/botanical|garden/.test(hereCatNames)) return 'park_garden';
   if (/park|playground/.test(hereCatNames)) return 'park_garden';
-  if (/restaurant|cafe|bar |pub |biergarten|brewery|food|drink/.test(hereCatNames)) return 'food_drink';
+  // Food/drink retain (biergarten and brewery stay food_drink per Lark rule)
+  if (/restaurant|cafe|biergarten|brewery|food/.test(hereCatNames)) return 'food_drink';
+  // Nightlife
+  if (/\bbar\b|pub|nightclub|cocktail|wine bar/.test(hereCatNames)) return 'nightlife';
+  // Fallback generic "drink" — could be a juice bar or smoothie place
+  if (/drink/.test(hereCatNames)) return 'food_drink';
   return null;
 }
 
@@ -123,7 +131,8 @@ function categoryFromGoogleTypes(googleTypes: string[]): Category | null {
   if (has(/museum|art_gallery|planetarium/)) return 'museum_gallery';
   if (has(/historical|monument|castle|palace|church|place_of_worship|synagogue|mosque|temple|cultural_landmark/)) return 'historical';
   if (has(/zoo|aquarium|wildlife/)) return 'zoo_aquarium';
-  if (has(/amusement|movie_theater|performing_arts|concert|opera|bowling|casino|comedy|karaoke|night_club|arcade|theater/)) return 'entertainment';
+  // Entertainment — cinemas, theatres, concerts, arcades (night_club moved to nightlife below)
+  if (has(/amusement|movie_theater|performing_arts|concert|opera|bowling|casino|comedy|karaoke|arcade|theater/)) return 'entertainment';
   if (has(/water_park|swimming|beach/)) return 'beach_water';
   if (has(/hiking/)) return 'hiking_trails';
   if (has(/ski|sports_|fitness|golf|stadium|climbing|skating|adventure/)) return 'active_adventure';
@@ -131,7 +140,12 @@ function categoryFromGoogleTypes(googleTypes: string[]): Category | null {
   if (has(/national_park|natural_feature|observation_deck/)) return 'nature_landscape';
   if (has(/botanical|garden|dog_park|playground|picnic/)) return 'park_garden';
   if (/(^|,)park(,|$)/.test(t) || has(/state_park|city_park/)) return 'park_garden';
-  if (has(/restaurant|cafe|coffee|bar(_|,|$)|pub(_|,|$)|bakery|food|brew|wine|deli|ice_cream|market/)) return 'food_drink';
+  // Food/drink — restaurants, cafés, brewpubs (per Lark rule). Bars/pubs go to nightlife below.
+  if (has(/restaurant|cafe|coffee|bakery|food|brew|deli|ice_cream|market/)) return 'food_drink';
+  // Nightlife — bars, pubs, night clubs, wine bars, cocktail bars
+  if (has(/night_club|bar(_|,|$)|pub(_|,|$)|wine_bar|cocktail/)) return 'nightlife';
+  // Generic wine (winery, wine shop) → food_drink
+  if (has(/wine/)) return 'food_drink';
   if (has(/locality|neighborhood|town_square|plaza/)) return 'neighbourhood_walks';
   return null;
 }
@@ -152,7 +166,10 @@ function categoryFromName(name: string): Category | null {
   if (/\bspa\b|thermal|therme|sauna|wellness/.test(name)) return 'wellness';
   if (/\bbeach\b|\bstrand\b|\bschwimm|\blake\b|\bsee\b/.test(name)) return 'beach_water';
   if (/cinema|theater|theatre|concert hall|bowling|escape room/.test(name)) return 'entertainment';
-  if (/restaurant|bistro|café|cafe|brasserie|brewery|brauerei|biergarten|gasthaus|pub\b|\bbar\b/.test(name)) return 'food_drink';
+  // Food/drink retain wins over bar/pub (so "Augustiner Bräu" stays food_drink even if it had "bar" in the name)
+  if (/biergarten|brauhaus|bräuhaus|brewery|brauerei|gasthaus|gasthof|wirtshaus|restaurant|bistro|café|cafe|brasserie/.test(name)) return 'food_drink';
+  // Nightlife
+  if (/\bpub\b|\bbar\b|nightclub|cocktail lounge|cocktail bar|speakeasy/.test(name)) return 'nightlife';
   return null;
 }
 
@@ -175,9 +192,10 @@ function categoryFromOsmTags(tags: Record<string, string>): Category | null {
   if (t('sport') === 'swimming') return 'beach_water';
   if (['climbing', 'skiing', 'kayak', 'surfing', 'paragliding'].includes(t('sport'))) return 'active_adventure';
   if (t('leisure') === 'water_park') return 'active_adventure';
-  if (['restaurant', 'cafe', 'pub', 'biergarten', 'fast_food', 'bar'].includes(t('amenity'))) return 'food_drink';
+  if (['restaurant', 'cafe', 'biergarten', 'fast_food'].includes(t('amenity'))) return 'food_drink';
   if (t('craft') === 'brewery') return 'food_drink';
   if (t('amenity') === 'marketplace') return 'food_drink';
+  if (['bar', 'pub', 'nightclub'].includes(t('amenity'))) return 'nightlife';
   if (t('amenity') === 'cinema' || t('leisure') === 'bowling_alley') return 'entertainment';
   if (t('tourism') === 'theme_park' || t('leisure') === 'amusement_arcade') return 'entertainment';
   if (t('leisure') === 'escape_game') return 'entertainment';

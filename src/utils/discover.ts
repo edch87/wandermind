@@ -1,14 +1,20 @@
 import { supabase } from './supabase';
 import type { BucketListItem, Category, UserProfile, HereSearchResult } from '../types';
+import curatedMunich from '../data/curated/munich.json';
 
 /**
- * Discover feed data layer — two organic sources, zero paid APIs:
+ * Discover feed data layer — three organic sources, zero paid APIs:
  *
- *  1. Community: places other Lark users have saved, aggregated anonymously
+ *  1. Curated: hand-reviewed places shipped in src/data/curated/*.json. Each
+ *     file is a regional batch (Munich first; more cities to follow). Entries
+ *     have an editor-chosen description and image and are filtered by the
+ *     same 150 km radius from the user's home as the other sources.
+ *
+ *  2. Community: places other Lark users have saved, aggregated anonymously
  *     by the `get_community_places` security-definer function (migration v4).
  *     Only public fields + a save count; 2+ distinct savers required (privacy).
  *
- *  2. Wikidata: notable places near the user, ranked by sitelink count
+ *  3. Wikidata: notable places near the user, ranked by sitelink count
  *     (number of Wikipedia language editions — our stand-in for ratings).
  *     Wikidata is CC0, so results are cached in the shared `discover_cache`
  *     table in Supabase and one fetch serves every user, forever.
@@ -19,13 +25,14 @@ import type { BucketListItem, Category, UserProfile, HereSearchResult } from '..
  */
 
 export interface DiscoverPlace {
-  key: string;                       // Wikidata QID or community place key
-  source: 'community' | 'wikidata';
+  key: string;                       // Wikidata QID, curated key, or community place key
+  source: 'curated' | 'community' | 'wikidata';
   name: string;
   latitude: number;
   longitude: number;
   category: Category;
   imageUrl?: string;
+  description?: string;              // curated: editor-chosen one-liner
   city?: string;
   country?: string;
   saveCount?: number;                // community: distinct users who saved it
@@ -48,10 +55,11 @@ export function toSearchResult(p: DiscoverPlace): HereSearchResult {
   };
 }
 
-const RADIUS_KM = 100;
+const RADIUS_KM = 150;               // realistic 2hr-each-way Autobahn ceiling
 const CACHE_MAX_AGE_DAYS = 60;       // CC0 data; refresh just to pick up improvements
 const PER_CATEGORY_LIMIT = 20;
 const MIN_SITELINKS = 2;             // drop barely-documented places
+const COMMUNITY_HEART_THRESHOLD = 3; // saves needed for the soft community signal on a card
 
 // Wikidata P31 classes per Lark category. Direct instances only — the big
 // subclass trees time out inside the geo service, so we list the classes that
@@ -211,6 +219,45 @@ async function getWikidataPlaces(homeLat: number, homeLng: number): Promise<Disc
   return out;
 }
 
+// ── Curated layer ──
+
+interface CuratedEntry {
+  key: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: Category;
+  imageUrl?: string;
+  description?: string;
+  city?: string;
+  country?: string;
+  wikidataQid?: string;
+}
+
+/** All curated entries from every region file, merged. Add new cities here. */
+const CURATED_PLACES: CuratedEntry[] = [
+  ...(curatedMunich as CuratedEntry[]),
+];
+
+/** Curated places within RADIUS_KM of the user's home. */
+function getCuratedPlaces(homeLat: number, homeLng: number): DiscoverPlace[] {
+  return CURATED_PLACES
+    .map(p => ({
+      key: p.key,
+      source: 'curated' as const,
+      name: p.name,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      category: p.category,
+      imageUrl: p.imageUrl,
+      description: p.description,
+      city: p.city,
+      country: p.country,
+      distanceKm: Math.round(haversineKm(homeLat, homeLng, p.latitude, p.longitude)),
+    }))
+    .filter(p => p.distanceKm <= RADIUS_KM);
+}
+
 // ── Community layer ──
 
 async function getCommunityPlaces(homeLat: number, homeLng: number): Promise<DiscoverPlace[]> {
@@ -250,10 +297,26 @@ function isAlreadySaved(place: DiscoverPlace, items: BucketListItem[]): boolean 
 // shouldn't refetch. Cleared on page reload.
 const sessionCache = new Map<string, DiscoverPlace[]>();
 
+/** True if two places are the same physical location (≤150m or matching Wikidata QID). */
+function sameLocation(a: DiscoverPlace, b: DiscoverPlace): boolean {
+  if (a.key && b.key && a.key === b.key) return true;
+  return haversineKm(a.latitude, a.longitude, b.latitude, b.longitude) < 0.15;
+}
+
+/** Merge a duplicate into the kept entry: keep curated metadata, but carry over community signal. */
+function mergeDuplicate(kept: DiscoverPlace, other: DiscoverPlace): DiscoverPlace {
+  return {
+    ...kept,
+    saveCount: kept.saveCount ?? other.saveCount,
+    sitelinks: kept.sitelinks ?? other.sitelinks,
+  };
+}
+
 /**
- * The organic discover feed: community saves first (most loved first),
- * then Wikidata notables (most famous first), minus anything already
- * on the user's own list.
+ * The discover feed: curated picks first (editor-chosen), then community saves
+ * (most loved first), then Wikidata notables (most famous first), minus anything
+ * already on the user's own list. Source labels don't surface in the UI — the
+ * feed reads as a single seamless list grouped by category.
  */
 export async function getDiscoverPlaces(
   profile: UserProfile,
@@ -263,21 +326,48 @@ export async function getDiscoverPlaces(
   let all = sessionCache.get(cacheKey);
 
   if (!all) {
+    const curated = getCuratedPlaces(profile.homeLatitude, profile.homeLongitude);
     const [community, wikidata] = await Promise.all([
       getCommunityPlaces(profile.homeLatitude, profile.homeLongitude),
       getWikidataPlaces(profile.homeLatitude, profile.homeLongitude),
     ]);
 
-    // Drop Wikidata entries that duplicate a community place
-    const deduped = wikidata.filter(
-      w => !community.some(c => haversineKm(c.latitude, c.longitude, w.latitude, w.longitude) < 0.15),
-    );
+    // Three-way dedup. Priority: curated > community > wikidata.
+    // When two sources describe the same place, curated metadata wins but we
+    // preserve community saveCount / wikidata sitelinks so the card can still
+    // show its social signal.
+    const merged: DiscoverPlace[] = [];
+    for (const c of curated) {
+      const commMatch = community.find(x => sameLocation(c, x));
+      const wikiMatch = wikidata.find(x => sameLocation(c, x));
+      merged.push(mergeDuplicate(mergeDuplicate(c, commMatch || c), wikiMatch || c));
+    }
+    for (const c of community) {
+      if (merged.some(m => sameLocation(m, c))) continue;
+      const wikiMatch = wikidata.find(x => sameLocation(c, x));
+      merged.push(mergeDuplicate(c, wikiMatch || c));
+    }
+    for (const w of wikidata) {
+      if (merged.some(m => sameLocation(m, w))) continue;
+      merged.push(w);
+    }
 
-    community.sort((a, b) => (b.saveCount || 0) - (a.saveCount || 0));
-    deduped.sort((a, b) => (b.sitelinks || 0) - (a.sitelinks || 0));
-    all = [...community, ...deduped];
+    // Rank within source bands: curated first (in file order), then community by saves,
+    // then wikidata by sitelinks. The user sees them merged so source bands stay implicit.
+    const order: Record<DiscoverPlace['source'], number> = { curated: 0, community: 1, wikidata: 2 };
+    merged.sort((a, b) => {
+      if (order[a.source] !== order[b.source]) return order[a.source] - order[b.source];
+      if (a.source === 'community') return (b.saveCount || 0) - (a.saveCount || 0);
+      if (a.source === 'wikidata') return (b.sitelinks || 0) - (a.sitelinks || 0);
+      return 0;
+    });
+
+    all = merged;
     sessionCache.set(cacheKey, all);
   }
 
   return all.filter(p => !isAlreadySaved(p, savedItems));
 }
+
+/** Threshold (in saves) above which a card should show the soft community heart. */
+export const SOFT_HEART_MIN_SAVES = COMMUNITY_HEART_THRESHOLD;
