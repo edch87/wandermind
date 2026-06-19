@@ -190,6 +190,25 @@ export async function saveItem(item: BucketListItem): Promise<boolean> {
   return !error;
 }
 
+/**
+ * Batch upsert. Used by onboarding's seed-from-discover step so a user can
+ * land on the dashboard with a list already populated. Returns the count
+ * actually written.
+ */
+export async function saveItems(items: BucketListItem[]): Promise<number> {
+  if (items.length === 0) return 0;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const dbItems = items.map(item => itemToDb(item, user.id));
+  const { error } = await supabase.from('bucket_list_items').upsert(dbItems);
+  if (error) {
+    console.error('saveItems failed:', error.message);
+    return 0;
+  }
+  return items.length;
+}
+
 export async function deleteItem(id: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;

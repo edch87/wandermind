@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './utils/supabase';
-import { getProfile, getItems, saveProfile, saveItem, deleteItem } from './utils/storage';
+import { getProfile, getItems, saveProfile, saveItem, saveItems, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem, Category, HereSearchResult } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { House, ClipboardText, Plus, Gear } from '@phosphor-icons/react';
@@ -136,8 +136,12 @@ export default function App() {
     return (
       <Onboarding
         displayName={session.user.user_metadata?.display_name || ''}
-        onComplete={(p) => {
-          handleSaveProfile(p);
+        onComplete={async (p, seedItems) => {
+          await handleSaveProfile(p);
+          if (seedItems && seedItems.length > 0) {
+            await saveItems(seedItems);
+            await refreshItems();
+          }
           setScreen({ name: 'dashboard' });
         }}
       />
