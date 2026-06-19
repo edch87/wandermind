@@ -31,6 +31,7 @@ export default function App() {
   const [items, setItems] = useState<BucketListItem[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: 'dashboard' });
   const [dataLoading, setDataLoading] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   // Listen for auth changes
   useEffect(() => {
@@ -39,8 +40,11 @@ export default function App() {
       setAuthLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -99,6 +103,17 @@ export default function App() {
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
         <div className="text-sand-700 text-lg font-medium">Loading...</div>
       </div>
+    );
+  }
+
+  // Password recovery: show new-password screen regardless of session state
+  if (passwordRecovery) {
+    return (
+      <AuthScreen
+        initialMode="new-password"
+        onAuthSuccess={() => {}}
+        onPasswordUpdated={() => setPasswordRecovery(false)}
+      />
     );
   }
 
