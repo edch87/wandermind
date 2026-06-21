@@ -212,7 +212,13 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
                   ))}
                 </div>
               )}
-              <div ref={mapRef} className="w-full h-48 rounded-[20px] border border-sand-200" />
+              {/* Inline height with minHeight fallback: same pattern as AddPlace confirm step.
+                  Inside App's wrapper, Tailwind h-48 alone has been collapsing to zero here. */}
+              <div
+                ref={mapRef}
+                className="w-full rounded-[20px] border border-sand-200 overflow-hidden"
+                style={{ height: '12rem', minHeight: '192px' }}
+              />
             </div>
           )}
         </div>
