@@ -4,6 +4,10 @@
 
 ---
 
+## 2026-06-21 (fixes)
+- **Transit always showed 0 minutes**: HERE Transit doesn't return `travelSummary` fields by default — you have to opt in with `return=travelSummary`. Without it, the parser summed empty sections and stored "0 min by transit" for every item. Fixed in `fetchHereRoute`; added two safety nets (derive duration from arrival-departure timestamps if summaries are missing; treat transit=0 between distinct points as `null` → "Not practical by transit").
+- **24h cooldown on manual "Refresh travel times"**: stored in localStorage. Doesn't gate the auto-refresh on home-location change (which is user-initiated by an actual home edit). Stops accidental double-taps from burning HERE quota.
+
 ## 2026-06-21 (per-mode travel times)
 - **Public transport added + travel-time architecture overhaul**: at save time the app now computes all 4 transport modes (walk/bike/car/transit) in parallel via HERE and stores them per-item. The single `travelTimeMinutes` + `transportMode` pair (and the user's `preferredTransport`) is gone — per-outing context belongs in the recommend flow, not on the item.
 - **Transit specifics**: queries HERE Transit with `departureTime` set to the next-upcoming Tuesday 10:30am local (off-peak representative weekday). HERE returning empty `routes` stores `null` → renders as "Not practical by transit". Network/HTTP failures fall back to haversine × 2.5.

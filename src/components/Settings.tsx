@@ -20,6 +20,24 @@ interface Props {
  *  enough to refetch all travel times. Anything smaller is privacy rounding. */
 const HOME_CHANGE_THRESHOLD_KM = 0.5;
 
+/** Soft cooldown on the manual "Refresh travel times" button. Doesn't affect
+ *  the auto-refresh triggered by a home location change. 24h is generous
+ *  enough that legitimate users never bump into it; just stops accidental
+ *  double-taps from burning through HERE quota. */
+const MANUAL_REFRESH_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const REFRESH_TS_KEY = 'lark:travelRefreshedAt';
+
+function getLastRefreshMs(): number | null {
+  try {
+    const raw = localStorage.getItem(REFRESH_TS_KEY);
+    return raw ? Number(raw) : null;
+  } catch { return null; }
+}
+
+function setLastRefreshMs(ms: number): void {
+  try { localStorage.setItem(REFRESH_TS_KEY, String(ms)); } catch { /* ignore */ }
+}
+
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const a =
@@ -98,6 +116,7 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
   // home-location change and manually via the "Refresh travel times" button.
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
+  const [lastRefreshMs, setLastRefreshMsState] = useState<number | null>(getLastRefreshMs());
 
   const runTravelRefresh = async (homeLat: number, homeLng: number) => {
     const todo = items.filter(i => i.status === 'want_to_do');
@@ -121,8 +140,17 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
       };
     });
     await onSaveItems(updated);
+    const now = Date.now();
+    setLastRefreshMs(now);
+    setLastRefreshMsState(now);
     setRefreshing(false);
   };
+
+  const msUntilRefreshAvailable = lastRefreshMs == null
+    ? 0
+    : Math.max(0, lastRefreshMs + MANUAL_REFRESH_COOLDOWN_MS - Date.now());
+  const refreshOnCooldown = msUntilRefreshAvailable > 0;
+  const hoursUntilAvailable = Math.ceil(msUntilRefreshAvailable / (60 * 60 * 1000));
 
   const handleSave = async () => {
     const homeChangedKm = haversineKm(
@@ -213,12 +241,14 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
             Usually runs automatically when you change your home location.
           </p>
           <button onClick={handleManualRefresh}
-            disabled={refreshing || items.filter(i => i.status === 'want_to_do').length === 0}
+            disabled={refreshing || refreshOnCooldown || items.filter(i => i.status === 'want_to_do').length === 0}
             className="w-full py-3 rounded-full text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition disabled:opacity-40 inline-flex items-center justify-center gap-2">
             <ArrowsClockwise size={14} className={refreshing ? 'animate-spin' : ''} />
             {refreshing
               ? `Refreshing ${refreshProgress.done} of ${refreshProgress.total}...`
-              : 'Refresh travel times'}
+              : refreshOnCooldown
+                ? `Available again in ${hoursUntilAvailable}h`
+                : 'Refresh travel times'}
           </button>
         </div>
 

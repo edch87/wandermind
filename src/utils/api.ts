@@ -515,8 +515,11 @@ async function fetchHereRoute(
     let url: string;
     if (mode === 'transit') {
       const departure = encodeURIComponent(nextTuesdayMidMorningIso());
-      // HERE Transit doesn't need transportMode; departureTime forces the off-peak slot
-      url = `${HERE_TRANSIT}?origin=${origin}&destination=${destination}&departureTime=${departure}&apiKey=${HERE_API_KEY}`;
+      // HERE Transit doesn't return travelSummary fields by default — you have
+      // to opt in. Without this, every section came back with no duration,
+      // so we summed 0+0+0 and stored "0 minutes by transit". Asking for
+      // travelSummary populates the duration/length we read below.
+      url = `${HERE_TRANSIT}?origin=${origin}&destination=${destination}&departureTime=${departure}&return=travelSummary&apiKey=${HERE_API_KEY}`;
     } else {
       url = `${HERE_ROUTE}?transportMode=${HERE_MODE_PARAM[mode]}&origin=${origin}&destination=${destination}&return=summary&apiKey=${HERE_API_KEY}`;
     }
@@ -544,9 +547,30 @@ async function fetchHereRoute(
         totalMeters += section.travelSummary.length || 0;
       }
     }
+
+    // Belt-and-braces fallback: if we somehow got a route with no summaries,
+    // derive the duration from the first section's departure and the last
+    // section's arrival. These timestamps are always present on transit routes
+    // and almost always on routing v8 too.
+    if (totalSeconds === 0 && sections.length > 0) {
+      const dep = sections[0]?.departure?.time;
+      const arr = sections[sections.length - 1]?.arrival?.time;
+      if (dep && arr) {
+        totalSeconds = Math.max(0, (new Date(arr).getTime() - new Date(dep).getTime()) / 1000);
+      }
+    }
+
+    const minutes = Math.round(totalSeconds / 60);
+    // Transit returning 0 minutes between distinct points is never a real
+    // answer — treat it as "no practical route" so the UI shows the proper
+    // "Not practical by transit" label instead of a misleading "0 min".
+    if (mode === 'transit' && minutes === 0) {
+      return { ok: true, minutes: null, distanceKm: null };
+    }
+
     return {
       ok: true,
-      minutes: Math.round(totalSeconds / 60),
+      minutes,
       distanceKm: Math.round(totalMeters / 100) / 10,
     };
   } catch {
