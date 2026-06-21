@@ -115,7 +115,7 @@ export default function AuthScreen({ onAuthSuccess, initialMode = 'login', onPas
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. Alex"
                 required
-                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
               />
             </div>
           )}
@@ -131,7 +131,7 @@ export default function AuthScreen({ onAuthSuccess, initialMode = 'login', onPas
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
               />
             </div>
           )}
@@ -159,7 +159,7 @@ export default function AuthScreen({ onAuthSuccess, initialMode = 'login', onPas
                 placeholder="At least 6 characters"
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+                className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
               />
             </div>
           )}

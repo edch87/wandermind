@@ -134,6 +134,10 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   // Discover-step selection state (keyed by curated entry key)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
+  // Shown after the user taps the final button. onComplete runs profile + items
+  // upserts in the parent which can take a few seconds; without this the user
+  // sees a frozen screen.
+  const [completingMessage, setCompletingMessage] = useState<string | null>(null);
 
   // Swipe handling
   const touchStartX = useRef(0);
@@ -251,7 +255,8 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     if (hasNearby) {
       setStep('discover');
     } else {
-      onComplete(profile);
+      setCompletingMessage('Setting things up...');
+      await onComplete(profile);
     }
   };
 
@@ -267,12 +272,14 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     const profile = await buildProfile();
     if (!profile) return;
     if (!withSelection || selectedKeys.size === 0) {
-      onComplete(profile);
+      setCompletingMessage('Almost there...');
+      await onComplete(profile);
       return;
     }
     const chosen = nearbyCurated.filter(e => selectedKeys.has(e.key));
     const items = chosen.map(e => curatedToBucketListItem(e, profile));
-    onComplete(profile, items);
+    setCompletingMessage('Building your list...');
+    await onComplete(profile, items);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -291,6 +298,19 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       }
     }
   };
+
+  // ── Completion interstitial ──
+  // Shown after the user taps the final button while the parent runs its
+  // profile + items writes. Wins over every other render so the user sees
+  // a clear "we're working on it" signal instead of a frozen previous screen.
+  if (completingMessage) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
+        <KiteIcon size={48} className="text-sand-900 mb-6 animate-pulse" />
+        <p className="text-sand-700 text-base">{completingMessage}</p>
+      </div>
+    );
+  }
 
   // ── Welcome screen ──
   if (step === 'welcome') {
@@ -553,7 +573,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Street, neighbourhood, or postcode"
-            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
           />
           <button
             onClick={handleSearch}
