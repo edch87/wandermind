@@ -1,18 +1,34 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { searchPlaces, reverseGeocode, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, reverseGeocode, calculateBatchAllModes, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { markHomePinRefined } from '../utils/homePinPrompt';
-import type { UserProfile, HereSearchResult } from '../types';
+import type { UserProfile, HereSearchResult, BucketListItem } from '../types';
+import { ArrowsClockwise } from '@phosphor-icons/react';
 
 interface Props {
   profile: UserProfile;
+  items: BucketListItem[];
   onSave: (profile: UserProfile) => void;
+  /** Persist updated items in bulk after a travel-time refresh. */
+  onSaveItems: (items: BucketListItem[]) => Promise<void>;
   onBack: () => void;
   onSignOut: () => void;
 }
 
-export default function Settings({ profile, onSave, onBack, onSignOut }: Props) {
+/** Distance threshold (km) for treating a home-coord change as meaningful
+ *  enough to refetch all travel times. Anything smaller is privacy rounding. */
+const HOME_CHANGE_THRESHOLD_KM = 0.5;
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const a =
+    Math.sin(toRad(lat2 - lat1) / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lng2 - lng1) / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(a));
+}
+
+export default function Settings({ profile, items, onSave, onSaveItems, onBack, onSignOut }: Props) {
   const [name, setName] = useState(profile.displayName);
   const [homeAddress, setHomeAddress] = useState(profile.homeAddress);
   const [homeLat, setHomeLat] = useState(profile.homeLatitude);
@@ -78,11 +94,57 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
 
   const [shareSaves, setShareSaves] = useState(profile.shareSaves !== false);
 
-  const handleSave = () => {
+  // Background refresh of per-mode travel times. Triggered automatically on
+  // home-location change and manually via the "Refresh travel times" button.
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
+
+  const runTravelRefresh = async (homeLat: number, homeLng: number) => {
+    const todo = items.filter(i => i.status === 'want_to_do');
+    if (todo.length === 0) return;
+    setRefreshing(true);
+    setRefreshProgress({ done: 0, total: todo.length });
+    const batch = todo.map(i => ({ id: i.id, latitude: i.latitude, longitude: i.longitude }));
+    const results = await calculateBatchAllModes(homeLat, homeLng, batch, (done, total) =>
+      setRefreshProgress({ done, total }),
+    );
+    const updated = items.map(item => {
+      const r = results[item.id];
+      if (!r) return item;
+      return {
+        ...item,
+        travelDistanceKm: r.distanceKm,
+        walkMinutes: r.walkMinutes,
+        bikeMinutes: r.bikeMinutes,
+        carMinutes: r.carMinutes,
+        transitMinutes: r.transitMinutes,
+      };
+    });
+    await onSaveItems(updated);
+    setRefreshing(false);
+  };
+
+  const handleSave = async () => {
+    const homeChangedKm = haversineKm(
+      profile.homeLatitude, profile.homeLongitude, homeLat, homeLng,
+    );
     onSave({ ...profile, displayName: name,
       homeLatitude: homeLat, homeLongitude: homeLng, homeAddress, shareSaves });
     markHomePinRefined(profile.id);
+
+    // Home moved meaningfully — refresh travel times in the background before
+    // returning to the previous screen. Items become readable immediately;
+    // the banner clears when the batch finishes.
+    if (homeChangedKm > HOME_CHANGE_THRESHOLD_KM) {
+      await runTravelRefresh(homeLat, homeLng);
+    }
     onBack();
+  };
+
+  /** Manual button — handy for users with legacy items whose 3 unused modes
+   *  are still null. Idempotent: running it again just rewrites the same data. */
+  const handleManualRefresh = async () => {
+    await runTravelRefresh(profile.homeLatitude, profile.homeLongitude);
   };
 
   return (
@@ -144,8 +206,29 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
           </button>
         </div>
 
+        <div>
+          <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1 block">Travel times</label>
+          <p className="text-[11px] text-sand-600 mb-2">
+            Recalculate walk, bike, car and transit times for every place on your list.
+            Usually runs automatically when you change your home location.
+          </p>
+          <button onClick={handleManualRefresh}
+            disabled={refreshing || items.filter(i => i.status === 'want_to_do').length === 0}
+            className="w-full py-3 rounded-full text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-50 transition disabled:opacity-40 inline-flex items-center justify-center gap-2">
+            <ArrowsClockwise size={14} className={refreshing ? 'animate-spin' : ''} />
+            {refreshing
+              ? `Refreshing ${refreshProgress.done} of ${refreshProgress.total}...`
+              : 'Refresh travel times'}
+          </button>
+        </div>
+
         <button onClick={handleSave}
-          className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold hover:bg-sand-800 transition">Save changes</button>
+          disabled={refreshing}
+          className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold hover:bg-sand-800 transition disabled:opacity-60">
+          {refreshing
+            ? `Updating travel times (${refreshProgress.done}/${refreshProgress.total})...`
+            : 'Save changes'}
+        </button>
 
         <div className="pt-4 border-t border-sand-200 space-y-3">
           <button onClick={async () => { await supabase.auth.signOut(); onSignOut(); }}

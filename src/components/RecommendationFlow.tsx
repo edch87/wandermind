@@ -1,14 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem, Category, HereSearchResult } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
-import { fetchWeatherForecast, calculateBatchTravelTimes } from '../utils/api';
+import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations, findCombos, viableModes } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
 import { DiscoverCard } from './Discover';
 import { getSuppressedIds, recordShown } from '../utils/recentShown';
 import {
-  Car, Bicycle, Footprints, Dog, Wheelchair, Baby, Warning,
+  Car, Bicycle, Footprints, Train, Dog, Wheelchair, Baby, Warning,
   User, Heart, Users, House,
   Shuffle, Lightning, Fire, Leaf,
   ArrowsLeftRight, ForkKnife, Lightbulb, Tree, Confetti, Wind, Compass,
@@ -23,9 +23,6 @@ const TIME_SNAPS = [
   { min: 240, label: 'Half day' },
   { min: Infinity, label: 'Full day' },
 ];
-
-/** Walk auto-include cutoff for the UI batch fetch (must match recommendation.ts) */
-const WALK_AUTO_CUTOFF_KM = 1.5;
 
 const MODE_LABEL: Record<TransportMode, string> = {
   car: 'car', bike: 'bike', walk: 'walk', transit: 'transit',
@@ -146,7 +143,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
   const [energy, setEnergy] = useState<EnergyLevel>('surprise_me');
   const [vibes, setVibes] = useState<Vibe[]>(['flexible']);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
-  const [transportModes, setTransportModes] = useState<TransportMode[]>([profile.preferredTransport || 'car']);
+  const [transportModes, setTransportModes] = useState<TransportMode[]>(['car']);
   const [dogComing, setDogComing] = useState(false);
   const [needsAccessibility, setNeedsAccessibility] = useState(false);
   const [strollerNeeded, setStrollerNeeded] = useState(false);
@@ -181,36 +178,14 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     // Fresh submit — clear in-session suppression (the localStorage one persists).
     setSessionSuppressed([]);
 
-    // Fetch weather
+    // Fetch weather. Travel times are pre-computed per item (save-time + on
+    // home change), so the old "Calculating travel times..." HERE batch is
+    // gone — recommendations are now near-instant after weather lands.
     setLoadingMsg('Checking the weather...');
     const forecasts = await fetchWeatherForecast(profile.homeLatitude, profile.homeLongitude);
     const targetDate = getDateString(dateOffset);
     const dayWeather = forecasts.find(f => f.date === targetDate) || forecasts[0] || null;
     setWeather(dayWeather);
-
-    // Decide which modes to compute travel times for.
-    // Always include the user's selected modes; auto-include walk for any item under 1.5 km.
-    const candidates = items.filter(i => i.status === 'want_to_do');
-    const modesToCompute: TransportMode[] = [...transportModes];
-    const needsWalk = candidates.some(i => i.travelDistanceKm <= WALK_AUTO_CUTOFF_KM);
-    if (needsWalk && !modesToCompute.includes('walk')) modesToCompute.push('walk');
-
-    setLoadingMsg('Calculating travel times...');
-    const overrides: Record<string, Partial<Record<TransportMode, number>>> = {};
-    for (const mode of modesToCompute) {
-      // For walk, only route items under the cutoff to keep API calls down
-      const itemsForMode = mode === 'walk'
-        ? candidates.filter(i => i.travelDistanceKm <= WALK_AUTO_CUTOFF_KM)
-        : candidates;
-      const batch = itemsForMode.map(i => ({ id: i.id, latitude: i.latitude, longitude: i.longitude }));
-      const travelTimes = await calculateBatchTravelTimes(
-        profile.homeLatitude, profile.homeLongitude, batch, mode
-      );
-      for (const [id, travel] of Object.entries(travelTimes)) {
-        if (!overrides[id]) overrides[id] = {};
-        overrides[id][mode] = travel.durationMinutes;
-      }
-    }
 
     setLoadingMsg('Finding your best options...');
     const timeMax = TIME_SNAPS[timeRange[1]].min; // may be Infinity for Full day
@@ -228,7 +203,6 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
       dogComing,
       needsAccessibility,
       strollerNeeded,
-      travelTimeOverrides: overrides,
       suppressedIds: getSuppressedIds(),
     };
     const scored = getRecommendations(items, finalConstraints, dayWeather);
@@ -264,6 +238,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
 
   const transportOptions: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
     { mode: 'car', icon: <Car size={14} />, label: 'Car' },
+    { mode: 'transit', icon: <Train size={14} />, label: 'Transit' },
     { mode: 'bike', icon: <Bicycle size={14} />, label: 'Bike' },
     { mode: 'walk', icon: <Footprints size={14} />, label: 'Walk' },
   ];
@@ -472,10 +447,10 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
             const { item, reasons } = scored;
             const modeOptions = resultConstraints
               ? viableModes(item, resultConstraints).slice(0, 2)
-              : [{ mode: (transportModes[0] || 'car') as TransportMode, minutes: item.travelTimeMinutes }];
-            const travelLabel = modeOptions
-              .map(m => `${formatDuration(m.minutes)} by ${MODE_LABEL[m.mode]}`)
-              .join(' or ');
+              : [];
+            const travelLabel = modeOptions.length > 0
+              ? modeOptions.map(m => `${formatDuration(m.minutes)} by ${MODE_LABEL[m.mode]}`).join(' or ')
+              : `${item.travelDistanceKm} km away`;
             const targetDate = getDateString(dateOffset);
             const hoursWarning = getOpeningHoursWarning(item.openingHours, targetDate);
             const nonHoursReasons = reasons.filter(r => !r.startsWith('Closed') && !r.startsWith('May be closed') && !r.startsWith('Only open') && !r.startsWith('Closes at') && !r.startsWith('Open until') && !r.startsWith('Opens at'));

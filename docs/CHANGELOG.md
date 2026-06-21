@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-06-21 (per-mode travel times)
+- **Public transport added + travel-time architecture overhaul**: at save time the app now computes all 4 transport modes (walk/bike/car/transit) in parallel via HERE and stores them per-item. The single `travelTimeMinutes` + `transportMode` pair (and the user's `preferredTransport`) is gone — per-outing context belongs in the recommend flow, not on the item.
+- **Transit specifics**: queries HERE Transit with `departureTime` set to the next-upcoming Tuesday 10:30am local (off-peak representative weekday). HERE returning empty `routes` stores `null` → renders as "Not practical by transit". Network/HTTP failures fall back to haversine × 2.5.
+- **Recommend flow simplified**: deleted the per-session "Calculating travel times..." HERE batch — `getRecommendations` now reads `walkMinutes`/`bikeMinutes`/`carMinutes`/`transitMinutes` directly off each item. Recommendations are near-instant after weather lands. Added Transit as a 4th transport toggle in "How are you getting there?"
+- **Home-change refresh**: Settings now detects meaningful home moves (>500m) and runs a background batch refresh of all items' 4 modes (CONCURRENCY=3). Progress shown inline on the Save button: "Updating travel times (5/30)...". Manual "Refresh travel times" button added for users with legacy items (only their original mode populated).
+- **List + detail updates**: BucketList "Nearest" sort uses `travelDistanceKm` instead of stored time. ItemDetail gained a "Getting there" panel showing distance + per-mode times (nulls dropped; transit-not-practical surfaced explicitly).
+- **Migration `supabase-migration-v5.sql`**: adds `walk_minutes`/`bike_minutes`/`car_minutes`/`transit_minutes` columns, one-shot backfill from the legacy pair, drops `profiles.preferred_transport`. Legacy columns retained one release; `storage.ts` does lazy read-side migration so existing items don't lose their original mode.
+
 ## 2026-06-04 (discover feed session)
 - **Organic discover feed shipped (Phase 1)**: "Discover nearby" rail on the Dashboard + dedicated Discover screen ("See all"), built from two free sources — anonymous community saves ("Saved by N people") and Wikidata notable places ranked by sitelink count (the legal stand-in for ratings). Tapping a card jumps straight to the AddPlace review step with the category prefilled.
 - **Design pivot, verified against live ToS**: HERE Platform Terms cap caching at 30 days and forbid serving one request to multiple users, killing the planned shared HERE tile cache; Google terms allow storing only `place_id`, killing a Google-rated seed list. Wikidata (CC0) replaces both for cold start — legally cacheable forever in the shared `discover_cache` table. Full reasoning in `docs/MONETIZATION.md`.

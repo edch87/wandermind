@@ -1,4 +1,4 @@
-import type { HereSearchResult, WeatherForecast, WeatherType } from '../types';
+import type { HereSearchResult, TransportMode, WeatherForecast, WeatherType } from '../types';
 
 const HERE_API_KEY = import.meta.env.VITE_HERE_API_KEY || '';
 const HERE_DISCOVER = 'https://discover.search.hereapi.com/v1/discover';
@@ -444,8 +444,9 @@ export async function findGooglePlaceId(name: string, lat: number, lng: number):
 
 // ── Travel time via HERE Routing ──
 
-// Average speeds (km/h) for fallback estimates
-const MODE_SPEEDS: Record<string, number> = {
+// Average speeds (km/h) for fallback estimates when HERE fails (NOT when HERE
+// returns "no route" — that's stored as null and rendered as "Not practical").
+const MODE_SPEEDS: Record<TransportMode, number> = {
   walk: 5,
   bike: 15,
   car: 60,
@@ -463,97 +464,185 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function hereTransportMode(mode: string): { endpoint: string; transportMode: string } {
-  switch (mode) {
-    case 'walk':
-      return { endpoint: HERE_ROUTE, transportMode: 'pedestrian' };
-    case 'bike':
-      return { endpoint: HERE_ROUTE, transportMode: 'bicycle' };
-    case 'transit':
-      return { endpoint: HERE_TRANSIT, transportMode: 'transit' };
-    case 'car':
-    default:
-      return { endpoint: HERE_ROUTE, transportMode: 'car' };
+/**
+ * Next upcoming Tuesday at 10:30 in the user's local timezone, returned as
+ * an ISO-8601 string with timezone offset (e.g. "2026-06-23T10:30:00+02:00").
+ * HERE Transit accepts this format and uses it as the requested departure.
+ * Why off-peak Tuesday: it's a representative weekday with normal schedule
+ * coverage, far from rush-hour peaks. Computed at call time so the date
+ * rolls forward naturally as the calendar advances.
+ */
+function nextTuesdayMidMorningIso(now: Date = new Date()): string {
+  const d = new Date(now);
+  const targetDay = 2; // Tuesday (0=Sun)
+  let daysAhead = (targetDay - d.getDay() + 7) % 7;
+  // If today is Tuesday and it's already past 10:30, jump to next week
+  if (daysAhead === 0 && (d.getHours() > 10 || (d.getHours() === 10 && d.getMinutes() >= 30))) {
+    daysAhead = 7;
   }
+  d.setDate(d.getDate() + daysAhead);
+  d.setHours(10, 30, 0, 0);
+  // Build ISO string with the local timezone offset (HERE wants ±HH:MM, not Z)
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const tzOffsetMin = -d.getTimezoneOffset();
+  const sign = tzOffsetMin >= 0 ? '+' : '-';
+  const tzH = pad(Math.floor(Math.abs(tzOffsetMin) / 60));
+  const tzM = pad(Math.abs(tzOffsetMin) % 60);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00${sign}${tzH}:${tzM}`;
 }
 
-export async function calculateTravelTime(
-  homeLat: number, homeLng: number,
-  placeLat: number, placeLng: number,
-  mode: string = 'car'
-): Promise<{ durationMinutes: number; distanceKm: number }> {
-  try {
-    const { endpoint, transportMode } = hereTransportMode(mode);
-    const origin = `${homeLat},${homeLng}`;
-    const destination = `${placeLat},${placeLng}`;
+/**
+ * Result of a single-mode routing call:
+ *  - { minutes: N }          → HERE found a route
+ *  - { minutes: N, fallback: true } → HERE failed; haversine × speed estimate
+ *  - { minutes: null }       → HERE returned no routes (e.g. transit not practical)
+ */
+type ModeResult = { minutes: number | null; fallback?: boolean; distanceKm?: number };
 
+const HERE_MODE_PARAM: Record<TransportMode, string> = {
+  walk: 'pedestrian',
+  bike: 'bicycle',
+  car: 'car',
+  transit: 'transit',
+};
+
+async function fetchHereRoute(
+  mode: TransportMode,
+  origin: string,
+  destination: string,
+): Promise<{ ok: true; minutes: number | null; distanceKm: number | null } | { ok: false }> {
+  try {
     let url: string;
     if (mode === 'transit') {
-      // Transit routing uses a different API structure
-      url = `${endpoint}?origin=${origin}&destination=${destination}&apiKey=${HERE_API_KEY}`;
+      const departure = encodeURIComponent(nextTuesdayMidMorningIso());
+      // HERE Transit doesn't need transportMode; departureTime forces the off-peak slot
+      url = `${HERE_TRANSIT}?origin=${origin}&destination=${destination}&departureTime=${departure}&apiKey=${HERE_API_KEY}`;
     } else {
-      url = `${endpoint}?transportMode=${transportMode}&origin=${origin}&destination=${destination}&return=summary&apiKey=${HERE_API_KEY}`;
+      url = `${HERE_ROUTE}?transportMode=${HERE_MODE_PARAM[mode]}&origin=${origin}&destination=${destination}&return=summary&apiKey=${HERE_API_KEY}`;
     }
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HERE routing failed: ${res.status}`);
+    if (!res.ok) return { ok: false };
     const data = await res.json();
 
     const route = data.routes?.[0];
-    if (!route) throw new Error('No route found');
+    if (!route) {
+      // HERE returned 200 with empty routes — this is a real "no practical
+      // route" answer (most common for transit), not a transport failure.
+      return { ok: true, minutes: null, distanceKm: null };
+    }
 
-    // HERE returns sections within a route
     const sections = route.sections || [];
     let totalSeconds = 0;
     let totalMeters = 0;
-
     for (const section of sections) {
       if (section.summary) {
         totalSeconds += section.summary.duration || 0;
         totalMeters += section.summary.length || 0;
       } else if (section.travelSummary) {
-        // Transit routes use travelSummary
         totalSeconds += section.travelSummary.duration || 0;
         totalMeters += section.travelSummary.length || 0;
       }
     }
-
     return {
-      durationMinutes: Math.round(totalSeconds / 60),
+      ok: true,
+      minutes: Math.round(totalSeconds / 60),
       distanceKm: Math.round(totalMeters / 100) / 10,
     };
   } catch {
-    // Fallback: straight-line distance × 1.3
-    const straightLine = haversineDistanceKm(homeLat, homeLng, placeLat, placeLng);
-    const distanceKm = Math.round(straightLine * 13) / 10;
-    const speed = MODE_SPEEDS[mode] || MODE_SPEEDS.car;
-    const minutes = Math.round((distanceKm / speed) * 60);
-    return { durationMinutes: minutes, distanceKm };
+    return { ok: false };
   }
 }
 
-/**
- * Calculate travel times for multiple items in parallel via HERE Routing.
- * Returns a map of itemId → { durationMinutes, distanceKm }.
- */
-export async function calculateBatchTravelTimes(
-  originLat: number,
-  originLng: number,
-  items: { id: string; latitude: number; longitude: number }[],
-  mode: string = 'car'
-): Promise<Record<string, { durationMinutes: number; distanceKm: number }>> {
-  const CONCURRENCY = 5;
-  const results: Record<string, { durationMinutes: number; distanceKm: number }> = {};
+function haversineFallback(
+  mode: TransportMode,
+  homeLat: number, homeLng: number,
+  placeLat: number, placeLng: number,
+): ModeResult {
+  const straightLine = haversineDistanceKm(homeLat, homeLng, placeLat, placeLng);
+  const distanceKm = Math.round(straightLine * 13) / 10;
+  // Spec for transit fallback is haversine × 2.5; others use haversine × 1.3 (already in distanceKm) ÷ speed.
+  const minutes = mode === 'transit'
+    ? Math.round(straightLine * 2.5)
+    : Math.round((distanceKm / MODE_SPEEDS[mode]) * 60);
+  return { minutes, fallback: true, distanceKm };
+}
 
+/**
+ * Compute all 4 transport-mode travel times in one parallel call. Used by
+ * AddPlace (single item) and Settings (batch on home change). Returns:
+ *   walk/bike/car: number minutes (always non-null after fallback)
+ *   transit: number minutes OR null (null = HERE returned no routes)
+ *   distanceKm: straight-line × 1.3 used when HERE is unreachable
+ *
+ * Why nulls only on transit: walking and cycling routes effectively always
+ * exist (worst case: long), and a car route is plausible for any reachable
+ * place. Transit is the only mode where "no practical route" is a real,
+ * useful answer (rural pin, weekend skeleton service, etc.).
+ */
+export async function calculateAllModesTravel(
+  homeLat: number, homeLng: number,
+  placeLat: number, placeLng: number,
+): Promise<{
+  walkMinutes: number | null;
+  bikeMinutes: number | null;
+  carMinutes: number | null;
+  transitMinutes: number | null;
+  distanceKm: number;
+}> {
+  const origin = `${homeLat},${homeLng}`;
+  const destination = `${placeLat},${placeLng}`;
+
+  const [walk, bike, car, transit] = await Promise.all([
+    fetchHereRoute('walk', origin, destination),
+    fetchHereRoute('bike', origin, destination),
+    fetchHereRoute('car', origin, destination),
+    fetchHereRoute('transit', origin, destination),
+  ]);
+
+  const haversine = haversineDistanceKm(homeLat, homeLng, placeLat, placeLng);
+  const haversineKmRounded = Math.round(haversine * 13) / 10;
+
+  // Prefer HERE's reported car distance when we have one — it's a real road
+  // distance, not straight-line. Falls back to haversine × 1.3 otherwise.
+  const distanceKm = (car.ok && car.distanceKm) || haversineKmRounded;
+
+  const resolve = (mode: TransportMode, r: typeof walk): number | null => {
+    if (r.ok) return r.minutes; // may be null for transit when no route
+    return haversineFallback(mode, homeLat, homeLng, placeLat, placeLng).minutes;
+  };
+
+  return {
+    walkMinutes: resolve('walk', walk),
+    bikeMinutes: resolve('bike', bike),
+    carMinutes: resolve('car', car),
+    transitMinutes: resolve('transit', transit),
+    distanceKm,
+  };
+}
+
+/**
+ * Run calculateAllModesTravel for many items in parallel batches. Used by
+ * Settings when home location changes and by the "Refresh travel times"
+ * button. CONCURRENCY=3 → 12 parallel HERE calls (4 modes × 3 items).
+ */
+export async function calculateBatchAllModes(
+  homeLat: number, homeLng: number,
+  items: { id: string; latitude: number; longitude: number }[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<Record<string, Awaited<ReturnType<typeof calculateAllModesTravel>>>> {
+  const CONCURRENCY = 3;
+  const results: Record<string, Awaited<ReturnType<typeof calculateAllModesTravel>>> = {};
+  let done = 0;
   for (let i = 0; i < items.length; i += CONCURRENCY) {
     const batch = items.slice(i, i + CONCURRENCY);
     const promises = batch.map(async (item) => {
-      const travel = await calculateTravelTime(originLat, originLng, item.latitude, item.longitude, mode);
-      results[item.id] = travel;
+      results[item.id] = await calculateAllModesTravel(homeLat, homeLng, item.latitude, item.longitude);
+      done += 1;
+      onProgress?.(done, items.length);
     });
     await Promise.all(promises);
   }
-
   return results;
 }
 

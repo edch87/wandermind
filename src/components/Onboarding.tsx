@@ -43,10 +43,9 @@ interface CuratedEntry {
 
 const ALL_CURATED: CuratedEntry[] = curatedMunich as CuratedEntry[];
 const DISCOVER_RADIUS_KM = 150;
-/** Rough average travel speed (km/h) used to seed travelTimeMinutes. The
- *  recommendation flow recomputes via HERE routing on the fly, so the saved
- *  number is just a placeholder until the first recommendation. */
-const SEED_TRAVEL_SPEED_KMH = 60;
+// Seeded discover items get per-mode times filled on the user's next home
+// change or via Settings → "Refresh travel times". Until then the recommend
+// flow falls back to haversine × speed-table for any null per-mode field.
 
 const CAROUSEL_SLIDES = [
   {
@@ -89,7 +88,6 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 /** Build a saveable BucketListItem from a curated entry + user's home. */
 function curatedToBucketListItem(entry: CuratedEntry, profile: UserProfile): BucketListItem {
   const distanceKm = haversineKm(profile.homeLatitude, profile.homeLongitude, entry.latitude, entry.longitude);
-  const travelMinutes = Math.round((distanceKm / SEED_TRAVEL_SPEED_KMH) * 60);
   const addressLine = entry.address || [entry.city, entry.country].filter(Boolean).join(', ');
   return {
     id: generateId(),
@@ -104,9 +102,11 @@ function curatedToBucketListItem(entry: CuratedEntry, profile: UserProfile): Buc
     city: entry.city,
     country: entry.country,
     url: entry.url,
-    travelTimeMinutes: travelMinutes,
     travelDistanceKm: Math.round(distanceKm * 10) / 10,
-    transportMode: profile.preferredTransport,
+    walkMinutes: null,
+    bikeMinutes: null,
+    carMinutes: null,
+    transitMinutes: null,
     category: entry.category,
     setting: entry.setting,
     weatherSuitability: entry.weatherSuitability,
@@ -239,7 +239,6 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       homeLatitude: selectedLocation.lat,
       homeLongitude: selectedLocation.lng,
       homeAddress: selectedLocation.address,
-      preferredTransport: 'car',
       hasDog: false,
       hasKids: false,
       needsAccessibility: false,

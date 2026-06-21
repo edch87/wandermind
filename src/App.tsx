@@ -243,7 +243,12 @@ export default function App() {
       {screen.name === 'settings' && (
         <Settings
           profile={profile}
+          items={items}
           onSave={handleSaveProfile}
+          onSaveItems={async (updated) => {
+            await saveItems(updated);
+            await refreshItems();
+          }}
           onBack={() => setScreen({ name: 'dashboard' })}
           onSignOut={handleSignOut}
         />

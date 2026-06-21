@@ -23,6 +23,12 @@ We recommend installing Lark on your phone first (it only takes a few seconds), 
 
 ---
 
+### Returning testers (round 1 participants)
+
+Welcome back, and thank you. Please **skip Task 1 (sign-up and onboarding)** and just log in with your existing account. On the feedback form, skip **questions 1, 2 and 6** (the sign-up questions in Section 1). Everything else has had improvements since round 1, including search, photos, the recommend flow and the dashboard, so please do still install the app and work through the rest of the tasks and questions as if it were your first time.
+
+---
+
 ### Optional: Install Lark on your phone
 
 Lark is a Progressive Web App, which means you can add it to your home screen and use it like a normal app, with its own icon and no browser bar. It is the best way to experience it, but skipping this step is fine if you prefer.
@@ -54,9 +60,7 @@ Sign up with your email and password. After signing up, check your inbox for a c
 Add at least 3 places to your bucket list. These can be anywhere: a restaurant, a hiking trail, a museum, a city, anything. Search for them by name and add them.
 
 **Task 3: Add a place by pasting a Google Maps link**
-On the Add a place screen, look for the option to paste a Google Maps link. Open Google Maps (in a browser or the app), find a place, copy its share link, and paste it into Lark. Check that the right place comes through.
-
-*Note: shortened links from the Google Maps mobile app (the ones that look like maps.app.goo.gl/...) are not supported yet. Use a full link from Google Maps in a desktop browser if your mobile link does not work.*
+On the Add a place screen, look for the option to paste a Google Maps link. Open Google Maps (in a browser or in the mobile app), find a place, copy its share link, and paste it into Lark. Both full desktop links and the shortened mobile share links (maps.app.goo.gl/...) should work. Check that the right place comes through.
 
 **Task 4: Add a place you have already been**
 Think of somewhere you have visited before that you would consider a highlight. Add it to your list, then find it and mark it as done. Once marked, open the review and leave a short note about the experience.
@@ -97,6 +101,7 @@ Once you have completed the tasks, please fill out the feedback form:
 
 ### Section 1: Getting Started
 *Covers: sign-up, onboarding, setting your home location, installing on phone*
+*Returning testers: please skip questions 1, 2 and 6 (the sign-up ones) and answer the install questions (3, 4 and 5).*
 
 1. How easy was it to create an account and get set up?
    *Linear scale: 1 = Very difficult, 5 = Very easy*

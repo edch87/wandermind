@@ -23,7 +23,6 @@ export interface UserProfile {
   homeLatitude: number;
   homeLongitude: number;
   homeAddress: string;
-  preferredTransport: TransportMode;
   hasDog: boolean;
   hasKids: boolean;
   needsAccessibility: boolean;
@@ -55,9 +54,15 @@ export interface BucketListItem {
   openingHours?: string;
 
   // Travel data
-  travelTimeMinutes: number;
   travelDistanceKm: number;
-  transportMode: TransportMode;
+  /** One-way travel time in minutes per mode. Computed at save time, refreshed
+   *  when home location changes. null = no practical route (e.g. transit) or
+   *  not yet computed for legacy items. */
+  walkMinutes: number | null;
+  bikeMinutes: number | null;
+  carMinutes: number | null;
+  /** Off-peak weekday (next-upcoming Tuesday 10:30am local) — see api.ts */
+  transitMinutes: number | null;
 
   // Smart defaults (inferred, editable)
   category: Category;
@@ -100,8 +105,6 @@ export interface RecommendationConstraints {
   dogComing: boolean;
   needsAccessibility: boolean;
   strollerNeeded: boolean;
-  /** Per-mode travel time overrides (itemId → mode → minutes one-way) from HERE routing. */
-  travelTimeOverrides?: Record<string, Partial<Record<TransportMode, number>>>;
   /** Item IDs to soft-penalise (recently shown or in-session "show different"). */
   suppressedIds?: string[];
 }

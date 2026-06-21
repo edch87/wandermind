@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import L from 'leaflet';
-import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateAllModesTravel, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -171,9 +171,11 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
       }
     }
 
-    setLoadingMsg('Calculating travel time...');
-    const travel = await calculateTravelTime(
-      profile.homeLatitude, profile.homeLongitude, lat, lng, profile.preferredTransport
+    setLoadingMsg('Calculating travel times...');
+    // Compute all 4 modes in parallel — stored on the item so the recommend
+    // flow doesn't need a live HERE batch every session.
+    const travel = await calculateAllModesTravel(
+      profile.homeLatitude, profile.homeLongitude, lat, lng
     );
 
     setLoadingMsg('Finding photos...');
@@ -206,9 +208,11 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
       region: result.address.state || '',
       city: result.address.city || '',
       openingHours: openingHours || result.openingHours || undefined,
-      travelTimeMinutes: travel.durationMinutes,
       travelDistanceKm: travel.distanceKm,
-      transportMode: profile.preferredTransport,
+      walkMinutes: travel.walkMinutes,
+      bikeMinutes: travel.bikeMinutes,
+      carMinutes: travel.carMinutes,
+      transitMinutes: travel.transitMinutes,
       ...inferred,
       priority: 'medium',
       personalNotes: '',

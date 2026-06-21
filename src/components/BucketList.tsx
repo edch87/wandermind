@@ -61,7 +61,7 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
   filtered.sort((a, b) => {
     switch (sortBy) {
       case 'priority': return ({ high: 3, medium: 2, low: 1 }[b.priority]) - ({ high: 3, medium: 2, low: 1 }[a.priority]);
-      case 'travel': return a.travelTimeMinutes - b.travelTimeMinutes;
+      case 'travel': return a.travelDistanceKm - b.travelDistanceKm;
       case 'name': return a.name.localeCompare(b.name);
       default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }

@@ -10,7 +10,9 @@ import {
   Clock, Coins, Users, Dog, Wheelchair, Baby,
   Flower, SunHorizon, MapPin, Star, ArrowRight, Trash, Check, PencilSimple, X,
   Buildings, TreeEvergreen, ArrowsClockwise,
+  Car, Train, Bicycle, Footprints,
 } from '@phosphor-icons/react';
+import { formatDuration } from '../types';
 
 interface Props {
   item: BucketListItem;
@@ -275,9 +277,18 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
   const seasonsDisplay = (item.bestSeasons || []).map(s => SEASON_LABELS[s]).join(', ') || 'Any season';
   const timesDisplay = (item.bestTimesOfDay || []).map(t => TIME_OF_DAY_LABELS[t]).join(', ') || 'Any time';
 
+  // Per-mode travel rows for the "Getting there" card. Nulls are dropped (mode
+  // not viable for this item — usually transit with no practical route). Order
+  // is car / transit / bike / walk to match the recommend-flow toggle.
+  const travelModes: { icon: React.ReactNode; label: string; minutes: number | null }[] = [
+    { icon: <Car size={16} />,        label: 'By car',     minutes: item.carMinutes },
+    { icon: <Train size={16} />,      label: 'By transit', minutes: item.transitMinutes },
+    { icon: <Bicycle size={16} />,    label: 'By bike',    minutes: item.bikeMinutes },
+    { icon: <Footprints size={16} />, label: 'On foot',    minutes: item.walkMinutes },
+  ];
+  const transitMissing = item.transitMinutes == null && (item.carMinutes != null || item.bikeMinutes != null || item.walkMinutes != null);
+
   const infoRows: { icon: React.ReactNode; label: string }[] = [
-    { icon: <NavigationArrow size={16} />,
-      label: `${item.travelDistanceKm} km away` },
     { icon: weatherIconEl(item.weatherSuitability),
       label: item.weatherSuitability === 'good_weather' ? 'Best in good weather' : item.weatherSuitability === 'bad_weather_ideal' ? 'Great for bad weather' : 'Any weather' },
     { icon: <Clock size={16} />, label: DURATION_LABELS[item.durationEstimate] },
@@ -327,6 +338,29 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           <p className="text-xs text-sand-700 mt-1 inline-flex items-center gap-1">
             <MapPin size={12} /> {item.address?.split(',').slice(0, 3).join(',')}
           </p>
+        </div>
+
+        {/* Getting there — distance + per-mode times */}
+        <div className="bg-white rounded-[20px] p-4 border border-sand-100 mb-4">
+          <p className="text-[10px] font-medium text-sand-700 uppercase tracking-wider mb-3">Getting there</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-6 flex justify-center text-sand-500"><NavigationArrow size={16} /></span>
+            <span className="text-sm text-sand-700">{item.travelDistanceKm} km away</span>
+          </div>
+          <div className="space-y-2">
+            {travelModes.filter(m => m.minutes != null).map((m) => (
+              <div key={m.label} className="flex items-center gap-3">
+                <span className="w-6 flex justify-center text-sand-500">{m.icon}</span>
+                <span className="text-sm text-sand-700">{m.label}: {formatDuration(m.minutes as number)}</span>
+              </div>
+            ))}
+            {transitMissing && (
+              <div className="flex items-center gap-3">
+                <span className="w-6 flex justify-center text-sand-400"><Train size={16} /></span>
+                <span className="text-sm text-sand-500">Not practical by transit</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info rows */}

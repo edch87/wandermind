@@ -65,8 +65,35 @@ function tierForBudget(totalMinutes: number): Tier {
 /** Walk auto-include cutoff: if a place is closer than this, walking is always considered */
 const WALK_AUTO_CUTOFF_KM = 1.5;
 
-/** Fallback walking speed (km/h) when no HERE walk override exists */
-const WALK_SPEED_KMH = 4.5;
+/** Fallback average speeds (km/h) for legacy items missing a per-mode time.
+ *  Transit deliberately omitted — when transit_minutes is null we treat it as
+ *  "not practical by transit" for that item, not "estimate it". */
+const FALLBACK_SPEED_KMH: Record<'walk' | 'bike' | 'car', number> = {
+  walk: 4.5,
+  bike: 15,
+  car: 60,
+};
+
+function storedMinutes(item: BucketListItem, mode: TransportMode): number | null {
+  switch (mode) {
+    case 'walk':    return item.walkMinutes;
+    case 'bike':    return item.bikeMinutes;
+    case 'car':     return item.carMinutes;
+    case 'transit': return item.transitMinutes;
+  }
+}
+
+/** Resolve a mode's minutes for an item. Returns null when the mode is not
+ *  viable (e.g. transit with no practical route). */
+function minutesForMode(item: BucketListItem, mode: TransportMode): number | null {
+  const stored = storedMinutes(item, mode);
+  if (stored != null) return stored;
+  // Legacy item without this mode populated yet. Transit gets no estimate
+  // (null = not viable); the others fall back to a rough straight-line guess.
+  if (mode === 'transit') return null;
+  const km = item.travelDistanceKm || 0;
+  return Math.round((km / FALLBACK_SPEED_KMH[mode]) * 60);
+}
 
 export function getCurrentSeason(): Season {
   const month = new Date().getMonth();
@@ -102,14 +129,16 @@ export function minutesUntilDayEnd(now: Date = new Date()): number {
 
 /**
  * Effective one-way travel time across the user's selected modes.
- * Returns the minimum, plus the mode that produced it.
+ * Returns the minimum, plus the mode that produced it. Reads pre-computed
+ * per-mode times from the item (stored at save time / on home-change).
  * Walk is auto-considered for places under 1.5 km even if not selected.
+ * Returns null when no selected mode is viable for this item (e.g. transit
+ * only, but transitMinutes is null).
  */
 export function effectiveTravel(
   item: BucketListItem,
   constraints: RecommendationConstraints,
 ): { minutes: number; mode: TransportMode } | null {
-  const overrides = constraints.travelTimeOverrides?.[item.id];
   const modesToConsider: TransportMode[] = [...constraints.transportModes];
 
   // Auto-include walk when item is close (using the item's stored straight-line km as a proxy).
@@ -121,38 +150,31 @@ export function effectiveTravel(
 
   let best: { minutes: number; mode: TransportMode } | null = null;
   for (const mode of modesToConsider) {
-    let minutes: number | undefined = overrides?.[mode];
-    if (minutes == null) {
-      // Fallback: stored travel time if the mode matches what was originally calculated,
-      // otherwise derive walking from distance.
-      if (mode === item.transportMode) minutes = item.travelTimeMinutes;
-      else if (mode === 'walk') minutes = Math.round((item.travelDistanceKm / WALK_SPEED_KMH) * 60);
-      else minutes = item.travelTimeMinutes; // generic fallback
-    }
+    const minutes = minutesForMode(item, mode);
+    if (minutes == null) continue; // not viable (e.g. no transit route)
     if (best === null || minutes < best.minutes) best = { minutes, mode };
   }
   return best;
 }
 
-/** All viable modes with their travel times — for display in results. */
+/** All viable modes with their travel times — for display in results. Modes
+ *  that aren't viable for this item (e.g. transit when transitMinutes is null)
+ *  are filtered out, so the result cards never show "Not practical" lines. */
 export function viableModes(
   item: BucketListItem,
   constraints: RecommendationConstraints,
 ): { mode: TransportMode; minutes: number }[] {
-  const overrides = constraints.travelTimeOverrides?.[item.id];
   const modes: TransportMode[] = [...constraints.transportModes];
   if (!modes.includes('walk') && item.travelDistanceKm <= WALK_AUTO_CUTOFF_KM) {
     modes.push('walk');
   }
-  return modes.map(mode => {
-    let minutes = overrides?.[mode];
-    if (minutes == null) {
-      if (mode === item.transportMode) minutes = item.travelTimeMinutes;
-      else if (mode === 'walk') minutes = Math.round((item.travelDistanceKm / WALK_SPEED_KMH) * 60);
-      else minutes = item.travelTimeMinutes;
-    }
-    return { mode, minutes };
-  }).sort((a, b) => a.minutes - b.minutes);
+  return modes
+    .map(mode => {
+      const minutes = minutesForMode(item, mode);
+      return minutes == null ? null : { mode, minutes };
+    })
+    .filter((m): m is { mode: TransportMode; minutes: number } => m != null)
+    .sort((a, b) => a.minutes - b.minutes);
 }
 
 export function getRecommendations(
@@ -434,8 +456,13 @@ export function findCombos(
         const walkMin = Math.round(dist * 15);
         const durA = DURATION_MINUTES[a.durationEstimate] || 120;
         const durB = DURATION_MINUTES[b.durationEstimate] || 120;
-        const travelA = constraints ? effectiveTravel(a, constraints)?.minutes ?? a.travelTimeMinutes : a.travelTimeMinutes;
-        const travelB = constraints ? effectiveTravel(b, constraints)?.minutes ?? b.travelTimeMinutes : b.travelTimeMinutes;
+        // For combos we approximate travel as the car time when no constraints
+        // are passed (Dashboard preview). Falls back to a haversine guess for
+        // legacy items where carMinutes is null.
+        const carEstimate = (item: BucketListItem) =>
+          item.carMinutes ?? Math.round(((item.travelDistanceKm || 0) / FALLBACK_SPEED_KMH.car) * 60);
+        const travelA = constraints ? effectiveTravel(a, constraints)?.minutes ?? carEstimate(a) : carEstimate(a);
+        const travelB = constraints ? effectiveTravel(b, constraints)?.minutes ?? carEstimate(b) : carEstimate(b);
         const totalNeeded = Math.max(travelA, travelB) * 2 + durA + durB + walkMin;
 
         if (totalNeeded <= budget) {

@@ -37,7 +37,6 @@ function profileFromDb(row: Record<string, unknown>): UserProfile {
     homeLatitude: (row.home_latitude as number) || 0,
     homeLongitude: (row.home_longitude as number) || 0,
     homeAddress: (row.home_address as string) || '',
-    preferredTransport: (row.preferred_transport as UserProfile['preferredTransport']) || 'car',
     hasDog: (row.has_dog as boolean) || false,
     hasKids: (row.has_kids as boolean) || false,
     needsAccessibility: (row.needs_accessibility as boolean) || false,
@@ -53,7 +52,6 @@ function profileToDb(profile: UserProfile) {
     home_latitude: roundForPrivacy(profile.homeLatitude),
     home_longitude: roundForPrivacy(profile.homeLongitude),
     home_address: profile.homeAddress,
-    preferred_transport: profile.preferredTransport,
     has_dog: profile.hasDog,
     has_kids: profile.hasKids,
     needs_accessibility: profile.needsAccessibility,
@@ -64,6 +62,15 @@ function profileToDb(profile: UserProfile) {
 }
 
 function itemFromDb(row: Record<string, unknown>): BucketListItem {
+  // Lazy migration: rows saved before the per-mode split have travel_time_minutes
+  // populated and transport_mode set. Copy the legacy value into the matching
+  // new field so existing items don't show as "unknown" for their original mode.
+  // The other 3 modes stay null until the next save / home-change / refresh.
+  const legacyMinutes = row.travel_time_minutes as number | null | undefined;
+  const legacyMode = row.transport_mode as string | undefined;
+  const seedLegacy = (mode: string) =>
+    legacyMode === mode && legacyMinutes != null ? legacyMinutes : null;
+
   return {
     id: row.id as string,
     status: (row.status as BucketListItem['status']) || 'want_to_do',
@@ -82,9 +89,11 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     region: row.region as string | undefined,
     city: row.city as string | undefined,
     openingHours: row.opening_hours as string | undefined,
-    travelTimeMinutes: (row.travel_time_minutes as number) || 0,
     travelDistanceKm: (row.travel_distance_km as number) || 0,
-    transportMode: (row.transport_mode as BucketListItem['transportMode']) || 'car',
+    walkMinutes: (row.walk_minutes as number | null) ?? seedLegacy('walk'),
+    bikeMinutes: (row.bike_minutes as number | null) ?? seedLegacy('bike'),
+    carMinutes: (row.car_minutes as number | null) ?? seedLegacy('car'),
+    transitMinutes: (row.transit_minutes as number | null) ?? seedLegacy('transit'),
     category: migrateCategory((row.category as string) || 'neighbourhood_walks') as BucketListItem['category'],
     setting: (row.setting as BucketListItem['setting']) || 'mixed',
     weatherSuitability: (row.weather_suitability as BucketListItem['weatherSuitability']) || 'any',
@@ -127,9 +136,11 @@ function itemToDb(item: BucketListItem, userId: string) {
     region: item.region || null,
     city: item.city || null,
     opening_hours: item.openingHours || null,
-    travel_time_minutes: item.travelTimeMinutes,
     travel_distance_km: item.travelDistanceKm,
-    transport_mode: item.transportMode,
+    walk_minutes: item.walkMinutes,
+    bike_minutes: item.bikeMinutes,
+    car_minutes: item.carMinutes,
+    transit_minutes: item.transitMinutes,
     category: item.category,
     setting: item.setting,
     weather_suitability: item.weatherSuitability,

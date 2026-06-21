@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lark · Munich curation review</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🪁</text></svg>" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body, h1, h2, h3, p, ul, li, button, input, select, textarea, dialog { margin: 0; padding: 0; }
+  :root {
+    --sand-50:  #faf6ef;
+    --sand-100: #f3ecdf;
+    --sand-200: #e6dbc4;
+    --sand-300: #d4c4a4;
+    --sand-500: #a08a6c;
+    --sand-600: #7a6850;
+    --sand-700: #5d4f3a;
+    --sand-900: #3d2e1f;
+    --forest-500: #5b8a64;
+    --accent: #c14a2f;
+    --danger: #b03a2e;
+    --shadow: 0 2px 8px rgba(61, 46, 31, 0.08);
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+    background: var(--sand-50);
+    color: var(--sand-900);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    border: 1px solid var(--sand-300);
+    background: white;
+    border-radius: 8px;
+    padding: 7px 14px;
+    transition: all .15s;
+  }
+  button:hover { background: var(--sand-100); border-color: var(--sand-500); }
+  button.primary { background: var(--sand-900); color: var(--sand-50); border-color: var(--sand-900); }
+  button.primary:hover { background: var(--sand-700); border-color: var(--sand-700); }
+  button.danger { color: var(--danger); border-color: var(--sand-300); }
+  button.danger:hover { background: #fce8e6; border-color: var(--danger); }
+  input, select, textarea {
+    font: inherit;
+    color: inherit;
+    background: white;
+    border: 1px solid var(--sand-300);
+    border-radius: 8px;
+    padding: 8px 12px;
+    width: 100%;
+  }
+  input[type="search"] { padding-left: 14px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--sand-700); }
+  textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--sand-100);
+    border-bottom: 1px solid var(--sand-200);
+    padding: 14px 24px 12px;
+  }
+  .head-row {
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .brand { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .brand .accent { color: var(--accent); font-style: italic; }
+  .stats {
+    font-size: 12px; color: var(--sand-600);
+    margin-left: auto; display: flex; gap: 14px;
+  }
+  .stats b { color: var(--sand-900); font-weight: 600; }
+  .actions { display: flex; gap: 8px; }
+  .filter-row {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .filter-row .search { flex: 0 0 260px; }
+  .toggles { display: flex; gap: 14px; font-size: 12px; color: var(--sand-700); }
+  .toggles label { display: flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; }
+  .toggles input { width: auto; padding: 0; }
+  .filters {
+    display: flex; gap: 6px; overflow-x: auto; max-width: 100%; flex: 1; padding-bottom: 2px;
+  }
+  .filters button {
+    padding: 5px 11px; border-radius: 999px; font-size: 12px;
+    background: white; border: 1px solid var(--sand-200); white-space: nowrap;
+  }
+  .filters button.active { background: var(--sand-900); color: var(--sand-50); border-color: var(--sand-900); }
+  .filters button .count { opacity: 0.6; margin-left: 6px; }
+
+  /* Empty / grid */
+  main { padding: 20px 24px 60px; }
+  .empty {
+    max-width: 540px; margin: 80px auto; text-align: center;
+    background: white; border-radius: 16px; padding: 40px; border: 1px dashed var(--sand-300);
+  }
+  .empty h2 { font-size: 20px; margin-bottom: 8px; }
+  .empty p { color: var(--sand-700); margin-bottom: 18px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--sand-200);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .card:hover { box-shadow: var(--shadow); border-color: var(--sand-500); transform: translateY(-1px); }
+  .card.excluded { opacity: 0.45; }
+  .card.edited::after {
+    content: "edited";
+    position: absolute; top: 8px; right: 8px;
+    background: var(--forest-500); color: white;
+    font-size: 10px; padding: 2px 7px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .card.excluded::after {
+    content: "excluded";
+    position: absolute; top: 8px; right: 8px;
+    background: var(--danger); color: white;
+    font-size: 10px; padding: 2px 7px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .card-img {
+    width: 100%; height: 130px; background: var(--sand-100);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img .placeholder { font-size: 30px; opacity: 0.4; }
+  .card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .card-name { font-weight: 600; font-size: 13px; line-height: 1.3; }
+  .card-meta { font-size: 11px; color: var(--sand-600); display: flex; gap: 8px; align-items: center; }
+  .card-desc {
+    font-size: 11px; color: var(--sand-700);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--sand-100); color: var(--sand-700);
+    padding: 2px 7px; border-radius: 999px; font-size: 10px;
+    border: 1px solid var(--sand-200);
+  }
+
+  /* Editor */
+  dialog#editor {
+    border: none; border-radius: 16px; padding: 0;
+    max-width: 640px; width: calc(100% - 32px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    background: white;
+  }
+  dialog#editor::backdrop { background: rgba(61, 46, 31, 0.5); backdrop-filter: blur(2px); }
+  .editor-hd {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--sand-200);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .editor-hd h2 { font-size: 15px; font-weight: 600; }
+  .editor-bd {
+    padding: 18px 22px; max-height: 70vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .editor-bd .img-preview {
+    width: 100%; height: 200px; background: var(--sand-100);
+    border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  .editor-bd .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--sand-600); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .read-only {
+    background: var(--sand-50); color: var(--sand-700);
+    padding: 8px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--sand-100);
+  }
+  .editor-ft {
+    padding: 14px 22px; border-top: 1px solid var(--sand-200);
+    display: flex; justify-content: space-between; gap: 10px;
+  }
+  .editor-ft .left, .editor-ft .right { display: flex; gap: 8px; }
+  .meta-strip {
+    font-size: 11px; color: var(--sand-600); display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .meta-strip a { color: var(--sand-700); text-decoration: none; border-bottom: 1px dotted var(--sand-500); }
+  .meta-strip a:hover { color: var(--accent); border-color: var(--accent); }
+  .close-x {
+    background: none; border: none; font-size: 22px; line-height: 1;
+    color: var(--sand-600); padding: 0; cursor: pointer;
+  }
+  .close-x:hover { color: var(--sand-900); background: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-row">
+    <div class="brand">Lark · <span class="accent">Munich</span> curation</div>
+    <div class="stats">
+      <span><b id="stat-total">0</b> total</span>
+      <span><b id="stat-kept">0</b> kept</span>
+      <span><b id="stat-excluded">0</b> excluded</span>
+      <span><b id="stat-edited">0</b> edited</span>
+      <span><b id="stat-with-image">0</b> with image</span>
+    </div>
+    <div class="actions">
+      <input type="file" id="import" accept=".json" hidden />
+      <button onclick="document.getElementById('import').click()">Load JSON…</button>
+      <button class="primary" onclick="downloadJSON()" id="dl-btn" disabled>Download cleaned JSON</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <div class="search"><input type="search" id="search" placeholder="Search name or description…" /></div>
+    <div class="filters" id="filters"></div>
+    <div class="toggles">
+      <label><input type="checkbox" id="show-excluded" /> Show excluded</label>
+      <label><input type="checkbox" id="missing-image" /> Missing image only</label>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="empty" class="empty">
+    <h2>Load your candidates file</h2>
+    <p>Click "Load JSON…" above and choose <code>munich-candidates.json</code> from your project folder.</p>
+    <p style="font-size:12px;color:var(--sand-600)">Your edits autosave to this browser, so you can close and come back.</p>
+  </div>
+  <div id="grid" class="grid"></div>
+</main>
+
+<dialog id="editor">
+  <div class="editor-hd">
+    <h2 id="editor-title">Edit entry</h2>
+    <button class="close-x" onclick="closeEditor(false)">×</button>
+  </div>
+  <div class="editor-bd">
+    <div class="img-preview" id="editor-img"></div>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f-name" />
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="f-description" rows="4"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Category</label>
+        <select id="f-category"></select>
+      </div>
+      <div class="field">
+        <label>Cost level</label>
+        <select id="f-costLevel">
+          <option value="free">Free</option>
+          <option value="cheap">Cheap (up to €15)</option>
+          <option value="moderate">Moderate (€15-€50)</option>
+          <option value="expensive">Expensive (€50+)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Setting</label>
+        <select id="f-setting">
+          <option value="indoor">Indoor</option>
+          <option value="outdoor">Outdoor</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Weather suitability</label>
+        <select id="f-weatherSuitability">
+          <option value="any">Any</option>
+          <option value="good_weather">Good weather</option>
+          <option value="bad_weather_ideal">Bad weather ideal</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Duration</label>
+        <select id="f-durationEstimate">
+          <option value="under_1h">Under 1h</option>
+          <option value="1_2h">1-2h</option>
+          <option value="2_3h">2-3h</option>
+          <option value="half_day">Half day</option>
+          <option value="full_day">Full day</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Image URL (optional)</label>
+        <input type="text" id="f-imageUrl" placeholder="Wikipedia Commons URL or empty" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Address</label>
+      <div class="read-only" id="f-address">—</div>
+    </div>
+    <div class="meta-strip" id="f-meta"></div>
+  </div>
+  <div class="editor-ft">
+    <div class="left">
+      <button class="danger" id="exclude-btn" onclick="toggleExclude()">Exclude</button>
+    </div>
+    <div class="right">
+      <button onclick="closeEditor(false)">Cancel</button>
+      <button class="primary" onclick="closeEditor(true)">Save</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const CATEGORIES = [
+  ['museum_gallery', 'Museum & Gallery', '🏛️'],
+  ['historical', 'Historical', '🏰'],
+  ['nature_landscape', 'Nature & Landscape', '🏔️'],
+  ['park_garden', 'Park & Garden', '🌳'],
+  ['hiking_trails', 'Hiking & Trails', '🥾'],
+  ['beach_water', 'Beach & Water', '🏖️'],
+  ['active_adventure', 'Active & Adventure', '🚴'],
+  ['food_drink', 'Food & Drink', '🍽️'],
+  ['nightlife', 'Nightlife', '🍸'],
+  ['entertainment', 'Entertainment', '🎭'],
+  ['wellness', 'Wellness', '💆'],
+  ['zoo_aquarium', 'Zoo & Aquarium', '🦁'],
+  ['event_festival', 'Event & Festival', '🎉'],
+  ['neighbourhood_walks', 'Neighbourhood Walks', '🏘️'],
+];
+const CAT_LABEL = Object.fromEntries(CATEGORIES.map(([k, l]) => [k, l]));
+const CAT_EMOJI = Object.fromEntries(CATEGORIES.map(([k, , e]) => [k, e]));
+
+const STORAGE_KEY = 'lark-curation-v1';
+let state = { entries: [], filename: 'munich-candidates.json' };
+let currentFilter = 'all';
+let editingIdx = null;
+let originalEditing = null;
+
+// ----- Load / persist -----
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && Array.isArray(data.entries) && data.entries.length) {
+        state = data;
+        document.getElementById('empty').style.display = 'none';
+        document.getElementById('dl-btn').disabled = false;
+        return true;
+      }
+    }
+  } catch (e) { console.warn('Storage parse failed', e); }
+  return false;
+}
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('Storage save failed', e); }
+}
+
+document.getElementById('import').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw new Error('Expected an array');
+      // Preserve any prior edits that match by key
+      const priorMap = new Map(state.entries.map(e => [e.key, e]));
+      state.entries = data.map(item => {
+        const prior = priorMap.get(item.key);
+        return prior ? { ...item, ...prior, _imported_at: Date.now() } : { ...item };
+      });
+      state.filename = f.name;
+      document.getElementById('empty').style.display = 'none';
+      document.getElementById('dl-btn').disabled = false;
+      saveToStorage();
+      renderAll();
+    } catch (err) {
+      alert('Could not parse JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(f);
+});
+
+// ----- Render -----
+function renderStats() {
+  const total = state.entries.length;
+  const kept = state.entries.filter(e => !e.excluded).length;
+  const excluded = total - kept;
+  const edited = state.entries.filter(e => e._edited).length;
+  const withImage = state.entries.filter(e => e.imageUrl && !e.excluded).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-kept').textContent = kept;
+  document.getElementById('stat-excluded').textContent = excluded;
+  document.getElementById('stat-edited').textContent = edited;
+  document.getElementById('stat-with-image').textContent = withImage;
+}
+
+function renderFilters() {
+  const filtersEl = document.getElementById('filters');
+  const counts = { all: state.entries.filter(e => !e.excluded).length };
+  for (const e of state.entries) {
+    if (e.excluded) continue;
+    counts[e.category] = (counts[e.category] || 0) + 1;
+  }
+  const buttons = [['all', 'All']].concat(
+    CATEGORIES.filter(([k]) => counts[k]).map(([k, l, em]) => [k, em + ' ' + l])
+  );
+  filtersEl.innerHTML = buttons.map(([k, label]) => {
+    const cnt = counts[k] || 0;
+    return `<button data-cat="${k}" class="${currentFilter === k ? 'active' : ''}">${label}<span class="count">${cnt}</span></button>`;
+  }).join('');
+  filtersEl.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => { currentFilter = b.dataset.cat; renderAll(); });
+  });
+}
+
+function renderGrid() {
+  const showExcluded = document.getElementById('show-excluded').checked;
+  const missingImage = document.getElementById('missing-image').checked;
+  const q = (document.getElementById('search').value || '').toLowerCase().trim();
+
+  const list = state.entries.map((e, i) => ({ e, i })).filter(({ e }) => {
+    if (e.excluded && !showExcluded) return false;
+    if (currentFilter !== 'all' && e.category !== currentFilter) return false;
+    if (missingImage && e.imageUrl) return false;
+    if (q) {
+      const hay = (e.name + ' ' + (e.description || '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const grid = document.getElementById('grid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column: 1 / -1; margin: 40px auto;">No entries match these filters.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(({ e, i }) => `
+    <div class="card ${e.excluded ? 'excluded' : ''} ${e._edited && !e.excluded ? 'edited' : ''}" data-idx="${i}">
+      <div class="card-img">
+        ${e.imageUrl
+          ? `<img src="${e.imageUrl}" loading="lazy" alt="" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=&quot;placeholder&quot;>${CAT_EMOJI[e.category] || '🌟'}</span>'" />`
+          : `<span class="placeholder">${CAT_EMOJI[e.category] || '🌟'}</span>`}
+      </div>
+      <div class="card-body">
+        <div class="card-name">${escapeHtml(e.name)}</div>
+        <div class="card-meta">
+          <span class="badge">${CAT_EMOJI[e.category] || ''} ${CAT_LABEL[e.category] || e.category}</span>
+          <span>·</span>
+          <span>${e.distanceFromMarienplatzKm ?? '?'} km</span>
+        </div>
+        <div class="card-desc">${escapeHtml(e.description || '—')}</div>
+      </div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('click', () => openEditor(parseInt(c.dataset.idx, 10)));
+  });
+}
+
+function renderAll() { renderStats(); renderFilters(); renderGrid(); }
+
+// ----- Editor -----
+function populateCategoryDropdown() {
+  const sel = document.getElementById('f-category');
+  sel.innerHTML = CATEGORIES.map(([k, l, e]) => `<option value="${k}">${e} ${l}</option>`).join('');
+}
+populateCategoryDropdown();
+
+function openEditor(idx) {
+  editingIdx = idx;
+  const e = state.entries[idx];
+  originalEditing = JSON.stringify(e);
+  document.getElementById('editor-title').textContent = e.name;
+  document.getElementById('f-name').value = e.name || '';
+  document.getElementById('f-description').value = e.description || '';
+  document.getElementById('f-category').value = e.category;
+  document.getElementById('f-costLevel').value = e.costLevel || 'moderate';
+  document.getElementById('f-setting').value = e.setting || 'mixed';
+  document.getElementById('f-weatherSuitability').value = e.weatherSuitability || 'any';
+  document.getElementById('f-durationEstimate').value = e.durationEstimate || '1_2h';
+  document.getElementById('f-imageUrl').value = e.imageUrl || '';
+  document.getElementById('f-address').textContent = e.address || '—';
+
+  const imgEl = document.getElementById('editor-img');
+  if (e.imageUrl) {
+    imgEl.innerHTML = `<img src="${e.imageUrl}" alt="" onerror="this.parentElement.innerHTML='<span style=\\'font-size:60px;opacity:.3\\'>${CAT_EMOJI[e.category] || '🌟'}</span>'" />`;
+  } else {
+    imgEl.innerHTML = `<span style="font-size:60px;opacity:.3">${CAT_EMOJI[e.category] || '🌟'}</span>`;
+  }
+
+  // Meta strip: source links
+  const wvLang = e.wikivoyageLang || 'en';
+  const wvArticle = e.wikivoyageArticle ? encodeURIComponent(e.wikivoyageArticle).replace(/%20/g, '_') : null;
+  const wikidata = e.wikidataQid ? `https://www.wikidata.org/wiki/${e.wikidataQid}` : null;
+  const coords = `${e.latitude}, ${e.longitude}`;
+  const mapsUrl = `https://www.openstreetmap.org/?mlat=${e.latitude}&mlon=${e.longitude}&zoom=17`;
+  const metaParts = [
+    `<span>${coords}</span>`,
+    `<a href="${mapsUrl}" target="_blank" rel="noopener">View on map</a>`,
+  ];
+  if (wvArticle) {
+    const url = `https://${wvLang === 'synth' ? 'en' : wvLang}.wikivoyage.org/wiki/${wvArticle}`;
+    metaParts.push(`<a href="${url}" target="_blank" rel="noopener">Wikivoyage source (${e.wikivoyageType || '?'})</a>`);
+  }
+  if (wikidata) metaParts.push(`<a href="${wikidata}" target="_blank" rel="noopener">Wikidata ${e.wikidataQid}</a>`);
+  if (e.url) metaParts.push(`<a href="${e.url}" target="_blank" rel="noopener">Official site</a>`);
+  document.getElementById('f-meta').innerHTML = metaParts.join('');
+
+  // Exclude button state
+  const exBtn = document.getElementById('exclude-btn');
+  exBtn.textContent = e.excluded ? 'Restore (un-exclude)' : 'Exclude';
+  exBtn.className = e.excluded ? 'primary' : 'danger';
+
+  document.getElementById('editor').showModal();
+}
+
+function toggleExclude() {
+  const e = state.entries[editingIdx];
+  e.excluded = !e.excluded;
+  saveToStorage();
+  renderAll();
+  closeEditor(false);
+}
+
+function closeEditor(save) {
+  if (save && editingIdx != null) {
+    const e = state.entries[editingIdx];
+    const updated = {
+      ...e,
+      name: document.getElementById('f-name').value.trim(),
+      description: document.getElementById('f-description').value.trim(),
+      category: document.getElementById('f-category').value,
+      costLevel: document.getElementById('f-costLevel').value,
+      setting: document.getElementById('f-setting').value,
+      weatherSuitability: document.getElementById('f-weatherSuitability').value,
+      durationEstimate: document.getElementById('f-durationEstimate').value,
+      imageUrl: document.getElementById('f-imageUrl').value.trim() || null,
+    };
+    if (JSON.stringify(updated) !== originalEditing) updated._edited = true;
+    state.entries[editingIdx] = updated;
+    saveToStorage();
+    renderAll();
+  }
+  editingIdx = null;
+  originalEditing = null;
+  document.getElementById('editor').close();
+}
+
+// ----- Download -----
+function downloadJSON() {
+  // Strip internal markers (_edited, _imported_at) from output? Keep _edited so we can re-import and see what we touched
+  const out = state.entries.map(e => {
+    const { _imported_at, ...rest } = e;
+    return rest;
+  });
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = state.filename.replace('.json', '') + '-reviewed.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ----- Utilities -----
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+// ----- Wire up filters / search -----
+document.getElementById('search').addEventListener('input', () => renderGrid());
+document.getElementById('show-excluded').addEventListener('change', () => renderAll());
+document.getElementById('missing-image').addEventListener('change', () => renderGrid());
+
+// ESC closes editor
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('editor').open) closeEditor(false);
+});
+
+// ----- Boot -----
+if (loadFromStorage()) {
+  renderAll();
+}
+</script>
+</body>
+</html>
