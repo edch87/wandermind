@@ -181,6 +181,12 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
     mapInstance.current = map;
     markerRef.current = marker;
+
+    // Leaflet sometimes mis-measures the container on first paint inside a
+    // flex/responsive layout, causing tiles to render past the right edge of
+    // the screen. invalidateSize on the next tick forces a re-measure after
+    // the browser has settled the layout.
+    setTimeout(() => map.invalidateSize(), 0);
   }, [step, selectedLocation]);
 
   // When leaving the pin step (e.g. user taps Back), tear the map down so it can
@@ -520,7 +526,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           </p>
         </div>
 
-        <div ref={mapRef} className="flex-1 mx-6 rounded-[20px] border border-sand-200 min-h-[55vh]" />
+        <div ref={mapRef} className="mx-6 h-[55vh] rounded-[20px] border border-sand-200 overflow-hidden" />
 
         {selectedLocation && (
           <p className="text-xs text-sand-700 px-6 pt-3 truncate">

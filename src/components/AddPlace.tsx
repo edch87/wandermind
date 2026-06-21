@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl } from '../utils/api';
+import L from 'leaflet';
+import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateTravelTime, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -25,7 +26,17 @@ interface Props {
   initialCategory?: Category;
 }
 
-type Step = 'search' | 'loading' | 'review';
+type Step = 'search' | 'confirm' | 'loading' | 'review';
+
+/** Haversine distance in metres. Used to decide whether a pin drag is large
+ *  enough to bother re-running reverse geocoding. */
+function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const a =
+    Math.sin(toRad(lat2 - lat1) / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lng2 - lng1) / 2) ** 2;
+  return 6371000 * 2 * Math.asin(Math.sqrt(a));
+}
 
 export default function AddPlace({ profile, onSave, onBack, initialPlace, initialCategory }: Props) {
   const [step, setStep] = useState<Step>('search');
@@ -39,14 +50,92 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
   const [urlMode, setUrlMode] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState('');
+  // The result the user just picked, held in state while they confirm or
+  // adjust the pin. Once they tap "Add this place" we hand this off to the
+  // existing selectPlace pipeline (Google details, travel time, photo, etc.).
+  const [pendingPlace, setPendingPlace] = useState<HereSearchResult | null>(null);
 
   const searchTimeout = useRef<number | null>(null);
+  const confirmMapRef = useRef<HTMLDivElement>(null);
+  const confirmMapInstance = useRef<L.Map | null>(null);
+  const confirmMarkerRef = useRef<L.Marker | null>(null);
 
-  // Launched with a prefilled place (from the Discover feed): skip search, go straight to review
+  // Launched with a prefilled place (from the Discover feed): skip search, go straight to review.
+  // Discover items are already user-confirmed visually, so we deliberately skip the confirm step.
   useEffect(() => {
     if (initialPlace) selectPlace(initialPlace, initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Build the map on the confirm step. Marker is draggable; tapping anywhere
+  // on the map also moves it. On meaningful drags (>50m from the original
+  // autocomplete position) we reverse-geocode so the address text stays in
+  // sync with the pin.
+  useEffect(() => {
+    if (step !== 'confirm' || !confirmMapRef.current || confirmMapInstance.current || !pendingPlace) return;
+
+    const originLat = pendingPlace.position.lat;
+    const originLng = pendingPlace.position.lng;
+    const map = L.map(confirmMapRef.current).setView([originLat, originLng], 16);
+    L.tileLayer(HERE_TILE_URL, { attribution: HERE_TILE_ATTRIBUTION }).addTo(map);
+    const marker = L.marker([originLat, originLng], { draggable: true }).addTo(map);
+
+    const updateFromMap = async (lat: number, lng: number) => {
+      const moved = distanceMeters(originLat, originLng, lat, lng);
+      // Tiny nudges (<50m) update the pin but keep the autocomplete address as-is,
+      // so we don't accidentally overwrite "Marienplatz" with a generic street label.
+      if (moved < 50) {
+        setPendingPlace(prev => prev ? { ...prev, position: { lat, lng } } : prev);
+        return;
+      }
+      const geo = await reverseGeocode(lat, lng);
+      setPendingPlace(prev => prev ? {
+        ...prev,
+        position: { lat, lng },
+        address: geo?.address || prev.address,
+      } : prev);
+    };
+
+    marker.on('dragend', () => {
+      const { lat, lng } = marker.getLatLng();
+      void updateFromMap(lat, lng);
+    });
+
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      void updateFromMap(lat, lng);
+    });
+
+    confirmMapInstance.current = map;
+    confirmMarkerRef.current = marker;
+    setTimeout(() => map.invalidateSize(), 0);
+  }, [step, pendingPlace]);
+
+  // Tear the confirm-step map down whenever we leave it, so re-entry (e.g. via
+  // Search again → pick a new result) gets a clean instance.
+  useEffect(() => {
+    if (step !== 'confirm' && confirmMapInstance.current) {
+      confirmMapInstance.current.remove();
+      confirmMapInstance.current = null;
+      confirmMarkerRef.current = null;
+    }
+  }, [step]);
+
+  const goToConfirm = (place: HereSearchResult) => {
+    setPendingPlace(place);
+    setResults([]);
+    setStep('confirm');
+  };
+
+  const confirmPlace = () => {
+    if (pendingPlace) void selectPlace(pendingPlace);
+  };
+
+  const backToSearch = () => {
+    setPendingPlace(null);
+    setStep('search');
+  };
 
   const handleSearch = async (q: string) => {
     setQuery(q);
@@ -178,7 +267,10 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           categories: [],
         };
 
-    await selectPlace(result);
+    // Drop into the confirm step so the user can verify the parsed pin before
+    // we spend API calls on details/photos/travel time.
+    setStep('search');
+    goToConfirm(result);
   };
 
   const updateDraft = (updates: Partial<BucketListItem>) => {
@@ -258,7 +350,7 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           {results.map((r) => {
             const subtitle = [r.address.city, r.address.country].filter(Boolean).join(', ');
             return (
-              <button key={r.id} onClick={() => selectPlace(r)}
+              <button key={r.id} onClick={() => goToConfirm(r)}
                 className="w-full text-left px-4 py-3.5 rounded-[20px] hover:bg-sand-100 transition">
                 <div className="text-sm font-medium text-sand-900">{r.title}</div>
                 {subtitle && <div className="text-xs text-sand-700 mt-0.5">{subtitle}</div>}
@@ -277,6 +369,45 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
             <p className="text-sm text-sand-700">Search for museums, restaurants, parks, hikes, viewpoints...</p>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Confirm step — map preview with draggable pin so the user can sanity-check
+  // (and adjust) the autocomplete result before we spend API calls on details.
+  if (step === 'confirm' && pendingPlace) {
+    return (
+      <div className="page-enter min-h-screen flex flex-col">
+        <div className="px-6 pt-6 pb-3">
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={backToSearch}
+              className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-600 text-sm">←</button>
+            <h2 className="text-xl font-semibold text-sand-900">
+              Is this the right <span className="heading-accent">spot?</span>
+            </h2>
+          </div>
+          <p className="text-base font-medium text-sand-900">{pendingPlace.title}</p>
+          <p className="text-xs text-sand-700 mt-0.5 truncate">{pendingPlace.address.label}</p>
+          <p className="text-xs text-sand-600 mt-2">
+            Drag the pin (or tap the map) if it's slightly off.
+          </p>
+        </div>
+
+        <div ref={confirmMapRef} className="mx-6 h-[55vh] rounded-[20px] border border-sand-200 overflow-hidden" />
+
+        <div
+          className="px-6 pt-3 flex gap-2"
+          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        >
+          <button onClick={backToSearch}
+            className="flex-1 py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition">
+            Search again
+          </button>
+          <button onClick={confirmPlace}
+            className="flex-[2] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition">
+            Add this place
+          </button>
+        </div>
       </div>
     );
   }

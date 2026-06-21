@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, reverseGeocode, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { markHomePinRefined } from '../utils/homePinPrompt';
 import type { UserProfile, HereSearchResult } from '../types';
@@ -26,18 +26,37 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
 
   useEffect(() => {
     if (showLocationEdit && mapRef.current && !mapInstance.current) {
-      const map = L.map(mapRef.current).setView([homeLat, homeLng], 12);
+      const map = L.map(mapRef.current).setView([homeLat, homeLng], 14);
       L.tileLayer(HERE_TILE_URL, { attribution: HERE_TILE_ATTRIBUTION }).addTo(map);
-      markerRef.current = L.marker([homeLat, homeLng]).addTo(map);
+      const marker = L.marker([homeLat, homeLng], { draggable: true }).addTo(map);
+      markerRef.current = marker;
       mapInstance.current = map;
-      map.on('click', (e: L.LeafletMouseEvent) => {
-        setHomeLat(e.latlng.lat); setHomeLng(e.latlng.lng);
-        setHomeAddress(`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
-        if (markerRef.current) map.removeLayer(markerRef.current);
-        markerRef.current = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+
+      // Reverse-geocode whenever the pin moves so the address text reflects
+      // the new location instead of a raw lat,lng pair.
+      const updateFromMap = async (lat: number, lng: number) => {
+        setHomeLat(lat);
+        setHomeLng(lng);
+        const geo = await reverseGeocode(lat, lng);
+        setHomeAddress(geo?.address.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      };
+
+      marker.on('dragend', () => {
+        const { lat, lng } = marker.getLatLng();
+        void updateFromMap(lat, lng);
       });
+
+      map.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        marker.setLatLng([lat, lng]);
+        void updateFromMap(lat, lng);
+      });
+
+      // Leaflet sometimes mis-measures its container on first render inside a
+      // toggled section. Force a re-measure on the next tick.
+      setTimeout(() => map.invalidateSize(), 0);
     }
-    return () => { if (!showLocationEdit && mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
+    return () => { if (!showLocationEdit && mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; markerRef.current = null; } };
   }, [showLocationEdit]);
 
   const handleSearchLocation = async () => {
