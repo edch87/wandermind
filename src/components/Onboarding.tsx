@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
-import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, reverseGeocode, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { generateId } from '../utils/storage';
+import { markHomePinRefined } from '../utils/homePinPrompt';
 import type { UserProfile, BucketListItem, HereSearchResult, Category } from '../types';
 import { CATEGORY_INFO } from '../types';
 import { MapPin, Target, BookOpen, Shuffle, Check } from '@phosphor-icons/react';
@@ -120,7 +121,7 @@ function curatedToBucketListItem(entry: CuratedEntry, profile: UserProfile): Buc
   };
 }
 
-type Step = 'welcome' | 'carousel' | 'location' | 'discover';
+type Step = 'welcome' | 'carousel' | 'location' | 'pin' | 'discover';
 
 export default function Onboarding({ displayName, onComplete }: Props) {
   const [step, setStep] = useState<Step>('welcome');
@@ -142,30 +143,51 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   const mapInstance = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
 
+  // Build the map for the dedicated pin-refine step. The marker is draggable so
+  // users can nudge it after autocomplete drops them roughly the right place.
+  // Tapping anywhere on the map also moves the pin. On drag-end or click we
+  // reverse-geocode to keep the human-readable address in sync.
   useEffect(() => {
-    if (step === 'location' && mapRef.current && !mapInstance.current) {
-      const map = L.map(mapRef.current).setView([48.137, 11.576], 10);
-      L.tileLayer(HERE_TILE_URL, {
-        attribution: HERE_TILE_ATTRIBUTION,
-      }).addTo(map);
-      mapInstance.current = map;
-      map.on('click', (e: L.LeafletMouseEvent) => {
-        const { lat, lng } = e.latlng;
-        setSelectedLocation({ lat, lng, address: `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
-        if (markerRef.current) map.removeLayer(markerRef.current);
-        markerRef.current = L.marker([lat, lng]).addTo(map);
+    if (step !== 'pin' || !mapRef.current || mapInstance.current || !selectedLocation) return;
+
+    const map = L.map(mapRef.current).setView([selectedLocation.lat, selectedLocation.lng], 16);
+    L.tileLayer(HERE_TILE_URL, { attribution: HERE_TILE_ATTRIBUTION }).addTo(map);
+
+    const marker = L.marker([selectedLocation.lat, selectedLocation.lng], { draggable: true }).addTo(map);
+
+    const updateFromMap = async (lat: number, lng: number) => {
+      const geo = await reverseGeocode(lat, lng);
+      setSelectedLocation({
+        lat,
+        lng,
+        address: geo?.address.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       });
+    };
+
+    marker.on('dragend', () => {
+      const { lat, lng } = marker.getLatLng();
+      void updateFromMap(lat, lng);
+    });
+
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      void updateFromMap(lat, lng);
+    });
+
+    mapInstance.current = map;
+    markerRef.current = marker;
+  }, [step, selectedLocation]);
+
+  // When leaving the pin step (e.g. user taps Back), tear the map down so it can
+  // be re-created cleanly if they return.
+  useEffect(() => {
+    if (step !== 'pin' && mapInstance.current) {
+      mapInstance.current.remove();
+      mapInstance.current = null;
+      markerRef.current = null;
     }
   }, [step]);
-
-  useEffect(() => {
-    if (selectedLocation && mapInstance.current) {
-      const { lat, lng } = selectedLocation;
-      mapInstance.current.setView([lat, lng], 14);
-      if (markerRef.current) mapInstance.current.removeLayer(markerRef.current);
-      markerRef.current = L.marker([lat, lng]).addTo(mapInstance.current);
-    }
-  }, [selectedLocation]);
 
   // Curated entries within 150km of the user's home, grouped by category.
   const nearbyCurated = useMemo(() => {
@@ -215,11 +237,13 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     };
   };
 
-  // From the location step: go to discover if there are nearby curated entries,
+  // From the pin step: go to discover if there are nearby curated entries,
   // otherwise skip straight to completion (clean fallback for users outside Munich).
   const goToDiscoverOrFinish = async () => {
     const profile = await buildProfile();
     if (!profile) return;
+    // User went through the new pin step, so they don't need the refine banner.
+    markHomePinRefined(profile.id);
     // Quick filter without waiting for useMemo recompute
     const hasNearby = ALL_CURATED.some(e =>
       haversineKm(profile.homeLatitude, profile.homeLongitude, e.latitude, e.longitude) <= DISCOVER_RADIUS_KM,
@@ -463,6 +487,49 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     );
   }
 
+  // ── Pin refine step ──
+  if (step === 'pin') {
+    return (
+      <div className="min-h-screen flex flex-col bg-sand-50">
+        <div className="px-6 pt-8 pb-3">
+          <h2 className="text-xl font-semibold text-sand-900">
+            Fine-tune <span className="heading-accent">the pin</span>
+          </h2>
+          <p className="text-sm text-sand-700 mt-1">
+            Drag the pin, or tap the map, to drop it exactly on your home.
+          </p>
+        </div>
+
+        <div ref={mapRef} className="flex-1 mx-6 rounded-[20px] border border-sand-200 min-h-[55vh]" />
+
+        {selectedLocation && (
+          <p className="text-xs text-sand-700 px-6 pt-3 truncate">
+            {selectedLocation.address}
+          </p>
+        )}
+
+        <div
+          className="px-6 pt-3 flex gap-2"
+          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        >
+          <button
+            onClick={() => setStep('location')}
+            className="flex-1 py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition"
+          >
+            Back
+          </button>
+          <button
+            onClick={goToDiscoverOrFinish}
+            disabled={!selectedLocation}
+            className="flex-[2] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            This is home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ── Location setup ──
   return (
     <div className="min-h-screen px-6 py-8 bg-sand-50">
@@ -471,7 +538,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           Where's <span className="heading-accent">home?</span>
         </h2>
         <p className="text-sm text-sand-700 mt-1">
-          We'll use this to calculate travel times to your bucket list spots.
+          We use this to work out travel times. The more precise the better, and you can fine-tune the pin on the next step.
         </p>
       </div>
 
@@ -485,7 +552,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Search for your city..."
+            placeholder="Street, neighbourhood, or postcode"
             className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-sm text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
           />
           <button
@@ -511,17 +578,15 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           </div>
         )}
 
-        <div ref={mapRef} className="w-full h-52 rounded-[20px] mb-3 border border-sand-200" />
-
         {selectedLocation && (
           <p className="text-xs text-forest-600 mb-4 px-1">
-            ✓ {selectedLocation.address.substring(0, 60)}...
+            ✓ {selectedLocation.address.substring(0, 80)}
           </p>
         )}
       </div>
 
       <button
-        onClick={goToDiscoverOrFinish}
+        onClick={() => setStep('pin')}
         disabled={!selectedLocation}
         className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2"
       >

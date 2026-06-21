@@ -4,10 +4,11 @@ import type { UserProfile, BucketListItem, WeatherForecast, HereSearchResult } f
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations } from '../utils/recommendation';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
+import { isHomePinRefined, markHomePinRefined } from '../utils/homePinPrompt';
 import { DiscoverCard } from './Discover';
 import {
   Sun, CloudSun, CloudRain, Snowflake, CloudFog,
-  Shuffle, Plus,
+  Shuffle, Plus, MapPin, X,
 } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
 import PlaceholderImage from './PlaceholderImage';
@@ -32,10 +33,22 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
   const [surprise, setSurprise] = useState<BucketListItem | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [discover, setDiscover] = useState<DiscoverPlace[]>([]);
+  // One-time prompt for existing users to refine their home with the new pin
+  // flow. New users complete the pin step in onboarding and never see this.
+  const [showRefineHomeBanner, setShowRefineHomeBanner] = useState(false);
 
   useEffect(() => {
     fetchWeatherForecast(profile.homeLatitude, profile.homeLongitude).then(setWeather);
   }, [profile.homeLatitude, profile.homeLongitude]);
+
+  useEffect(() => {
+    setShowRefineHomeBanner(!isHomePinRefined(profile.id));
+  }, [profile.id]);
+
+  const dismissRefineHomeBanner = () => {
+    markHomePinRefined(profile.id);
+    setShowRefineHomeBanner(false);
+  };
 
   // Discover teaser rail — session-cached in discover.ts, so this is cheap on re-renders
   useEffect(() => {
@@ -119,6 +132,43 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
           </p>
         )}
       </div>
+
+      {/* One-time prompt for users whose home is still city-level. New users
+          completed the pin step in onboarding and won't see this. */}
+      {showRefineHomeBanner && (
+        <div className="mx-6 mb-4 rounded-[20px] bg-sand-100 border border-sand-200 p-3 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-sand-900 text-sand-100 flex items-center justify-center flex-shrink-0">
+            <MapPin size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-sand-900">Fine-tune your home location</p>
+            <p className="text-xs text-sand-700 mt-0.5 leading-snug">
+              We can give better travel times with a more precise pin. Takes a few seconds.
+            </p>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => { markHomePinRefined(profile.id); setShowRefineHomeBanner(false); onNavigate({ name: 'settings' }); }}
+                className="text-xs font-semibold text-terra-500 hover:text-terra-600"
+              >
+                Update home
+              </button>
+              <button
+                onClick={dismissRefineHomeBanner}
+                className="text-xs font-medium text-sand-600 hover:text-sand-800"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={dismissRefineHomeBanner}
+            aria-label="Dismiss"
+            className="text-sand-500 hover:text-sand-800 -mt-0.5 -mr-0.5 p-1"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Weather card */}
       {todayWeather && (

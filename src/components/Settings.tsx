@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { searchPlaces, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
+import { markHomePinRefined } from '../utils/homePinPrompt';
 import type { UserProfile, HereSearchResult } from '../types';
 
 interface Props {
@@ -61,6 +62,7 @@ export default function Settings({ profile, onSave, onBack, onSignOut }: Props) 
   const handleSave = () => {
     onSave({ ...profile, displayName: name,
       homeLatitude: homeLat, homeLongitude: homeLng, homeAddress, shareSaves });
+    markHomePinRefined(profile.id);
     onBack();
   };
 

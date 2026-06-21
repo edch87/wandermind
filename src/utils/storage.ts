@@ -15,6 +15,19 @@ function migrateCategory(raw: string): string {
   return LEGACY_CATEGORY_MAP[raw] || raw;
 }
 
+/**
+ * Round home coordinates to 3 decimal places before persisting. At Munich's
+ * latitude (~48°N) this is roughly a 111m × 74m grid cell with ~65m worst-case
+ * displacement from the true location — enough to obscure an exact address
+ * while keeping travel-time and "close to home" calculations accurate.
+ *
+ * The in-session value used for map rendering is *not* rounded; only what we
+ * write to the database is.
+ */
+function roundForPrivacy(coord: number): number {
+  return Math.round(coord * 1000) / 1000;
+}
+
 // ── Helpers: convert between camelCase (app) and snake_case (database) ──
 
 function profileFromDb(row: Record<string, unknown>): UserProfile {
@@ -37,8 +50,8 @@ function profileToDb(profile: UserProfile) {
   return {
     id: profile.id,
     display_name: profile.displayName,
-    home_latitude: profile.homeLatitude,
-    home_longitude: profile.homeLongitude,
+    home_latitude: roundForPrivacy(profile.homeLatitude),
+    home_longitude: roundForPrivacy(profile.homeLongitude),
     home_address: profile.homeAddress,
     preferred_transport: profile.preferredTransport,
     has_dog: profile.hasDog,
