@@ -377,9 +377,13 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
   // (and adjust) the autocomplete result before we spend API calls on details.
   if (step === 'confirm' && pendingPlace) {
     return (
-      // No page-enter on this view: the fadeUp transform animation interferes
-      // with Leaflet's initial measurement and leaves the tile layer blank.
-      <div className="min-h-screen flex flex-col bg-sand-50">
+      // Plain block layout (not flex column). Earlier flex-column versions of
+      // this screen had the map div collapsing to zero height on this route —
+      // AddPlace renders inside App's wrapper div whereas Onboarding does not,
+      // and the flex sizing didn't survive that extra context. Explicit inline
+      // height with a px minHeight fallback removes the dependency on parent
+      // sizing entirely.
+      <div className="bg-sand-50 pb-4">
         <div className="px-6 pt-6 pb-3">
           <div className="flex items-center gap-3 mb-4">
             <button onClick={backToSearch}
@@ -395,7 +399,11 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           </p>
         </div>
 
-        <div ref={confirmMapRef} className="mx-6 h-[55vh] rounded-[20px] border border-sand-200 overflow-hidden" />
+        <div
+          ref={confirmMapRef}
+          className="mx-6 rounded-[20px] border border-sand-200 overflow-hidden"
+          style={{ height: '55vh', minHeight: '320px' }}
+        />
 
         <div
           className="px-6 pt-3 flex gap-2"
