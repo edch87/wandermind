@@ -28,6 +28,11 @@ function roundForPrivacy(coord: number): number {
   return Math.round(coord * 1000) / 1000;
 }
 
+/** See itemFromDb — coerces stale 0 transit_minutes to null. */
+function normalizeTransit(v: number | null): number | null {
+  return v === 0 ? null : v;
+}
+
 // ── Helpers: convert between camelCase (app) and snake_case (database) ──
 
 function profileFromDb(row: Record<string, unknown>): UserProfile {
@@ -93,7 +98,11 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     walkMinutes: (row.walk_minutes as number | null) ?? seedLegacy('walk'),
     bikeMinutes: (row.bike_minutes as number | null) ?? seedLegacy('bike'),
     carMinutes: (row.car_minutes as number | null) ?? seedLegacy('car'),
-    transitMinutes: (row.transit_minutes as number | null) ?? seedLegacy('transit'),
+    // Stale 0 values from the original broken refresh (before HERE Transit's
+    // return=travelSummary fix landed) are coerced to null on read so the UI
+    // shows "Not practical by transit" instead of a misleading "0 min".
+    // Real transit between distinct points is never 0 — see api.ts.
+    transitMinutes: normalizeTransit((row.transit_minutes as number | null) ?? seedLegacy('transit')),
     category: migrateCategory((row.category as string) || 'neighbourhood_walks') as BucketListItem['category'],
     setting: (row.setting as BucketListItem['setting']) || 'mixed',
     weatherSuitability: (row.weather_suitability as BucketListItem['weatherSuitability']) || 'any',

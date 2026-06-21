@@ -6,6 +6,7 @@
 
 ## 2026-06-21 (fixes)
 - **Transit always showed 0 minutes**: HERE Transit doesn't return `travelSummary` fields by default — you have to opt in with `return=travelSummary`. Without it, the parser summed empty sections and stored "0 min by transit" for every item. Fixed in `fetchHereRoute`; added two safety nets (derive duration from arrival-departure timestamps if summaries are missing; treat transit=0 between distinct points as `null` → "Not practical by transit").
+- **Storage normalization for stale 0 transit values**: `itemFromDb` now coerces any `transit_minutes = 0` to `null` on read, so items written by the original broken refresh display "Not practical by transit" until a fresh refresh overwrites them with real numbers. Real transit between distinct points is never 0 minutes, so this is unambiguous.
 - **24h cooldown on manual "Refresh travel times"**: stored in localStorage. Doesn't gate the auto-refresh on home-location change (which is user-initiated by an actual home edit). Stops accidental double-taps from burning HERE quota.
 
 ## 2026-06-21 (per-mode travel times)
