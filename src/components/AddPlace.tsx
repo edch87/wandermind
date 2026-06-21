@@ -67,17 +67,12 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Stable identifier for the current pending place. We key the map effect off
-  // this rather than the full pendingPlace object so a pin drag (which mutates
-  // pendingPlace) doesn't tear down and rebuild the map.
-  const pendingPlaceKey = pendingPlace ? (pendingPlace.id || pendingPlace.title) : null;
-
   // Build the map on the confirm step. Marker is draggable; tapping anywhere
   // on the map also moves it. On meaningful drags (>50m from the original
   // autocomplete position) we reverse-geocode so the address text stays in
-  // sync with the pin.
+  // sync with the pin. Mirrors the pattern used in Onboarding's pin step.
   useEffect(() => {
-    if (step !== 'confirm' || !confirmMapRef.current || !pendingPlace) return;
+    if (step !== 'confirm' || !confirmMapRef.current || confirmMapInstance.current || !pendingPlace) return;
 
     const originLat = pendingPlace.position.lat;
     const originLng = pendingPlace.position.lng;
@@ -114,21 +109,18 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
 
     confirmMapInstance.current = map;
     confirmMarkerRef.current = marker;
-    // Leaflet sometimes mis-measures its container on first paint. A short delay
-    // (rather than 0ms) covers the page-enter fade-up animation.
-    const timer = setTimeout(() => map.invalidateSize(), 150);
+    setTimeout(() => map.invalidateSize(), 0);
+  }, [step, pendingPlace]);
 
-    // Proper cleanup: removes the Leaflet DOM and detaches handlers. Required
-    // for React StrictMode double-invocation and for clean re-entry when the
-    // user goes back and picks a different result.
-    return () => {
-      clearTimeout(timer);
-      map.remove();
+  // Tear the confirm-step map down whenever we leave it, so re-entry (e.g.
+  // via Search again → pick a new result) gets a clean instance.
+  useEffect(() => {
+    if (step !== 'confirm' && confirmMapInstance.current) {
+      confirmMapInstance.current.remove();
       confirmMapInstance.current = null;
       confirmMarkerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, pendingPlaceKey]);
+    }
+  }, [step]);
 
   const goToConfirm = (place: HereSearchResult) => {
     setPendingPlace(place);
