@@ -67,12 +67,17 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Stable identifier for the current pending place. We key the map effect off
+  // this rather than the full pendingPlace object so a pin drag (which mutates
+  // pendingPlace) doesn't tear down and rebuild the map.
+  const pendingPlaceKey = pendingPlace ? (pendingPlace.id || pendingPlace.title) : null;
+
   // Build the map on the confirm step. Marker is draggable; tapping anywhere
   // on the map also moves it. On meaningful drags (>50m from the original
   // autocomplete position) we reverse-geocode so the address text stays in
   // sync with the pin.
   useEffect(() => {
-    if (step !== 'confirm' || !confirmMapRef.current || confirmMapInstance.current || !pendingPlace) return;
+    if (step !== 'confirm' || !confirmMapRef.current || !pendingPlace) return;
 
     const originLat = pendingPlace.position.lat;
     const originLng = pendingPlace.position.lng;
@@ -109,18 +114,21 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
 
     confirmMapInstance.current = map;
     confirmMarkerRef.current = marker;
-    setTimeout(() => map.invalidateSize(), 0);
-  }, [step, pendingPlace]);
+    // Leaflet sometimes mis-measures its container on first paint. A short delay
+    // (rather than 0ms) covers the page-enter fade-up animation.
+    const timer = setTimeout(() => map.invalidateSize(), 150);
 
-  // Tear the confirm-step map down whenever we leave it, so re-entry (e.g. via
-  // Search again → pick a new result) gets a clean instance.
-  useEffect(() => {
-    if (step !== 'confirm' && confirmMapInstance.current) {
-      confirmMapInstance.current.remove();
+    // Proper cleanup: removes the Leaflet DOM and detaches handlers. Required
+    // for React StrictMode double-invocation and for clean re-entry when the
+    // user goes back and picks a different result.
+    return () => {
+      clearTimeout(timer);
+      map.remove();
       confirmMapInstance.current = null;
       confirmMarkerRef.current = null;
-    }
-  }, [step]);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, pendingPlaceKey]);
 
   const goToConfirm = (place: HereSearchResult) => {
     setPendingPlace(place);
@@ -377,7 +385,9 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
   // (and adjust) the autocomplete result before we spend API calls on details.
   if (step === 'confirm' && pendingPlace) {
     return (
-      <div className="page-enter min-h-screen flex flex-col">
+      // No page-enter on this view: the fadeUp transform animation interferes
+      // with Leaflet's initial measurement and leaves the tile layer blank.
+      <div className="min-h-screen flex flex-col bg-sand-50">
         <div className="px-6 pt-6 pb-3">
           <div className="flex items-center gap-3 mb-4">
             <button onClick={backToSearch}
