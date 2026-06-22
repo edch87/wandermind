@@ -65,6 +65,10 @@ Captured here so context is not lost when we pick this up:
 
 ## UX & Flow Redesign
 
+- ~~**Duplicate detection on add**~~ ✅ Done (2026-06-22) — search results and pasted Google Maps links now check existing items by `googlePlaceId` then `osmId`. Matched results render with an "Already saved" badge and route taps to ItemDetail instead of the confirm step. Lat/lng proximity intentionally not used as a fallback to avoid false positives on side-by-side places. Helper `findExistingMatch` lives in `AddPlace.tsx`; `App.tsx` passes `items` + `onViewExisting` through.
+- **Three-state dog / child / accessibility** — replace the single Yes/unknown toggle on AddPlace with a Yes / Not sure / No pill group per item, defaulting to "Not sure". Stop the inference layer from writing `false` from OSM/Google tags (only `true`), so the detail view only shows "Not dog-friendly" / "Not accessible" / "Not stroller-friendly" when the user explicitly said so. Recommend-flow filter behaviour stays the same: explicit `false` excludes, `undefined` is allowed through.
+
+
 - ~~**Clarify "time" means total door-to-door time**~~ ✅ Done — relabelled to "Total time, door to door?" with subtitle
 - ~~**Move transport mode out of profile/settings into the recommend flow**~~ ✅ Done — "How are you getting there?" in recommend flow, dynamic HERE routing calculation
 - ~~**Move kids, dog, accessibility into the recommend flow**~~ ✅ Done — "Anything else?" section with dog/stroller/wheelchair toggles

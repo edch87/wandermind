@@ -18,8 +18,12 @@ import {
 
 interface Props {
   profile: UserProfile;
+  items: BucketListItem[];
   onSave: (item: BucketListItem) => void;
   onBack: () => void;
+  /** Open an existing item's detail screen — used when a search/url result
+   *  matches a place that's already on the user's list. */
+  onViewExisting: (id: string) => void;
   /** When set (e.g. from the Discover feed), skip search and jump straight to the review step. */
   initialPlace?: HereSearchResult;
   /** Category hint from the discover feed — overrides inference so the user isn't re-asked. */
@@ -38,7 +42,27 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number):
   return 6371000 * 2 * Math.asin(Math.sqrt(a));
 }
 
-export default function AddPlace({ profile, onSave, onBack, initialPlace, initialCategory }: Props) {
+/** Return the existing bucket list item that matches a search/url result, or
+ *  undefined if it's a new place. Match strategy is IDs only (per IDEAS.md
+ *  spec): googlePlaceId first, fall back to HERE id (stored as osmId for
+ *  legacy reasons). Lat/lng proximity is intentionally NOT a fallback to
+ *  avoid false positives where two distinct places sit close together. */
+function findExistingMatch(
+  result: HereSearchResult,
+  items: BucketListItem[],
+): BucketListItem | undefined {
+  if (result.googlePlaceId) {
+    const m = items.find(i => i.googlePlaceId && i.googlePlaceId === result.googlePlaceId);
+    if (m) return m;
+  }
+  if (result.id) {
+    const m = items.find(i => i.osmId && i.osmId === result.id);
+    if (m) return m;
+  }
+  return undefined;
+}
+
+export default function AddPlace({ profile, items, onSave, onBack, onViewExisting, initialPlace, initialCategory }: Props) {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<HereSearchResult[]>([]);
@@ -271,9 +295,18 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           categories: [],
         };
 
+    setStep('search');
+
+    // If the pasted link points to a place already on the list, jump straight
+    // to its detail screen instead of taking the user through confirm/review.
+    const existing = findExistingMatch(result, items);
+    if (existing) {
+      onViewExisting(existing.id);
+      return;
+    }
+
     // Drop into the confirm step so the user can verify the parsed pin before
     // we spend API calls on details/photos/travel time.
-    setStep('search');
     goToConfirm(result);
   };
 
@@ -353,11 +386,23 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
         <div className="space-y-1">
           {results.map((r) => {
             const subtitle = [r.address.city, r.address.country].filter(Boolean).join(', ');
+            const existing = findExistingMatch(r, items);
+            // If already in the list, tap routes to the item detail instead of
+            // the confirm step — same surface, no silent hide, no re-adding.
             return (
-              <button key={r.id} onClick={() => goToConfirm(r)}
+              <button key={r.id} onClick={() => existing ? onViewExisting(existing.id) : goToConfirm(r)}
                 className="w-full text-left px-4 py-3.5 rounded-[20px] hover:bg-sand-100 transition">
-                <div className="text-sm font-medium text-sand-900">{r.title}</div>
-                {subtitle && <div className="text-xs text-sand-700 mt-0.5">{subtitle}</div>}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-sand-900 truncate">{r.title}</div>
+                    {subtitle && <div className="text-xs text-sand-700 mt-0.5 truncate">{subtitle}</div>}
+                  </div>
+                  {existing && (
+                    <span className="badge bg-sand-200 text-sand-800 flex-shrink-0 mt-0.5">
+                      Already saved
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}

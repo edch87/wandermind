@@ -197,6 +197,7 @@ export default function App() {
       {screen.name === 'add' && (
         <AddPlace
           profile={profile}
+          items={items}
           initialPlace={screen.initialPlace}
           initialCategory={screen.initialCategory}
           onSave={(item) => {
@@ -204,6 +205,7 @@ export default function App() {
             setScreen({ name: 'list' });
           }}
           onBack={() => setScreen({ name: 'dashboard' })}
+          onViewExisting={(id) => setScreen({ name: 'detail', itemId: id })}
         />
       )}
       {screen.name === 'list' && (
