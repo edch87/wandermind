@@ -387,7 +387,7 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
       // and the flex sizing didn't survive that extra context. Explicit inline
       // height with a px minHeight fallback removes the dependency on parent
       // sizing entirely.
-      <div className="bg-sand-50 pb-4">
+      <div className="bg-sand-50 pb-4 w-full max-w-full overflow-x-hidden">
         <div className="px-6 pt-6 pb-3">
           <div className="flex items-center gap-3 mb-4">
             <button onClick={backToSearch}
