@@ -403,11 +403,17 @@ export default function AddPlace({ profile, onSave, onBack, initialPlace, initia
           </p>
         </div>
 
-        <div
-          ref={confirmMapRef}
-          className="mx-6 rounded-[20px] border border-sand-200 overflow-hidden"
-          style={{ height: '55vh', minHeight: '320px' }}
-        />
+        {/* px-6 wrapper + w-full on the map is the same pattern Settings uses.
+            Earlier mx-6 on the map div was letting Leaflet render past the
+            right edge in some PWA layouts — putting the inset on a wrapper
+            forces an explicit constrained width on the map element itself. */}
+        <div className="px-6">
+          <div
+            ref={confirmMapRef}
+            className="w-full rounded-[20px] border border-sand-200 overflow-hidden"
+            style={{ height: '55vh', minHeight: '320px' }}
+          />
+        </div>
 
         <div
           className="px-6 pt-3 flex gap-2"
