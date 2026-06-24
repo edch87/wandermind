@@ -71,10 +71,10 @@ const CAROUSEL_SLIDES = [
 ];
 
 const CATEGORY_ORDER: Category[] = [
-  'museum_gallery', 'historical', 'nature_landscape', 'park_garden',
-  'hiking_trails', 'beach_water', 'active_adventure',
-  'food_drink', 'nightlife', 'entertainment', 'wellness',
-  'zoo_aquarium', 'event_festival', 'neighbourhood_walks',
+  'museum_gallery', 'historical', 'religious_site', 'nature_landscape', 'park_garden',
+  'neighbourhood_walks', 'beach_water', 'active',
+  'food_drink', 'nightlife', 'theatre_concert', 'amusement_park',
+  'entertainment', 'zoo_aquarium', 'wellness', 'shopping', 'other',
 ];
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -114,7 +114,10 @@ function curatedToBucketListItem(entry: CuratedEntry, profile: UserProfile): Buc
     costLevel: entry.costLevel,
     bestSeasons: entry.bestSeasons,
     bestTimesOfDay: entry.bestTimesOfDay,
-    groupSuitability: entry.groupSuitability,
+    // Strip `family` from legacy seed data (dropped from GroupType in 2026-06-24 pass).
+    groupSuitability: (entry.groupSuitability as unknown as string[])
+      .filter((g): g is BucketListItem['groupSuitability'][number] =>
+        g === 'solo' || g === 'couple' || g === 'friends' || g === 'kids'),
     priority: 'medium',
     tags: [],
     osmTags: entry.wikidataQid ? { wikidata_qid: entry.wikidataQid } : {},

@@ -146,9 +146,14 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
             <div className="toggle-group">
               <button className={`toggle-btn text-xs ${filterGroup === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterGroup('all')}>All</button>
-              {(['solo', 'couple', 'friends', 'family', 'kids'] as GroupType[]).map(g => (
+              {([
+                ['solo', 'Solo'],
+                ['couple', 'Couple'],
+                ['friends', 'Friends'],
+                ['kids', 'With kids'],
+              ] as [GroupType, string][]).map(([g, label]) => (
                 <button key={g} className={`toggle-btn text-xs ${filterGroup === g ? 'active' : ''}`}
-                  onClick={() => setFilterGroup(g)}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
+                  onClick={() => setFilterGroup(g)}>{label}</button>
               ))}
             </div>
           </div>

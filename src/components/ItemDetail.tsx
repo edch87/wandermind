@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { fetchGooglePlacePhoto } from '../utils/api';
-import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay, GroupType, Priority } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
+import type { BucketListItem, Category, Setting, WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay, GroupType, Priority, Tag } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO } from '../types';
 import { formatOpeningHours } from '../utils/openingHours';
 import PlaceholderImage from './PlaceholderImage';
+import { TagPicker } from './AddPlace';
 import {
   NavigationArrow,
   Sun, CloudRain, CloudSun,
@@ -222,11 +223,24 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
 
           <Section label="Good for">
             <div className="toggle-group">
-              {(['solo', 'couple', 'friends', 'family', 'kids'] as GroupType[]).map((val) => (
+              {([
+                ['solo', 'Solo'],
+                ['couple', 'Couple'],
+                ['friends', 'Friends'],
+                ['kids', 'With kids'],
+              ] as [GroupType, string][]).map(([val, label]) => (
                 <button key={val} className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
-                  onClick={() => toggleGroupType(val)}>{val.charAt(0).toUpperCase() + val.slice(1)}</button>
+                  onClick={() => toggleGroupType(val)}>{label}</button>
               ))}
             </div>
+          </Section>
+
+          <Section label="Tags">
+            <TagPicker
+              category={draft.category}
+              selected={(draft.tags || []) as Tag[]}
+              onChange={(next) => updateDraft({ tags: next })}
+            />
           </Section>
 
           <Section label="Accessibility">
@@ -338,6 +352,15 @@ export default function ItemDetail({ item, onBack, onSave, onDelete }: Props) {
           <p className="text-xs text-sand-700 mt-1 inline-flex items-center gap-1">
             <MapPin size={12} /> {item.address?.split(',').slice(0, 3).join(',')}
           </p>
+          {(item.tags || []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {(item.tags || []).filter((t): t is Tag => t in TAG_INFO).map(t => (
+                <span key={t} className="badge bg-sand-100 text-sand-700 text-[11px]">
+                  {TAG_INFO[t].label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Getting there — distance + per-mode times */}

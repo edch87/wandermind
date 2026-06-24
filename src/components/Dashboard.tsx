@@ -67,12 +67,14 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
 
   const handleSpontaneous = () => {
     const dayWeather = weather[0] || null;
-    // "I'm feeling spontaneous" — random pick from list, capped at full day (480 min)
+    // "I'm feeling spontaneous" — random pick from list, capped at full day (480 min).
+    // Uses the engine's surprise-me path (added 2026-06-24) so the weighted-random
+    // shuffle is applied; the old `energy: 'surprise_me'` enum value is gone.
     const scored = getRecommendations(items, {
       date: new Date().toISOString().split('T')[0],
       timeAvailableMinutes: 480,
       groupTypes: [],
-      energy: 'surprise_me',
+      energy: 'up_for_anything',
       vibes: ['flexible'],
       maxCostLevel: 'expensive',
       travelFrom: 'home',
@@ -80,6 +82,7 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       dogComing: false,
       needsAccessibility: false,
       strollerNeeded: false,
+      surpriseMe: true,
     }, dayWeather);
     if (scored.length > 0) {
       const randomIdx = Math.floor(Math.random() * Math.min(scored.length, 5));

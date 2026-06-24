@@ -1,7 +1,7 @@
 import type {
   BucketListItem, RecommendationConstraints, WeatherForecast,
   ScoredItem, CostLevel, DurationEstimate, Vibe, Category, Season, EnergyLevel,
-  TransportMode, TimeOfDay,
+  TransportMode, TimeOfDay, Tag,
 } from '../types';
 import { getOpeningHoursWarning } from './openingHours';
 
@@ -13,47 +13,67 @@ const COST_RANK: Record<CostLevel, number> = {
   free: 0, cheap: 1, moderate: 2, expensive: 3,
 };
 
+// Vibe → categories (hard filter when one or more non-flexible vibes selected).
+// Sourced from docs/categories.xlsx Sheet 2 (Vibe → Categories map). 8 vibes incl. `active`.
 const VIBE_CATEGORIES: Record<Exclude<Vibe, 'flexible'>, Category[]> = {
-  foodie: ['food_drink'],
-  curious: ['museum_gallery', 'historical', 'neighbourhood_walks'],
-  outdoorsy: ['hiking_trails', 'nature_landscape', 'park_garden', 'beach_water'],
-  playful: ['entertainment', 'nightlife', 'zoo_aquarium', 'event_festival', 'active_adventure', 'beach_water'],
-  unwind: ['wellness', 'food_drink', 'park_garden'],
-  explore: ['neighbourhood_walks', 'nature_landscape', 'hiking_trails'],
+  foodie:    ['food_drink'],
+  curious:   ['museum_gallery', 'historical', 'religious_site', 'neighbourhood_walks'],
+  outdoorsy: ['nature_landscape', 'park_garden', 'beach_water', 'neighbourhood_walks'],
+  active:    ['active', 'nature_landscape', 'beach_water', 'amusement_park'],
+  playful:   ['entertainment', 'nightlife', 'zoo_aquarium', 'amusement_park', 'theatre_concert'],
+  unwind:    ['wellness', 'food_drink', 'park_garden'],
+  explore:   ['neighbourhood_walks', 'nature_landscape'],
+};
+
+// Vibe → tags that get a score boost when present on a matched item.
+// Sourced from project-recommendation-audit memory (locked 2026-06-23).
+// Tags not in this map don't contribute — the engine only boosts the listed ones.
+const VIBE_TAG_BOOSTS: Partial<Record<Exclude<Vibe, 'flexible'>, Tag[]>> = {
+  foodie:    ['market', 'outdoor_seating', 'class'],
+  curious:   ['tour'],
+  outdoorsy: ['viewpoint', 'picnicking'],
+  active:    ['hiking', 'cycling', 'water_sports', 'winter_sports'],
+  playful:   ['live_music', 'late_night'],
+  unwind:    ['sauna', 'outdoor_seating'],
+  explore:   ['market', 'viewpoint', 'tour'],
 };
 
 /** Max activity duration (minutes) per energy level — soft scoring only */
 const ENERGY_DURATION_CAP: Record<EnergyLevel, number> = {
-  surprise_me: Infinity,
   up_for_anything: Infinity,
   got_some_energy: 240,
   keep_it_easy: 120,
 };
 
-/** Max comfortable one-way travel (minutes) per energy level */
+/** Max comfortable one-way travel (minutes) per energy level.
+ *  keep_it_easy's 30-min cap is also enforced as a hard filter (Q3 decision). */
 const ENERGY_TRAVEL_CAP: Record<EnergyLevel, number> = {
-  surprise_me: Infinity,
   up_for_anything: Infinity,
   got_some_energy: 60,
   keep_it_easy: 30,
 };
 
-/** Ambition tiers — match activity category to time budget shape */
+/** Ambition tiers — match activity category to time budget shape.
+ *  Sourced from docs/categories.xlsx Sheet 2 (Tier map). */
 type Tier = 'quick' | 'local' | 'outing' | 'adventure';
 
 const TIER_FAVOURED: Record<Tier, Category[]> = {
-  quick:     ['food_drink', 'nightlife', 'neighbourhood_walks', 'park_garden'],
-  local:     ['museum_gallery', 'food_drink', 'nightlife', 'park_garden', 'wellness', 'entertainment', 'historical'],
-  outing:    ['hiking_trails', 'nature_landscape', 'zoo_aquarium', 'beach_water', 'historical', 'museum_gallery'],
-  adventure: ['active_adventure', 'hiking_trails', 'nature_landscape', 'beach_water', 'zoo_aquarium'],
+  quick:     ['food_drink', 'nightlife', 'neighbourhood_walks', 'park_garden', 'shopping', 'religious_site'],
+  local:     ['museum_gallery', 'historical', 'religious_site', 'food_drink', 'nightlife', 'theatre_concert', 'park_garden', 'wellness', 'entertainment', 'shopping', 'active'],
+  outing:    ['nature_landscape', 'beach_water', 'zoo_aquarium', 'historical', 'museum_gallery', 'amusement_park', 'wellness', 'active'],
+  adventure: ['nature_landscape', 'beach_water', 'amusement_park', 'active'],
 };
 
 const TIER_PENALISED: Record<Tier, Category[]> = {
-  quick:     ['active_adventure', 'hiking_trails', 'zoo_aquarium', 'nature_landscape'],
+  quick:     ['active', 'nature_landscape', 'amusement_park', 'zoo_aquarium', 'beach_water'],
   local:     [],
   outing:    [],
-  adventure: ['food_drink', 'nightlife', 'neighbourhood_walks'],
+  adventure: ['food_drink', 'nightlife', 'neighbourhood_walks', 'shopping'],
 };
+
+/** Tag-boost magnitudes — +8 per vibe→tag match, capped at +24 (3 tags max contribute). */
+const TAG_BOOST_PER_MATCH = 8;
+const TAG_BOOST_CAP = 24;
 
 function tierForBudget(totalMinutes: number): Tier {
   if (totalMinutes <= 90) return 'quick';
@@ -183,6 +203,12 @@ export function getRecommendations(
   weather: WeatherForecast | null,
   now: Date = new Date(),
 ): ScoredItem[] {
+  // Surprise-me mode: skip Q5 (energy) and Q6 (vibe) filtering, use permissive defaults,
+  // then apply the weighted-random shuffle at the end. Q1-Q4 + Q7-Q8 still apply.
+  const surprise = !!constraints.surpriseMe;
+  const effectiveEnergy: EnergyLevel = surprise ? 'up_for_anything' : constraints.energy;
+  const effectiveVibes: Vibe[] = surprise ? ['flexible'] : constraints.vibes;
+
   // Resolve effective time budget. If max is Infinity, full-day mode.
   const isFullDay = !isFinite(constraints.timeAvailableMinutes);
   const isToday = constraints.date === toISODate(now);
@@ -198,7 +224,7 @@ export function getRecommendations(
 
   // Build allowed categories from selected vibes (hard filter).
   // 'flexible' = no restriction. If only flexible (or empty), all categories pass.
-  const activeVibes = constraints.vibes.filter(v => v !== 'flexible');
+  const activeVibes = effectiveVibes.filter(v => v !== 'flexible');
   const allowedCategories: Set<Category> | null = activeVibes.length > 0
     ? new Set(activeVibes.flatMap(v => VIBE_CATEGORIES[v as Exclude<Vibe, 'flexible'>]))
     : null;
@@ -217,6 +243,13 @@ export function getRecommendations(
     const totalNeeded = (travel.minutes * 2) + activityMin;
     if (totalNeeded > effectiveMax) return false;
 
+    // keep_it_easy hard filter (Q3 decision): 30-min one-way travel cap, exclude `active` category.
+    // hiking-tagged items aren't excluded but get a score penalty further down.
+    if (effectiveEnergy === 'keep_it_easy') {
+      if (travel.minutes > 30) return false;
+      if (item.category === 'active') return false;
+    }
+
     // Minimum total — user wants at least this much
     if (constraints.timeMinMinutes && totalNeeded < constraints.timeMinMinutes) return false;
 
@@ -230,9 +263,10 @@ export function getRecommendations(
       }
     }
 
-    // Group
+    // Group — AND semantics (2026-06-24 Q4 decision). "Partner + With kids" means the item
+    // must be suitable for couples AND kids, not either-or. Empty selection = no filter.
     if (constraints.groupTypes.length > 0) {
-      if (!constraints.groupTypes.some(g => item.groupSuitability.includes(g))) return false;
+      if (!constraints.groupTypes.every(g => item.groupSuitability.includes(g))) return false;
     }
 
     // Budget
@@ -334,21 +368,43 @@ export function getRecommendations(
       reasons.push(`Best time of year to visit`);
     }
 
-    // Vibe is now a hard filter (see step 1) — no score adjustment needed here.
-    // Surface that the match was intentional in the reasons list.
+    // Vibe is a hard filter (see step 1). The soft boost is the per-vibe tag map:
+    // matched tags on the item add +TAG_BOOST_PER_MATCH each, capped at TAG_BOOST_CAP.
     if (allowedCategories) {
       reasons.push('Matches your vibe');
+      const itemTags = (item.tags || []) as Tag[];
+      let tagBoost = 0;
+      let tagsHit: Tag[] = [];
+      for (const vibe of activeVibes) {
+        const boosters = VIBE_TAG_BOOSTS[vibe as Exclude<Vibe, 'flexible'>] || [];
+        for (const tag of itemTags) {
+          if (boosters.includes(tag) && !tagsHit.includes(tag)) {
+            tagsHit.push(tag);
+            tagBoost += TAG_BOOST_PER_MATCH;
+          }
+        }
+      }
+      tagBoost = Math.min(tagBoost, TAG_BOOST_CAP);
+      if (tagBoost > 0) {
+        score += tagBoost;
+        reasons.push(`Has ${tagsHit.join(' + ')}`);
+      }
     }
 
-    // Energy fit (soft)
-    const durationCap = ENERGY_DURATION_CAP[constraints.energy];
-    const travelCap = ENERGY_TRAVEL_CAP[constraints.energy];
+    // Energy fit (soft). keep_it_easy already enforced the hard cap above; this
+    // adds a hiking-tag penalty so hike-tagged park/nature items rank below
+    // gentler alternatives without being excluded outright.
+    const durationCap = ENERGY_DURATION_CAP[effectiveEnergy];
+    const travelCap = ENERGY_TRAVEL_CAP[effectiveEnergy];
     if (activityMin <= durationCap && travel.minutes <= travelCap) {
       score += 10;
-      if (constraints.energy === 'keep_it_easy') reasons.push('Easy, low-effort outing');
-      else if (constraints.energy === 'up_for_anything') reasons.push('Great for a big day out');
-    } else if (constraints.energy === 'keep_it_easy' || constraints.energy === 'got_some_energy') {
+      if (effectiveEnergy === 'keep_it_easy') reasons.push('Easy, low-effort outing');
+      else if (effectiveEnergy === 'up_for_anything') reasons.push('Great for a big day out');
+    } else if (effectiveEnergy === 'keep_it_easy' || effectiveEnergy === 'got_some_energy') {
       score -= 10;
+    }
+    if (effectiveEnergy === 'keep_it_easy' && (item.tags || []).includes('hiking')) {
+      score -= 12;
     }
 
     // Cost bonus
@@ -381,8 +437,9 @@ export function getRecommendations(
 
   // "Surprise me" — weighted random pick from the top 20 placed at the top of
   // the list. Higher-scoring items are still more likely to be picked, but
-  // the user gets a different mix every time.
-  if (constraints.energy === 'surprise_me' && scored.length > 1) {
+  // the user gets a different mix every time. Triggered by the dedicated button
+  // (constraints.surpriseMe), not the energy enum (surprise_me removed 2026-06-24).
+  if (surprise && scored.length > 1) {
     const poolSize = Math.min(20, scored.length);
     const pool = scored.slice(0, poolSize);
     const rest = scored.slice(poolSize);
@@ -407,27 +464,80 @@ export function getRecommendations(
   return scored;
 }
 
-/** Categories that slot into any outing — short, low-commitment fillers. */
-const COMBO_FILLERS: Category[] = ['food_drink', 'park_garden', 'neighbourhood_walks'];
-/** Cultural anchors that pair sensibly with each other (museum + historical site, etc.). */
-const COMBO_CULTURAL: Category[] = ['museum_gallery', 'historical'];
-/** Outdoor anchors that pair sensibly with each other (nature + beach, hike + nature view, etc.). */
-const COMBO_OUTDOOR: Category[] = ['nature_landscape', 'hiking_trails', 'beach_water'];
+// Combo classes (6 buckets — docs/categories.xlsx Sheet 2 "Combo classes").
+// `filler` pairs with anything; `cultural` pairs with cultural + filler; `outdoor`
+// pairs with outdoor + filler; `evening` pairs with filler only AND only when the
+// filler has evening availability; `solo` pairs with filler only; `destination`
+// never pairs.
+const COMBO_FILLERS: Category[] = ['food_drink', 'park_garden', 'neighbourhood_walks', 'shopping'];
+const COMBO_CULTURAL: Category[] = ['museum_gallery', 'historical', 'religious_site'];
+const COMBO_OUTDOOR: Category[] = ['nature_landscape', 'beach_water'];
+const COMBO_EVENING: Category[] = ['nightlife', 'theatre_concert'];
+const COMBO_SOLO: Category[] = ['active', 'entertainment', 'zoo_aquarium', 'wellness', 'other'];
+const COMBO_DESTINATION: Category[] = ['amusement_park'];
+
+function comboClass(c: Category): 'filler' | 'cultural' | 'outdoor' | 'evening' | 'solo' | 'destination' {
+  if (COMBO_FILLERS.includes(c)) return 'filler';
+  if (COMBO_CULTURAL.includes(c)) return 'cultural';
+  if (COMBO_OUTDOOR.includes(c)) return 'outdoor';
+  if (COMBO_EVENING.includes(c)) return 'evening';
+  if (COMBO_DESTINATION.includes(c)) return 'destination';
+  if (COMBO_SOLO.includes(c)) return 'solo';
+  // Any future category not listed above defaults to solo (safest: pair only with filler).
+  return 'solo';
+}
+
+/** A filler is "evening-compatible" when its bestTimesOfDay slot includes
+ *  evening or any — used for pairing nightlife/theatre with a dinner spot. */
+function isEveningCompatibleFiller(item: BucketListItem): boolean {
+  if (comboClass(item.category) !== 'filler') return false;
+  const slots = item.bestTimesOfDay || [];
+  return slots.length === 0 || slots.includes('any') || slots.includes('evening');
+}
 
 /**
- * Whether two categories form a sensible "do both in one outing" combo.
- * Rules:
- *  1. Same category never combines (no dinner-then-dinner, no museum-then-museum).
- *  2. A filler (food/park/walk) pairs with anything else.
- *  3. Two cultural anchors pair (museum + historical).
- *  4. Two outdoor anchors pair (hike + beach, nature + hike).
- *  5. Everything else (e.g. spa + active adventure, museum + hike) is rejected.
+ * Whether two items form a sensible "do both in one outing" combo.
+ * Rules per docs/categories.xlsx Sheet 2:
+ *  1. Same category never combines.
+ *  2. destination (amusement_park) never combines.
+ *  3. filler pairs with anything non-same-category.
+ *  4. cultural pairs with cultural + filler.
+ *  5. outdoor pairs with outdoor + filler.
+ *  6. evening pairs with filler only, and only when the filler is evening-compatible.
+ *  7. solo (active/entertainment/zoo/wellness/other) pairs with filler only.
  */
-function combosAreCompatible(a: Category, b: Category): boolean {
-  if (a === b) return false;
-  if (COMBO_FILLERS.includes(a) || COMBO_FILLERS.includes(b)) return true;
-  if (COMBO_CULTURAL.includes(a) && COMBO_CULTURAL.includes(b)) return true;
-  if (COMBO_OUTDOOR.includes(a) && COMBO_OUTDOOR.includes(b)) return true;
+function combosAreCompatible(a: BucketListItem, b: BucketListItem): boolean {
+  if (a.category === b.category) return false;
+  const ca = comboClass(a.category);
+  const cb = comboClass(b.category);
+  if (ca === 'destination' || cb === 'destination') return false;
+
+  // Filler on either side handles its own pairing rule below depending on the other's class.
+  const isFiller = (c: typeof ca) => c === 'filler';
+
+  // evening + filler — filler must be evening-compatible.
+  if (ca === 'evening' && isFiller(cb)) return isEveningCompatibleFiller(b);
+  if (cb === 'evening' && isFiller(ca)) return isEveningCompatibleFiller(a);
+  if (ca === 'evening' || cb === 'evening') return false; // evening + anything-non-filler
+
+  // solo + filler — solo never pairs with anything else.
+  if (ca === 'solo' && isFiller(cb)) return true;
+  if (cb === 'solo' && isFiller(ca)) return true;
+  if (ca === 'solo' || cb === 'solo') return false;
+
+  // cultural pair with cultural or filler.
+  if (ca === 'cultural' && (cb === 'cultural' || isFiller(cb))) return true;
+  if (cb === 'cultural' && (ca === 'cultural' || isFiller(ca))) return true;
+  if (ca === 'cultural' || cb === 'cultural') return false;
+
+  // outdoor pair with outdoor or filler.
+  if (ca === 'outdoor' && (cb === 'outdoor' || isFiller(cb))) return true;
+  if (cb === 'outdoor' && (ca === 'outdoor' || isFiller(ca))) return true;
+  if (ca === 'outdoor' || cb === 'outdoor') return false;
+
+  // Two fillers — different categories already checked at the top, so they pair.
+  if (isFiller(ca) && isFiller(cb)) return true;
+
   return false;
 }
 
@@ -448,7 +558,7 @@ export function findCombos(
       const b = top[j].item;
 
       // Category compatibility — skip nonsense pairs (two restaurants, museum + hike, etc.)
-      if (!combosAreCompatible(a.category, b.category)) continue;
+      if (!combosAreCompatible(a, b)) continue;
 
       const dist = haversineDistance(a.latitude, a.longitude, b.latitude, b.longitude);
 

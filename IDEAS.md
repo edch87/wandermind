@@ -33,10 +33,7 @@ Decisions made 2026-06-21. Work through in order; ship without social. Social ar
    - Strong candidates: dashboard rails, recommend results screen, empty states
    - Avoid map overload. Pick moments where seeing the place geographically improves the decision
 
-5. **Recommendation flow full audit**
-   - Walk through every question and every option in the recommend flow one at a time with Edward
-   - Verify each option still makes sense given the "days out from home" reframe and the public transport addition
-   - Document any tweaks. Ship as a single coherent pass rather than piecemeal edits
+5. ~~**Recommendation flow full audit**~~ ✅ Done (2026-06-24) — single coherent pass landed. Category taxonomy rationalised (17 categories, full spec in `docs/categories.xlsx`); added `religious_site`, `amusement_park`, `theatre_concert`, `shopping`, `other`; renamed `active_adventure` → `active`; dropped `hiking_trails` (places-not-activities; merged into nature with a `hiking` tag) and `event_festival` (deferred to v2 events feature). Vibe enum grew to 8 with `active` (PersonSimpleRun chip placed before outdoorsy). New 13-tag controlled vocabulary added — user-driven editorial layer, no inference, text-only chips, 5-tag soft cap. Recommend flow changes: weekend buttons dropped (only Today/Tomorrow); "Today" relabels to "This evening" past 16:00 with the slider capped to half-day; transport defaults to Car + Transit plus an "Any way" shortcut; single max-time slider (1h/2h/half day/full day — 3h dropped); group chips renamed "Just me / Partner / Friends / With kids" and switched to AND semantics; `surprise_me` removed from EnergyLevel enum and replaced by a dedicated "Or just surprise me" button above the main CTA (uses a `surpriseMe` constraint flag); `keep_it_easy` became a hard filter (30-min travel cap, active excluded, hiking-tagged soft-penalised); budget "Free only" → "Free". Engine matrix overhaul: new 8-vibe / 4-tier maps; 6 combo classes (filler/cultural/outdoor/evening/solo/destination) with the evening class only pairing with evening-compatible fillers; tag-boost scoring (+8 per vibe→tag match, capped +24). Storage does in-place migration on read: `active_adventure` → `active`, `hiking_trails` → `nature_landscape` + `hiking` tag, `family` stripped from groupSuitability.
 
 6. **GDPR and pre-launch hygiene**
    - Privacy policy and terms updated to cover home location storage and stated purpose
@@ -79,6 +76,8 @@ Captured here so context is not lost when we pick this up:
 
 ## New Features
 
+- **Weekend-planning via list filtering** — recommend flow is deliberately scoped to Today/Tomorrow (see Recommendation Engine notes). Users wanting to plan a weekend ahead should be able to filter their list (by weather-suitability, duration, distance, vibe, etc.) directly on the BucketList screen. Design a clean filter UX for this so the list itself becomes the "plan ahead" surface.
+- **Events (time-bound items)** — Lark v1 deliberately strips `event_festival` and treats everything as a place. v2 should reintroduce events as a first-class concept: Oktoberfest, Tollwood, Christkindlmarkt, festivals, concerts with specific dates, spectator sport matches. Needs a time-window field on items + recommend-flow logic to surface events only when their dates are live. Migration of any existing event_festival items happens here.
 - **"Use my current location" option** — let users switch from home-based to GPS-based recommendations. Great for when you're on holiday and want to find bucket list items nearby. Could be a toggle in the recommend flow: "Starting from: Home / Current location"
 - **Sharing items between users** with "recommended by..." attribution (already planned)
 - **Future/someday list** — a way to save ideas that aren't location-specific yet or that are far away, separate from the main actionable bucket list

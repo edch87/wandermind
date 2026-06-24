@@ -6,9 +6,9 @@ import { generateId } from '../utils/storage';
 import type {
   UserProfile, BucketListItem, HereSearchResult, Category, Setting,
   WeatherSuitability, DurationEstimate, CostLevel, Season, TimeOfDay,
-  GroupType, Priority
+  GroupType, Priority, Tag
 } from '../types';
-import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO, TAG_SOFT_CAP, tagsEligibleForCategory } from '../types';
 import {
   MapPin, MagnifyingGlass, LinkSimple,
   Buildings, TreeEvergreen, ArrowsClockwise,
@@ -609,12 +609,30 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
         <Section label="Good for">
           <div className="toggle-group">
-            {(['solo', 'couple', 'friends', 'family', 'kids'] as GroupType[]).map((val) => (
+            {([
+              ['solo', 'Solo'],
+              ['couple', 'Couple'],
+              ['friends', 'Friends'],
+              ['kids', 'With kids'],
+            ] as [GroupType, string][]).map(([val, label]) => (
               <button key={val} className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
-                onClick={() => toggleGroupType(val)}>{val.charAt(0).toUpperCase() + val.slice(1)}</button>
+                onClick={() => toggleGroupType(val)}>{label}</button>
             ))}
           </div>
         </Section>
+
+        {/* Tag picker — text-only, user-driven (no inference). Category-eligible
+            pool only. Soft 5-tag cap; further taps after the cap show a hint
+            but don't block (existing items can keep more than 5). */}
+        {draft.category && (
+          <Section label="Tags">
+            <TagPicker
+              category={draft.category}
+              selected={(draft.tags || []) as Tag[]}
+              onChange={(next) => updateDraft({ tags: next })}
+            />
+          </Section>
+        )}
 
         <Section label="Accessibility">
           <div className="toggle-group">
@@ -663,6 +681,52 @@ function Section({ label, children }: { label: string; children: React.ReactNode
     <div className="mb-5">
       <label className="block text-xs font-medium text-sand-600 mb-2 uppercase tracking-wide">{label}</label>
       {children}
+    </div>
+  );
+}
+
+/** Text-only chip picker for editorial tags. Shows the category-eligible pool;
+ *  selected tags out of pool (e.g. after a category change) are kept and shown
+ *  too so the user can drop them deliberately. Soft cap at TAG_SOFT_CAP. */
+export function TagPicker({
+  category,
+  selected,
+  onChange,
+}: {
+  category: Category;
+  selected: Tag[];
+  onChange: (next: Tag[]) => void;
+}) {
+  const pool = tagsEligibleForCategory(category);
+  // Show out-of-pool selected tags too — happens when an item's category was changed
+  // after tags were applied. User decides whether to remove them.
+  const outOfPool = selected.filter(t => !pool.includes(t));
+  const all = [...pool, ...outOfPool];
+  const overCap = selected.length > TAG_SOFT_CAP;
+
+  const toggle = (t: Tag) => {
+    if (selected.includes(t)) {
+      onChange(selected.filter(x => x !== t));
+    } else {
+      onChange([...selected, t]);
+    }
+  };
+
+  return (
+    <div>
+      <div className="toggle-group">
+        {all.map(t => (
+          <button key={t} className={`toggle-btn text-xs ${selected.includes(t) ? 'active' : ''}`}
+            onClick={() => toggle(t)}>
+            {TAG_INFO[t].label}
+          </button>
+        ))}
+      </div>
+      <p className={`text-[10px] mt-1 ${overCap ? 'text-terra-600' : 'text-sand-600'}`}>
+        {overCap
+          ? `${selected.length} selected — best to keep it under ${TAG_SOFT_CAP}.`
+          : `Pick the ones that make this place worth recommending. Up to ${TAG_SOFT_CAP}.`}
+      </p>
     </div>
   );
 }

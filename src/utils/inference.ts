@@ -16,21 +16,29 @@ interface InferredDefaults {
   wheelchairAccessible?: boolean;
 }
 
+// Defaults sourced from docs/categories.xlsx Sheet 1 (group fit / weather / duration columns).
+// Setting, costLevel, bestSeasons, bestTimesOfDay aren't in the spreadsheet — kept as
+// sensible defaults that the user can override on the review screen.
+// Note: `family` GroupType is gone (2026-06-24 pass) — the spreadsheet's family entries
+// collapse into the `kids` group where children are the headline use-case.
 const CATEGORY_DEFAULTS: Record<Category, Omit<InferredDefaults, 'category' | 'categoryUncertain' | 'dogFriendly' | 'wheelchairAccessible'>> = {
-  museum_gallery:      { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: 'half_day', costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','family','kids'] },
-  historical:          { setting: 'mixed',   weatherSuitability: 'good_weather', durationEstimate: '2_3h',     costLevel: 'cheap',    bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','family'] },
-  nature_landscape:    { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: '2_3h',     costLevel: 'free',     bestSeasons: ['spring'], bestTimesOfDay: ['morning'],   groupSuitability: ['solo','couple','friends','family'] },
-  park_garden:         { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: '1_2h',     costLevel: 'free',     bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','family','kids'] },
-  hiking_trails:       { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'free',     bestSeasons: ['any'],    bestTimesOfDay: ['morning'],   groupSuitability: ['solo','couple','friends'] },
-  beach_water:         { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'free',     bestSeasons: ['summer'], bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','family','kids'] },
-  active_adventure:    { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: '2_3h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
-  food_drink:          { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '1_2h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends','family'] },
-  nightlife:           { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '1_2h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends'] },
-  entertainment:       { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: '2_3h',     costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['afternoon'], groupSuitability: ['couple','friends','family','kids'] },
-  wellness:            { setting: 'indoor',  weatherSuitability: 'any',          durationEstimate: 'half_day', costLevel: 'expensive',bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple'] },
-  zoo_aquarium:        { setting: 'mixed',   weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'moderate', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['couple','friends','family','kids'] },
-  event_festival:      { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: '2_3h',     costLevel: 'cheap',    bestSeasons: ['any'],    bestTimesOfDay: ['afternoon'], groupSuitability: ['couple','friends','family'] },
-  neighbourhood_walks: { setting: 'outdoor', weatherSuitability: 'good_weather', durationEstimate: 'half_day', costLevel: 'free',     bestSeasons: ['any'],    bestTimesOfDay: ['morning'],   groupSuitability: ['solo','couple','friends'] },
+  museum_gallery:      { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','kids'] },
+  historical:          { setting: 'mixed',   weatherSuitability: 'any',               durationEstimate: '2_3h',     costLevel: 'cheap',     bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','kids'] },
+  religious_site:      { setting: 'mixed',   weatherSuitability: 'any',               durationEstimate: 'under_1h', costLevel: 'free',      bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
+  nature_landscape:    { setting: 'outdoor', weatherSuitability: 'good_weather',      durationEstimate: 'half_day', costLevel: 'free',      bestSeasons: ['any'],    bestTimesOfDay: ['morning'],   groupSuitability: ['solo','couple','friends','kids'] },
+  park_garden:         { setting: 'outdoor', weatherSuitability: 'good_weather',      durationEstimate: '1_2h',     costLevel: 'free',      bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','kids'] },
+  neighbourhood_walks: { setting: 'outdoor', weatherSuitability: 'good_weather',      durationEstimate: '1_2h',     costLevel: 'free',      bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
+  beach_water:         { setting: 'outdoor', weatherSuitability: 'good_weather',      durationEstimate: 'half_day', costLevel: 'free',      bestSeasons: ['summer'], bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','kids'] },
+  active:              { setting: 'mixed',   weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
+  food_drink:          { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends','kids'] },
+  nightlife:           { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '2_3h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['solo','couple','friends'] },
+  theatre_concert:     { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '2_3h',     costLevel: 'expensive', bestSeasons: ['any'],    bestTimesOfDay: ['evening'],   groupSuitability: ['couple','friends'] },
+  amusement_park:      { setting: 'outdoor', weatherSuitability: 'good_weather',      durationEstimate: 'full_day', costLevel: 'expensive', bestSeasons: ['summer'], bestTimesOfDay: ['any'],       groupSuitability: ['couple','friends','kids'] },
+  entertainment:       { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['afternoon'], groupSuitability: ['couple','friends','kids'] },
+  zoo_aquarium:        { setting: 'mixed',   weatherSuitability: 'any',               durationEstimate: 'half_day', costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['couple','friends','kids'] },
+  wellness:            { setting: 'indoor',  weatherSuitability: 'bad_weather_ideal', durationEstimate: '2_3h',     costLevel: 'expensive', bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
+  shopping:            { setting: 'indoor',  weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends'] },
+  other:               { setting: 'mixed',   weatherSuitability: 'any',               durationEstimate: '1_2h',     costLevel: 'moderate',  bestSeasons: ['any'],    bestTimesOfDay: ['any'],       groupSuitability: ['solo','couple','friends','kids'] },
 };
 
 type CategoryMatch = { category: Category; matched: boolean };
@@ -49,8 +57,11 @@ function categoryFromHereIds(hereCats: string[]): Category | null {
   // Museums & galleries — 300-3100 museum/history/art museum, 300-3000-0024 gallery
   if (pre('300-3100-') || has('300-3000-0024')) return 'museum_gallery';
 
-  // Historical — 300-3200 religious places (churches), historic building & castle
-  if (pre('300-3200-') || has('300-3000-0025') || has('300-3000-0030')) return 'historical';
+  // Religious site — 300-3200 churches / temples / mosques / cathedrals (2026-06-24 split from historical)
+  if (pre('300-3200-')) return 'religious_site';
+
+  // Historical — historic building & castle (300-3000-0025 / -0030)
+  if (has('300-3000-0025') || has('300-3000-0030')) return 'historical';
 
   // Food & drink — all 100 (restaurants, cafes, food halls, coffee), plus biergarten and brewery (per Lark rule)
   if (pre('100-')) return 'food_drink';
@@ -59,23 +70,25 @@ function categoryFromHereIds(hereCats: string[]): Category | null {
   // Nightlife — bars, pubs, night clubs (200-2000 family)
   if (has('200-2000-0011') || has('200-2000-0012') || has('200-2000-0019')) return 'nightlife';
 
-  // Entertainment — cinema (200-2100), theatre/music/culture (200-2200), nightlife/live music, amusement park
-  if (pre('200-2100-') || pre('200-2200-')) return 'entertainment';
+  // Theatre & concert — 200-2200 theatre/music/culture (concert halls, opera, philharmonics) — split from entertainment
+  if (pre('200-2200-')) return 'theatre_concert';
+
+  // Amusement park — 550-5520-0207 theme/amusement park, 550-5520-0357 water park (was beach_water/entertainment)
+  if (has('550-5520-0207') || has('550-5520-0357')) return 'amusement_park';
+
+  // Entertainment — cinema (200-2100), arcades, generic leisure within 200-2000 minus the carved-out theatre/nightlife ids
+  if (pre('200-2100-')) return 'entertainment';
   if (has('200-2000-0000') || has('200-2000-0013') || has('200-2000-0015') || has('200-2000-0306')) return 'entertainment';
-  if (has('550-5520-0207')) return 'entertainment';
 
   // Zoo & aquarium — 550-5520 zoo / aquarium / animal park
   if (has('550-5520-0208') || has('550-5520-0211') || has('550-5520-0228')) return 'zoo_aquarium';
 
-  // Beach & water — beach, lake, swimming pool, water park
-  if (has('550-5510-0205') || has('350-3500-0304') || has('800-8600-0182') || has('550-5520-0357')) return 'beach_water';
+  // Lakes & water — beach, lake, swimming pool
+  if (has('550-5510-0205') || has('350-3500-0304') || has('800-8600-0182')) return 'beach_water';
 
-  // Hiking & trails — mountain peak
-  if (has('350-3510-0238')) return 'hiking_trails';
-
-  // Active & adventure — sports facilities, ski, recreation centre, stadium, fitness, golf, training
-  if (has('550-5510-0203') || has('550-5510-0206') || has('550-5510-0227') || has('550-5520-0212')) return 'active_adventure';
-  if (pre('800-8600-')) return 'active_adventure';
+  // Active — sports facilities, ski, recreation centre, stadium, fitness, golf, training (renamed from active_adventure)
+  if (has('550-5510-0203') || has('550-5510-0206') || has('550-5510-0227') || has('550-5520-0212')) return 'active';
+  if (pre('800-8600-')) return 'active';
 
   // Wellness — wellness centre / services
   if (has('700-7400-0292')) return 'wellness';
@@ -83,9 +96,13 @@ function categoryFromHereIds(hereCats: string[]): Category | null {
   // Park & garden — park/recreation area, garden
   if (has('550-5510-0202') || has('550-5510-0204')) return 'park_garden';
 
-  // Nature & landscape — rivers, mountains/hills, forests, general natural, protected area, scenic viewpoints
+  // Nature & landscape — rivers, mountains/hills, forests, general natural, protected area, scenic viewpoints,
+  // plus mountain peak (was hiking_trails, now part of nature — the place IS a peak)
   if (has('350-3500-0302') || pre('350-3510-') || pre('350-3522-') || pre('350-3550-')) return 'nature_landscape';
   if (has('550-5520-0210') || has('550-5510-0242') || has('400-4300-0308')) return 'nature_landscape';
+
+  // Shopping — 600 family (shops, malls, outlet centres, boutiques)
+  if (pre('600-')) return 'shopping';
 
   // City areas / outdoor zones → neighbourhood walks
   if (pre('900-')) return 'neighbourhood_walks';
@@ -98,16 +115,21 @@ function categoryFromHereIds(hereCats: string[]): Category | null {
 function categoryFromHereNames(hereCatNames: string): Category | null {
   if (!hereCatNames) return null;
   if (/museum|gallery|art centre|arts centre/.test(hereCatNames)) return 'museum_gallery';
-  if (/historic|castle|ruins|monument|memorial|fortress|abbey|cathedral|temple|church|chapel/.test(hereCatNames)) return 'historical';
+  if (/cathedral|church|chapel|temple|mosque|synagogue|monastery|abbey|shrine/.test(hereCatNames)) return 'religious_site';
+  if (/historic|castle|ruins|monument|memorial|fortress/.test(hereCatNames)) return 'historical';
   if (/zoo|aquarium|wildlife park|safari/.test(hereCatNames)) return 'zoo_aquarium';
-  if (/theme park|amusement|cinema|bowling|escape room|theatre|theater/.test(hereCatNames)) return 'entertainment';
+  if (/theme park|amusement|water park/.test(hereCatNames)) return 'amusement_park';
+  if (/concert hall|opera|philharmoni|theatre|theater/.test(hereCatNames)) return 'theatre_concert';
+  if (/cinema|bowling|escape room|arcade/.test(hereCatNames)) return 'entertainment';
   if (/viewpoint|observation|scenic/.test(hereCatNames)) return 'nature_landscape';
   if (/spa|wellness|hot spring|thermal bath/.test(hereCatNames)) return 'wellness';
-  if (/swimming|beach|water park|lake/.test(hereCatNames)) return 'beach_water';
-  if (/hiking|trail|trekking|mountain|peak/.test(hereCatNames)) return 'hiking_trails';
+  if (/swimming|beach|lake/.test(hereCatNames)) return 'beach_water';
+  // Mountains/peaks/hiking trails are nature now (places-not-activities).
+  if (/hiking|trail|trekking|mountain|peak/.test(hereCatNames)) return 'nature_landscape';
   if (/national park|nature reserve|nature park|forest/.test(hereCatNames)) return 'nature_landscape';
   if (/botanical|garden/.test(hereCatNames)) return 'park_garden';
   if (/park|playground/.test(hereCatNames)) return 'park_garden';
+  if (/mall|shopping|outlet|boutique|department store/.test(hereCatNames)) return 'shopping';
   // Food/drink retain (biergarten and brewery stay food_drink per Lark rule)
   if (/restaurant|cafe|biergarten|brewery|food/.test(hereCatNames)) return 'food_drink';
   // Nightlife
@@ -129,17 +151,25 @@ function categoryFromGoogleTypes(googleTypes: string[]): Category | null {
   const has = (re: RegExp) => re.test(t);
 
   if (has(/museum|art_gallery|planetarium/)) return 'museum_gallery';
-  if (has(/historical|monument|castle|palace|church|place_of_worship|synagogue|mosque|temple|cultural_landmark/)) return 'historical';
+  // Religious site — split from historical (2026-06-24)
+  if (has(/church|place_of_worship|synagogue|mosque|temple|hindu_temple|buddhist_temple/)) return 'religious_site';
+  if (has(/historical|monument|castle|palace|cultural_landmark/)) return 'historical';
   if (has(/zoo|aquarium|wildlife/)) return 'zoo_aquarium';
-  // Entertainment — cinemas, theatres, concerts, arcades (night_club moved to nightlife below)
-  if (has(/amusement|movie_theater|performing_arts|concert|opera|bowling|casino|comedy|karaoke|arcade|theater/)) return 'entertainment';
-  if (has(/water_park|swimming|beach/)) return 'beach_water';
-  if (has(/hiking/)) return 'hiking_trails';
-  if (has(/ski|sports_|fitness|golf|stadium|climbing|skating|adventure/)) return 'active_adventure';
+  // Amusement & water parks — destination-tier
+  if (has(/amusement|water_park|theme_park/)) return 'amusement_park';
+  // Theatre & concert — live performance carved out of entertainment
+  if (has(/performing_arts|concert|opera|theater_company|symphony|philharmonic/)) return 'theatre_concert';
+  // Entertainment — cinemas, arcades, bowling, casinos, escape rooms
+  if (has(/movie_theater|bowling|casino|comedy|karaoke|arcade|escape_room/)) return 'entertainment';
+  if (has(/swimming|beach/)) return 'beach_water';
+  // Active — sports facilities, gyms, ski, climbing, skating, adventure parks
+  if (has(/ski|sports_|fitness|golf|stadium|climbing|skating|adventure/)) return 'active';
   if (has(/\bspa\b|sauna|wellness|public_bath|massage|hot_spring/)) return 'wellness';
-  if (has(/national_park|natural_feature|observation_deck/)) return 'nature_landscape';
+  if (has(/national_park|natural_feature|observation_deck|hiking_area/)) return 'nature_landscape';
   if (has(/botanical|garden|dog_park|playground|picnic/)) return 'park_garden';
   if (/(^|,)park(,|$)/.test(t) || has(/state_park|city_park/)) return 'park_garden';
+  // Shopping — malls, outlets, department stores, boutiques
+  if (has(/shopping_mall|shopping_center|department_store|outlet|boutique/)) return 'shopping';
   // Food/drink — restaurants, cafés, brewpubs (per Lark rule). Bars/pubs go to nightlife below.
   if (has(/restaurant|cafe|coffee|bakery|food|brew|deli|ice_cream|market/)) return 'food_drink';
   // Nightlife — bars, pubs, night clubs, wine bars, cocktail bars
@@ -155,17 +185,26 @@ function categoryFromName(name: string): Category | null {
   if (!name) return null;
   if (/\bmuseum\b|musée|museo|museu/.test(name)) return 'museum_gallery';
   if (/\bgallery\b|galerie|galleria/.test(name)) return 'museum_gallery';
-  if (/castle|schloss|\bburg\b|château|fortress|palace|palast|abbey|cathedral|dom\b|basilica|monument|memorial|ruins|ruine/.test(name)) return 'historical';
+  // Religious — Dom, Münster, Kloster, Wieskirche, etc.
+  if (/cathedral|\bdom\b|basilica|abbey|kloster|monastery|münster|wieskirche|frauenkirche|\bkirche\b|chapel|kapelle|temple|mosque|synagogue|shrine/.test(name)) return 'religious_site';
+  if (/castle|schloss|\bburg\b|château|fortress|palace|palast|monument|memorial|ruins|ruine/.test(name)) return 'historical';
   if (/waterfall|wasserfall|gorge|canyon|cave|grotto|cliff|crater|schlucht/.test(name)) return 'nature_landscape';
   if (/viewpoint|aussicht|belvedere|lookout|panorama/.test(name)) return 'nature_landscape';
   if (/national park|naturpark|nature reserve|naturschutz/.test(name)) return 'nature_landscape';
   if (/\bzoo\b|aquarium|safari|wildpark|tierpark/.test(name)) return 'zoo_aquarium';
   if (/botanical|botanic/.test(name)) return 'park_garden';
   if (/\bpark\b|\bgarden\b|\bgarten\b/.test(name)) return 'park_garden';
-  if (/hiking|trail|wanderweg|trek/.test(name)) return 'hiking_trails';
+  // Hiking-related names go to nature_landscape (place IS a trail/peak)
+  if (/hiking|trail|wanderweg|trek/.test(name)) return 'nature_landscape';
   if (/\bspa\b|thermal|therme|sauna|wellness/.test(name)) return 'wellness';
   if (/\bbeach\b|\bstrand\b|\bschwimm|\blake\b|\bsee\b/.test(name)) return 'beach_water';
-  if (/cinema|theater|theatre|concert hall|bowling|escape room/.test(name)) return 'entertainment';
+  // Theatre & concert venues
+  if (/concert hall|opera|nationaltheater|philharmoni|gasteig|olympiahalle|theater|theatre/.test(name)) return 'theatre_concert';
+  // Amusement & water parks
+  if (/legoland|skyline park|freizeitpark|theme park|water park/.test(name)) return 'amusement_park';
+  if (/cinema|kino|bowling|escape room/.test(name)) return 'entertainment';
+  // Shopping — malls and outlets
+  if (/arcaden|outlet|mall|shopping center|shopping centre/.test(name)) return 'shopping';
   // Food/drink retain wins over bar/pub (so "Augustiner Bräu" stays food_drink even if it had "bar" in the name)
   if (/biergarten|brauhaus|bräuhaus|brewery|brauerei|gasthaus|gasthof|wirtshaus|restaurant|bistro|café|cafe|brasserie/.test(name)) return 'food_drink';
   // Nightlife
@@ -177,31 +216,39 @@ function categoryFromName(name: string): Category | null {
 function categoryFromOsmTags(tags: Record<string, string>): Category | null {
   const t = (key: string) => tags[key] || '';
   if (t('tourism') === 'museum' || t('amenity') === 'arts_centre' || t('tourism') === 'gallery') return 'museum_gallery';
+  // Religious — place_of_worship and monasteries (split from historical 2026-06-24)
+  if (t('amenity') === 'place_of_worship' || t('building') === 'monastery' || t('building') === 'church' || t('building') === 'cathedral' || t('building') === 'temple' || t('building') === 'mosque') return 'religious_site';
   if (['castle', 'monument', 'ruins', 'memorial', 'archaeological_site'].includes(t('historic'))) return 'historical';
   if (t('tourism') === 'attraction' && t('historic')) return 'historical';
-  if (t('amenity') === 'place_of_worship' || t('building') === 'monastery') return 'historical';
   if (['waterfall', 'gorge', 'cliff', 'cave_entrance'].includes(t('natural'))) return 'nature_landscape';
   if (t('tourism') === 'viewpoint') return 'nature_landscape';
   if (t('leisure') === 'nature_reserve' || t('boundary') === 'national_park') return 'nature_landscape';
   if (['park', 'garden', 'playground'].includes(t('leisure'))) return 'park_garden';
   if (t('tourism') === 'botanical_garden') return 'park_garden';
-  if (t('natural') === 'peak' || t('natural') === 'ridge') return 'hiking_trails';
-  if (t('route') === 'hiking') return 'hiking_trails';
-  if (t('tourism') === 'alpine_hut') return 'hiking_trails';
+  // Peaks, ridges, trails and alpine huts go to nature_landscape now (place IS a peak/trail)
+  if (t('natural') === 'peak' || t('natural') === 'ridge') return 'nature_landscape';
+  if (t('route') === 'hiking') return 'nature_landscape';
+  if (t('tourism') === 'alpine_hut') return 'nature_landscape';
   if (t('natural') === 'beach' || t('leisure') === 'swimming_area') return 'beach_water';
   if (t('sport') === 'swimming') return 'beach_water';
-  if (['climbing', 'skiing', 'kayak', 'surfing', 'paragliding'].includes(t('sport'))) return 'active_adventure';
-  if (t('leisure') === 'water_park') return 'active_adventure';
+  // Active — climbing, ski, racquet sports, fitness, golf, etc.
+  if (['climbing', 'skiing', 'kayak', 'surfing', 'paragliding'].includes(t('sport'))) return 'active';
+  if (t('leisure') === 'fitness_centre' || t('leisure') === 'sports_centre' || t('leisure') === 'pitch') return 'active';
+  // Amusement & water parks — split out of entertainment
+  if (t('tourism') === 'theme_park' || t('leisure') === 'water_park') return 'amusement_park';
   if (['restaurant', 'cafe', 'biergarten', 'fast_food'].includes(t('amenity'))) return 'food_drink';
   if (t('craft') === 'brewery') return 'food_drink';
   if (t('amenity') === 'marketplace') return 'food_drink';
   if (['bar', 'pub', 'nightclub'].includes(t('amenity'))) return 'nightlife';
-  if (t('amenity') === 'cinema' || t('leisure') === 'bowling_alley') return 'entertainment';
-  if (t('tourism') === 'theme_park' || t('leisure') === 'amusement_arcade') return 'entertainment';
-  if (t('leisure') === 'escape_game') return 'entertainment';
+  // Theatre & concert — concert halls and theatres
+  if (t('amenity') === 'theatre' || t('amenity') === 'concert_hall') return 'theatre_concert';
+  if (t('amenity') === 'cinema' || t('leisure') === 'bowling_alley' || t('leisure') === 'amusement_arcade' || t('leisure') === 'escape_game') return 'entertainment';
   if (t('leisure') === 'spa' || t('amenity') === 'spa') return 'wellness';
   if (t('natural') === 'hot_spring') return 'wellness';
   if (t('tourism') === 'zoo' || t('tourism') === 'aquarium') return 'zoo_aquarium';
+  // Shopping — malls, department stores, marketplace-shop (markets handled above as food_drink)
+  if (t('shop') === 'mall' || t('shop') === 'department_store') return 'shopping';
+  if (t('shop') && t('shop') !== 'no' && !['convenience','supermarket'].includes(t('shop'))) return 'shopping';
   if (['city', 'town', 'village'].includes(t('place'))) return 'neighbourhood_walks';
   return null;
 }

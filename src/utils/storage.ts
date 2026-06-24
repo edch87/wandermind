@@ -2,17 +2,42 @@ import { supabase } from './supabase';
 import type { UserProfile, BucketListItem } from '../types';
 
 // ── Legacy category migration map ──
+// Lazy read-side migration. Older categories from before the 2026-06-24 recommend-flow pass
+// get rewritten here so existing items continue to score correctly. New saves go in
+// with the current taxonomy and skip this map entirely.
 const LEGACY_CATEGORY_MAP: Record<string, string> = {
-  mountain_hiking: 'hiking_trails',
-  sport_adventure: 'active_adventure',
-  religious_spiritual: 'historical',
+  // Pre-2026 first-pass legacy
+  mountain_hiking: 'nature_landscape',
+  sport_adventure: 'active',
+  religious_spiritual: 'religious_site',
   city_exploration: 'neighbourhood_walks',
-  shopping: 'food_drink',   // markets → food_drink; malls → entertainment would also work
-  other: 'neighbourhood_walks',
+  // 2026-06-24 pass: category taxonomy rationalisation
+  active_adventure: 'active',
+  hiking_trails: 'nature_landscape',  // paired with a 'hiking' tag injection — see itemFromDb
+  event_festival: 'other',             // no items affected per audit; safety map only
 };
 
 function migrateCategory(raw: string): string {
   return LEGACY_CATEGORY_MAP[raw] || raw;
+}
+
+/** Strip the dropped `family` group value from legacy items (2026-06-24 pass).
+ *  Per-outing context — the "With kids" chip in the recommend flow now carries
+ *  the family-outing intent. */
+function migrateGroupSuitability(raw: unknown): import('../types').GroupType[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((g): g is import('../types').GroupType =>
+    g === 'solo' || g === 'couple' || g === 'friends' || g === 'kids'
+  );
+}
+
+/** Inject a `hiking` tag when the legacy category was hiking_trails so that the
+ *  engine's tag-based hiking signal (effort, keep_it_easy penalty, active vibe boost)
+ *  still fires for those items after the category rewrite. */
+function migrateTags(raw: unknown, legacyCategory: string): string[] {
+  const arr = Array.isArray(raw) ? raw.filter((t): t is string => typeof t === 'string') : [];
+  if (legacyCategory === 'hiking_trails' && !arr.includes('hiking')) arr.push('hiking');
+  return arr;
 }
 
 /**
@@ -104,6 +129,7 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     // Real transit between distinct points is never 0 — see api.ts.
     transitMinutes: normalizeTransit((row.transit_minutes as number | null) ?? seedLegacy('transit')),
     category: migrateCategory((row.category as string) || 'neighbourhood_walks') as BucketListItem['category'],
+    // Hold the raw value so the tags-migration can inject `hiking` for ex-hiking_trails items.
     setting: (row.setting as BucketListItem['setting']) || 'mixed',
     weatherSuitability: (row.weather_suitability as BucketListItem['weatherSuitability']) || 'any',
     durationEstimate: (row.duration_estimate as BucketListItem['durationEstimate']) || '1_2h',
@@ -111,13 +137,13 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     specificCost: row.specific_cost as number | undefined,
     bestSeasons: (row.best_seasons as BucketListItem['bestSeasons']) || (row.best_season ? [row.best_season as string] : ['any']),
     bestTimesOfDay: (row.best_times_of_day as BucketListItem['bestTimesOfDay']) || (row.best_time_of_day ? [row.best_time_of_day as string] : ['any']),
-    groupSuitability: (row.group_suitability as BucketListItem['groupSuitability']) || [],
+    groupSuitability: migrateGroupSuitability(row.group_suitability),
     dogFriendly: row.dog_friendly as boolean | undefined,
     wheelchairAccessible: row.wheelchair_accessible as boolean | undefined,
     strollerFriendly: row.stroller_friendly as boolean | undefined,
     personalNotes: row.personal_notes as string | undefined,
     priority: (row.priority as BucketListItem['priority']) || 'medium',
-    tags: (row.tags as string[]) || [],
+    tags: migrateTags(row.tags, (row.category as string) || ''),
     url: row.url as string | undefined,
     completionRating: row.completion_rating as number | undefined,
     completionPhotoUrl: row.completion_photo_url as string | undefined,

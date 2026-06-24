@@ -52,10 +52,10 @@ export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: ()
 
 /** Display order for category sections — matches the order in the Lark type system. */
 const CATEGORY_ORDER: Category[] = [
-  'museum_gallery', 'historical', 'nature_landscape', 'park_garden',
-  'hiking_trails', 'beach_water', 'active_adventure',
-  'food_drink', 'nightlife', 'entertainment', 'wellness',
-  'zoo_aquarium', 'event_festival', 'neighbourhood_walks',
+  'museum_gallery', 'historical', 'religious_site', 'nature_landscape', 'park_garden',
+  'neighbourhood_walks', 'beach_water', 'active',
+  'food_drink', 'nightlife', 'theatre_concert', 'amusement_park',
+  'entertainment', 'zoo_aquarium', 'wellness', 'shopping', 'other',
 ];
 
 export default function Discover({ profile, items, onAddPlace, onBack }: Props) {

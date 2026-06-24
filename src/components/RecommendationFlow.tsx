@@ -9,85 +9,87 @@ import { DiscoverCard } from './Discover';
 import { getSuppressedIds, recordShown } from '../utils/recentShown';
 import {
   Car, Bicycle, Footprints, Train, Dog, Wheelchair, Baby, Warning,
-  User, Heart, Users, House,
+  User, Heart, Users,
   Shuffle, Lightning, Fire, Leaf,
   ArrowsLeftRight, ForkKnife, Lightbulb, Tree, Confetti, Wind, Compass,
+  PersonSimpleRun,
   Sun, CloudSun, CloudRain, Snowflake, Cloud,
   MagnifyingGlass,
 } from '@phosphor-icons/react';
 
+// Snaps for the single max-time slider. 3hr dropped in the 2026-06-24 pass
+// (audit memory Q3 decision) — 4 snaps total.
 const TIME_SNAPS = [
-  { min: 60, label: '1 hr' },
-  { min: 120, label: '2 hrs' },
-  { min: 180, label: '3 hrs' },
-  { min: 240, label: 'Half day' },
-  { min: Infinity, label: 'Full day' },
+  { min: 60,       label: '1 hr',     fuzzy: false },
+  { min: 120,      label: '2 hrs',    fuzzy: false },
+  { min: 240,      label: 'Half day', fuzzy: true  },
+  { min: Infinity, label: 'Full day', fuzzy: true  },
 ];
+
+/** When today, after 16:00 the slider caps to evening-sized — half-day max.
+ *  Full day is hidden so the form can't offer 8hr outings starting after 4pm. */
+const EVENING_TIME_MAX_INDEX = 2; // 'Half day'
 
 const MODE_LABEL: Record<TransportMode, string> = {
   car: 'car', bike: 'bike', walk: 'walk', transit: 'transit',
 };
 
-function TimeRangeSlider({ range, onChange }: { range: [number, number]; onChange: (r: [number, number]) => void }) {
+/** Single max-time slider (2026-06-24 Q3 decision — replaced the dual-thumb range).
+ *  `maxIndex` is the current selected snap; `maxAllowedIndex` caps it (used when
+ *  today after 16:00 limits choices to evening-sized outings). */
+function TimeMaxSlider({
+  maxIndex,
+  onChange,
+  maxAllowedIndex,
+}: {
+  maxIndex: number;
+  onChange: (i: number) => void;
+  maxAllowedIndex: number;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef<'min' | 'max' | null>(null);
+  const dragging = useRef(false);
   const count = TIME_SNAPS.length;
 
   const indexFromX = useCallback((clientX: number): number => {
     const rect = trackRef.current!.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return Math.round(pct * (count - 1));
-  }, [count]);
+    const idx = Math.round(pct * (count - 1));
+    return Math.min(idx, maxAllowedIndex);
+  }, [count, maxAllowedIndex]);
 
-  const handlePointerDown = (thumb: 'min' | 'max') => (e: React.PointerEvent) => {
-    dragging.current = thumb;
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragging.current = true;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    onChange(indexFromX(e.clientX));
   };
-
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragging.current) return;
-    const idx = indexFromX(e.clientX);
-    if (dragging.current === 'min') {
-      onChange([Math.min(idx, range[1]), range[1]]);
-    } else {
-      onChange([range[0], Math.max(idx, range[0])]);
-    }
+    onChange(indexFromX(e.clientX));
   };
+  const handlePointerUp = () => { dragging.current = false; };
 
-  const handlePointerUp = () => { dragging.current = null; };
-
-  const leftPct = (range[0] / (count - 1)) * 100;
-  const rightPct = (range[1] / (count - 1)) * 100;
+  const pct = (maxIndex / (count - 1)) * 100;
 
   return (
     <div className="pt-2 pb-1">
       <div className="relative h-10 flex items-center" ref={trackRef}
         onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
-        {/* Track background */}
         <div className="absolute inset-x-0 h-1.5 rounded-full bg-sand-200" />
-        {/* Active range */}
         <div className="absolute h-1.5 rounded-full bg-sand-900"
-          style={{ left: `${leftPct}%`, width: `${rightPct - leftPct}%` }} />
-        {/* Snap dots */}
+          style={{ left: '0%', width: `${pct}%` }} />
         {TIME_SNAPS.map((_, i) => (
           <div key={i} className={`absolute w-2 h-2 rounded-full -translate-x-1 ${
-            i >= range[0] && i <= range[1] ? 'bg-sand-900' : 'bg-sand-300'
+            i <= maxIndex ? 'bg-sand-900' : i > maxAllowedIndex ? 'bg-sand-200' : 'bg-sand-300'
           }`} style={{ left: `${(i / (count - 1)) * 100}%` }} />
         ))}
-        {/* Min thumb */}
         <div className="absolute w-7 h-7 rounded-full bg-white border-2 border-sand-900 shadow-md -translate-x-1/2 cursor-grab active:cursor-grabbing z-10 touch-none"
-          style={{ left: `${leftPct}%` }}
-          onPointerDown={handlePointerDown('min')} />
-        {/* Max thumb */}
-        <div className="absolute w-7 h-7 rounded-full bg-white border-2 border-sand-900 shadow-md -translate-x-1/2 cursor-grab active:cursor-grabbing z-10 touch-none"
-          style={{ left: `${rightPct}%` }}
-          onPointerDown={handlePointerDown('max')} />
+          style={{ left: `${pct}%` }}
+          onPointerDown={handlePointerDown} />
       </div>
-      {/* Labels */}
       <div className="relative h-5">
         {TIME_SNAPS.map((snap, i) => (
           <span key={i} className={`absolute text-[10px] -translate-x-1/2 ${
-            i >= range[0] && i <= range[1] ? 'text-sand-900 font-medium' : 'text-sand-400'
+            i <= maxIndex ? 'text-sand-900 font-medium' : i > maxAllowedIndex ? 'text-sand-300' : 'text-sand-400'
           }`} style={{ left: `${(i / (count - 1)) * 100}%` }}>{snap.label}</span>
         ))}
       </div>
@@ -109,22 +111,21 @@ interface Props {
 
 type Step = 'input' | 'loading' | 'results';
 
-function getDateLabel(offset: number): string {
-  const d = new Date(); d.setDate(d.getDate() + offset);
-  if (offset === 0) return 'Today';
+/** Past 16:00 today, "Today" relabels to "This evening" (Q1 decision). */
+function isEveningWindow(offset: number, now: Date = new Date()): boolean {
+  return offset === 0 && now.getHours() >= 16;
+}
+
+function getDateLabel(offset: number, now: Date = new Date()): string {
+  if (offset === 0) return isEveningWindow(offset, now) ? 'This evening' : 'Today';
   if (offset === 1) return 'Tomorrow';
+  const d = new Date(); d.setDate(d.getDate() + offset);
   return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
 }
 
 function getDateString(offset: number): string {
   const d = new Date(); d.setDate(d.getDate() + offset);
   return d.toISOString().split('T')[0];
-}
-
-function getWeekendOffsets(): { sat: number; sun: number } {
-  const today = new Date().getDay();
-  const satOffset = (6 - today + 7) % 7 || 7;
-  return { sat: satOffset, sun: satOffset + 1 };
 }
 
 export default function RecommendationFlow({ profile, items, onBack, onViewItem, onNavigate }: Props) {
@@ -138,12 +139,14 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     return () => { cancelled = true; };
   }, [profile, items]);
   const [dateOffset, setDateOffset] = useState(0);
-  const [timeRange, setTimeRange] = useState<[number, number]>([0, 4]); // indices into TIME_SNAPS
+  // Single max-time slider — index into TIME_SNAPS. Default: Half day (idx 2).
+  const [timeMaxIndex, setTimeMaxIndex] = useState(2);
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
-  const [energy, setEnergy] = useState<EnergyLevel>('surprise_me');
+  const [energy, setEnergy] = useState<EnergyLevel>('up_for_anything');
   const [vibes, setVibes] = useState<Vibe[]>(['flexible']);
   const [maxCost, setMaxCost] = useState<CostLevel>('expensive');
-  const [transportModes, setTransportModes] = useState<TransportMode[]>(['car']);
+  // Default transport: Car + Transit (2026-06-24 Q2 decision)
+  const [transportModes, setTransportModes] = useState<TransportMode[]>(['car', 'transit']);
   const [dogComing, setDogComing] = useState(false);
   const [needsAccessibility, setNeedsAccessibility] = useState(false);
   const [strollerNeeded, setStrollerNeeded] = useState(false);
@@ -161,6 +164,8 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
   const toggleTransport = (m: TransportMode) => setTransportModes(prev =>
     prev.includes(m) ? (prev.length > 1 ? prev.filter(x => x !== m) : prev) : [...prev, m]
   );
+  const selectAllTransport = () => setTransportModes(['car', 'transit', 'bike', 'walk']);
+  const isAllTransport = transportModes.length === 4;
   const toggleVibe = (v: Vibe) => {
     if (v === 'flexible') {
       setVibes(['flexible']);
@@ -173,7 +178,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     }
   };
 
-  const handleGetRecommendations = async () => {
+  const runQuery = async (surpriseMe: boolean) => {
     setStep('loading');
     // Fresh submit — clear in-session suppression (the localStorage one persists).
     setSessionSuppressed([]);
@@ -188,12 +193,10 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     setWeather(dayWeather);
 
     setLoadingMsg('Finding your best options...');
-    const timeMax = TIME_SNAPS[timeRange[1]].min; // may be Infinity for Full day
-    const timeMin = TIME_SNAPS[timeRange[0]].min;
+    const timeMax = TIME_SNAPS[timeMaxIndex].min;
     const finalConstraints = {
       date: targetDate,
       timeAvailableMinutes: timeMax,
-      timeMinMinutes: isFinite(timeMin) ? timeMin : undefined,
       groupTypes,
       energy,
       vibes,
@@ -204,6 +207,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
       needsAccessibility,
       strollerNeeded,
       suppressedIds: getSuppressedIds(),
+      surpriseMe,
     };
     const scored = getRecommendations(items, finalConstraints, dayWeather);
     setResults(scored);
@@ -212,6 +216,9 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     recordShown(scored.slice(0, 3).map(s => s.item.id));
     setStep('results');
   };
+
+  const handleGetRecommendations = () => runQuery(false);
+  const handleSurpriseMe = () => runQuery(true);
 
   /** Re-score with the current top results pushed into the session suppression list. */
   const handleShowDifferent = () => {
@@ -230,11 +237,17 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     recordShown(rescored.slice(0, 3).map(s => s.item.id));
   };
 
-  // Past 22:00 today → suggest switching to tomorrow
   const now = new Date();
+  // After 16:00 today, the form switches into evening-window mode (Q1 decision):
+  // "Today" becomes "This evening", the slider caps to evening-sized.
+  const eveningWindow = isEveningWindow(dateOffset, now);
+  // Past 22:00 today → nudge the user to switch to tomorrow.
   const isTodayLate = dateOffset === 0 && now.getHours() >= 22;
-
-  const weekend = getWeekendOffsets();
+  const timeMaxAllowedIndex = eveningWindow ? EVENING_TIME_MAX_INDEX : TIME_SNAPS.length - 1;
+  // Clamp the slider into evening range automatically when the user picks Today after 16:00.
+  useEffect(() => {
+    if (timeMaxIndex > timeMaxAllowedIndex) setTimeMaxIndex(timeMaxAllowedIndex);
+  }, [timeMaxAllowedIndex, timeMaxIndex]);
 
   const transportOptions: { mode: TransportMode; icon: React.ReactNode; label: string }[] = [
     { mode: 'car', icon: <Car size={14} />, label: 'Car' },
@@ -253,9 +266,10 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
 
         <Section label="When?">
           <div className="toggle-group">
-            {[{ offset: 0, label: 'Today' }, { offset: 1, label: 'Tomorrow' },
-              { offset: weekend.sat, label: 'Saturday' }, { offset: weekend.sun, label: 'Sunday' }]
-              .map(({ offset, label }) => (
+            {([
+              { offset: 0, label: eveningWindow ? 'This evening' : 'Today' },
+              { offset: 1, label: 'Tomorrow' },
+            ]).map(({ offset, label }) => (
               <button key={offset} className={`toggle-btn ${dateOffset === offset ? 'active' : ''}`}
                 onClick={() => setDateOffset(offset)}>{label}</button>
             ))}
@@ -263,33 +277,37 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
           {isTodayLate && (
             <p className="text-[11px] text-terra-600 mt-2">It's late — try Tomorrow for more options.</p>
           )}
+          {eveningWindow && !isTodayLate && (
+            <p className="text-[11px] text-sand-600 mt-2">We'll only show places open this evening and skip long outings.</p>
+          )}
         </Section>
 
         <Section label="How are you getting there?">
           <div className="toggle-group">
             {transportOptions.map(({ mode, icon, label }) => (
-              <button key={mode} className={`toggle-btn ${transportModes.includes(mode) ? 'active' : ''}`}
+              <button key={mode} className={`toggle-btn ${transportModes.includes(mode) && !isAllTransport ? 'active' : ''}`}
                 onClick={() => toggleTransport(mode)}>
                 <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
               </button>
             ))}
+            <button className={`toggle-btn ${isAllTransport ? 'active' : ''}`}
+              onClick={selectAllTransport}>Any way</button>
           </div>
-          <p className="text-[10px] text-sand-600 mt-1">Pick one or more. We'll show whichever fits each place best.</p>
+          <p className="text-[10px] text-sand-600 mt-1">Pick one or more, or tap Any way. Walking is always considered for spots nearby.</p>
         </Section>
 
         <Section label="How much time do you have?">
-          <TimeRangeSlider range={timeRange} onChange={setTimeRange} />
-          <p className="text-[10px] text-sand-600 mt-1">Total time door to door — includes travel both ways. Full day has no upper limit.</p>
+          <TimeMaxSlider maxIndex={timeMaxIndex} onChange={setTimeMaxIndex} maxAllowedIndex={timeMaxAllowedIndex} />
+          <p className="text-[10px] text-sand-600 mt-1">Total time door to door — includes travel both ways.</p>
         </Section>
 
         <Section label="Who's coming?">
           <div className="toggle-group">
             {([
-              { val: 'solo' as GroupType, icon: <User size={14} />, label: 'Solo' },
-              { val: 'couple' as GroupType, icon: <Heart size={14} />, label: 'Partner' },
+              { val: 'solo' as GroupType,    icon: <User size={14} />,  label: 'Just me' },
+              { val: 'couple' as GroupType,  icon: <Heart size={14} />, label: 'Partner' },
               { val: 'friends' as GroupType, icon: <Users size={14} />, label: 'Friends' },
-              { val: 'family' as GroupType, icon: <House size={14} />, label: 'Family' },
-              { val: 'kids' as GroupType, icon: <Baby size={14} />, label: 'Kids' },
+              { val: 'kids' as GroupType,    icon: <Baby size={14} />,  label: 'With kids' },
             ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${groupTypes.includes(val) ? 'active' : ''}`}
                 onClick={() => toggleGroup(val)}>
@@ -297,15 +315,15 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
               </button>
             ))}
           </div>
+          <p className="text-[10px] text-sand-600 mt-1">Pick all that apply — places must suit everyone in the group.</p>
         </Section>
 
         <Section label="How much energy do you have?">
           <div className="toggle-group">
             {([
-              { val: 'surprise_me' as EnergyLevel, icon: <Shuffle size={14} />, label: 'Surprise me' },
               { val: 'up_for_anything' as EnergyLevel, icon: <Lightning size={14} />, label: 'Up for anything' },
-              { val: 'got_some_energy' as EnergyLevel, icon: <Fire size={14} />, label: 'Got some energy' },
-              { val: 'keep_it_easy' as EnergyLevel, icon: <Leaf size={14} />, label: 'Keep it easy' },
+              { val: 'got_some_energy' as EnergyLevel, icon: <Fire size={14} />,      label: 'Got some energy' },
+              { val: 'keep_it_easy' as EnergyLevel,    icon: <Leaf size={14} />,      label: 'Keep it easy' },
             ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${energy === val ? 'active' : ''}`}
                 onClick={() => setEnergy(val)}>
@@ -318,13 +336,14 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
         <Section label="What's your vibe?">
           <div className="toggle-group">
             {([
-              { val: 'flexible' as Vibe, icon: <ArrowsLeftRight size={14} />, label: 'Open to anything' },
-              { val: 'foodie' as Vibe, icon: <ForkKnife size={14} />, label: 'Foodie' },
-              { val: 'curious' as Vibe, icon: <Lightbulb size={14} />, label: 'Curious' },
-              { val: 'outdoorsy' as Vibe, icon: <Tree size={14} />, label: 'Outdoorsy' },
-              { val: 'playful' as Vibe, icon: <Confetti size={14} />, label: 'Playful' },
-              { val: 'unwind' as Vibe, icon: <Wind size={14} />, label: 'Unwind' },
-              { val: 'explore' as Vibe, icon: <Compass size={14} />, label: 'Explore' },
+              { val: 'flexible' as Vibe,  icon: <ArrowsLeftRight size={14} />, label: 'Open to anything' },
+              { val: 'foodie' as Vibe,    icon: <ForkKnife size={14} />,       label: 'Foodie' },
+              { val: 'curious' as Vibe,   icon: <Lightbulb size={14} />,       label: 'Curious' },
+              { val: 'active' as Vibe,    icon: <PersonSimpleRun size={14} />, label: 'Active' },
+              { val: 'outdoorsy' as Vibe, icon: <Tree size={14} />,            label: 'Outdoorsy' },
+              { val: 'playful' as Vibe,   icon: <Confetti size={14} />,        label: 'Playful' },
+              { val: 'unwind' as Vibe,    icon: <Wind size={14} />,            label: 'Unwind' },
+              { val: 'explore' as Vibe,   icon: <Compass size={14} />,         label: 'Explore' },
             ]).map(({ val, icon, label }) => (
               <button key={val} className={`toggle-btn ${vibes.includes(val) ? 'active' : ''}`}
                 onClick={() => toggleVibe(val)}>
@@ -337,7 +356,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
 
         <Section label="Max budget?">
           <div className="toggle-group">
-            {([['free','Free only'],['cheap','Under €10'],['moderate','Under €25'],['expensive','Any budget']] as const)
+            {([['free','Free'],['cheap','Under €10'],['moderate','Under €25'],['expensive','Any budget']] as const)
               .map(([val, label]) => (
               <button key={val} className={`toggle-btn ${maxCost === val ? 'active' : ''}`}
                 onClick={() => setMaxCost(val as CostLevel)}>{label}</button>
@@ -362,8 +381,12 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
           </div>
         </Section>
 
+        <button onClick={handleSurpriseMe}
+          className="w-full py-3 rounded-full text-sm font-medium border border-sand-300 text-sand-800 hover:bg-sand-100 transition mt-4 inline-flex items-center justify-center gap-2">
+          <Shuffle size={14} /> Or just surprise me
+        </button>
         <button onClick={handleGetRecommendations}
-          className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-4">
+          className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-2">
           Find recommendations
         </button>
       </div>
