@@ -64,9 +64,25 @@ export default function App() {
     if (session) loadUserData();
   }, [session, loadUserData]);
 
-  // Scroll to top on every screen change
+  // Disable the browser's automatic scroll restoration so it can't fight us
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  // Scroll to top on every screen change. Use rAF so the new view has laid
+  // out before we scroll, and reset both window + document scroll for cross-
+  // browser safety (iOS Safari sometimes ignores `behavior: 'instant'`).
+  useEffect(() => {
+    const scrollTop = () => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    };
+    scrollTop();
+    const id = requestAnimationFrame(scrollTop);
+    return () => cancelAnimationFrame(id);
   }, [screen]);
 
   const refreshItems = async () => {
