@@ -232,6 +232,10 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
       region: result.address.state || '',
       city: result.address.city || '',
       openingHours: openingHours || result.openingHours || undefined,
+      // Seed the TTL whenever we got hours from Google so the 30-day refresh
+      // clock starts now. HERE-only opening hours (no Google key) leave this
+      // null — the detail page treats null as "refresh on next open".
+      openingHoursLastRefreshedAt: openingHours ? new Date().toISOString() : undefined,
       travelDistanceKm: travel.distanceKm,
       walkMinutes: travel.walkMinutes,
       bikeMinutes: travel.bikeMinutes,

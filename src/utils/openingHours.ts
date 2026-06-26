@@ -173,6 +173,124 @@ export function getOpeningHoursWarning(raw: string | undefined, targetDate: stri
   return null;
 }
 
+/** Parsed view of a day's opening: either a list of ranges (minutes from
+ *  midnight), or closed. Closed days have an empty `ranges` array. */
+interface DayRanges {
+  closed: boolean;
+  ranges: { startMin: number; endMin: number }[];
+}
+
+function timeToMinutes(t: string): number | null {
+  const [h, m] = t.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+function minutesToLabel(min: number): string {
+  // Wrap end-of-day to a friendlier "midnight" rather than 12 AM ambiguity.
+  if (min >= 1440) return 'midnight';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return formatTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+}
+
+/** Extract day-of-week ranges from an OSM-style opening_hours string. Returns
+ *  an array indexed by DAY_ORDER (Mo=0..Su=6). Missing days are treated as
+ *  "no rule" (returned as undefined) — distinct from explicit `off`. */
+function parseWeek(raw: string): (DayRanges | undefined)[] {
+  const week: (DayRanges | undefined)[] = new Array(7);
+  if (!raw) return week;
+  if (raw.trim() === '24/7') {
+    for (let i = 0; i < 7; i++) week[i] = { closed: false, ranges: [{ startMin: 0, endMin: 1440 }] };
+    return week;
+  }
+  const rules = raw.split(';').map(r => r.trim()).filter(Boolean);
+  for (const rule of rules) {
+    const match = rule.match(/^([A-Z][a-z][\w,\s-]*?)\s+([\d:,\s-]+|off)$/i);
+    if (!match) continue;
+    const daySpec = match[1].trim();
+    const timeSpec = match[2].trim();
+    for (let i = 0; i < 7; i++) {
+      const dayCode = DAY_ORDER[i];
+      if (!dayMatchesSpec(dayCode, daySpec)) continue;
+      if (timeSpec === 'off') { week[i] = { closed: true, ranges: [] }; continue; }
+      const ranges: { startMin: number; endMin: number }[] = [];
+      for (const part of timeSpec.split(',')) {
+        const [start, end] = part.trim().split('-').map(s => s.trim());
+        const s = timeToMinutes(start);
+        const e = timeToMinutes(end);
+        if (s == null || e == null) continue;
+        // Closing past midnight (e.g. 20:00-02:00) — wrap end into >24h so
+        // comparisons against "now in minutes" work without special-casing.
+        ranges.push({ startMin: s, endMin: e <= s ? e + 1440 : e });
+      }
+      if (ranges.length > 0) week[i] = { closed: false, ranges };
+    }
+  }
+  return week;
+}
+
+export interface OpeningStatus {
+  /** True when the place is open right now. */
+  isOpen: boolean;
+  /** One-line glanceable status — "Open until 6 PM", "Closed, opens 2 PM",
+   *  "Closed, opens 9 AM Thu", "Closed today", "Open 24 hours". Empty when we
+   *  can't determine anything useful (the detail page hides the block). */
+  label: string;
+}
+
+/**
+ * Glanceable "are we open?" status for the item detail page. Returns the
+ * status string + an isOpen flag for the coloured dot. Returns null when the
+ * opening_hours string is missing or unparseable — callers should hide the
+ * block in that case. Day-of-week and current time read from the user's
+ * device local time, matching the venue's local time for typical use.
+ */
+export function getOpeningHoursStatus(raw: string | undefined, now: Date = new Date()): OpeningStatus | null {
+  if (!raw) return null;
+  if (raw.trim() === '24/7') return { isOpen: true, label: 'Open 24 hours' };
+
+  const week = parseWeek(raw);
+  if (week.every(d => d === undefined)) return null;
+
+  const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  const today = week[todayIdx];
+
+  // Open right now? Check today's normal ranges plus a yesterday-wrap range
+  // that crossed midnight into today.
+  const yesterdayIdx = (todayIdx + 6) % 7;
+  const yesterday = week[yesterdayIdx];
+  const yesterdayWrap = yesterday?.ranges.find(r => r.endMin > 1440);
+
+  if (today && !today.closed) {
+    const live = today.ranges.find(r => nowMin >= r.startMin && nowMin < r.endMin);
+    if (live) return { isOpen: true, label: `Open until ${minutesToLabel(live.endMin)}` };
+  }
+  if (yesterdayWrap && nowMin < yesterdayWrap.endMin - 1440) {
+    return { isOpen: true, label: `Open until ${minutesToLabel(yesterdayWrap.endMin - 1440)}` };
+  }
+
+  // Closed. Find next opening — first a later range today, then walk forward.
+  if (today && !today.closed) {
+    const next = today.ranges.find(r => r.startMin > nowMin);
+    if (next) return { isOpen: false, label: `Closed, opens ${minutesToLabel(next.startMin)}` };
+  }
+  for (let offset = 1; offset <= 7; offset++) {
+    const idx = (todayIdx + offset) % 7;
+    const day = week[idx];
+    if (!day || day.closed || day.ranges.length === 0) continue;
+    const first = day.ranges[0];
+    if (offset === 1) return { isOpen: false, label: `Closed, opens ${minutesToLabel(first.startMin)} tomorrow` };
+    const dayName = DAY_NAMES[DAY_ORDER[idx]];
+    return { isOpen: false, label: `Closed, opens ${minutesToLabel(first.startMin)} ${dayName}` };
+  }
+
+  // No future opening found in the next week — treat as permanently closed.
+  return { isOpen: false, label: 'Closed today' };
+}
+
 /**
  * Check if a day matches an OSM day specification like "Mo-Fr" or "Sa" or "Mo,We,Fr"
  */

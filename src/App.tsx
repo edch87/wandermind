@@ -220,6 +220,7 @@ export default function App() {
       {screen.name === 'detail' && (
         <ItemDetail
           item={items.find(i => i.id === screen.itemId)!}
+          profile={profile}
           onBack={() => setScreen({ name: 'list' })}
           onSave={handleSaveItem}
           onDelete={handleDeleteItem}

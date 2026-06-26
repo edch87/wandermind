@@ -30,6 +30,15 @@ export type Tag =
   | 'picnicking' | 'market' | 'outdoor_seating' | 'live_music' | 'late_night'
   | 'sauna' | 'class' | 'tour';
 
+/** User's default transport mode for display defaults (item detail mode shown,
+ *  recommend-flow toggle initial value, Navigate button URL). Walking is NOT
+ *  an option — it's auto-derived on the detail page when walkMinutes ≤ 15.
+ *  Distinct from the dropped UserProfile.preferredTransport in v5: that field
+ *  stored a single per-item mode at save time, which forced the same mode
+ *  everywhere. This is display-only — all four travel-time fields stay on
+ *  each item, and the recommend flow toggle is still overridable per outing. */
+export type PreferredTransport = 'car' | 'transit' | 'bike';
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -43,6 +52,10 @@ export interface UserProfile {
   /** Community layer opt-out: when true (default) the user's saves feed the
    *  anonymous discover aggregate ("Saved by N people" — never who). */
   shareSaves?: boolean;
+  /** Default transport mode for the item detail page, the recommend-flow
+   *  toggle's initial value, and the Navigate button. Defaults to 'car' when
+   *  unset; no onboarding prompt. */
+  preferredTransport?: PreferredTransport;
 }
 
 export interface BucketListItem {
@@ -65,6 +78,11 @@ export interface BucketListItem {
   region?: string;
   city?: string;
   openingHours?: string;
+  /** ISO timestamp of the last successful Google opening-hours refresh.
+   *  Read on the detail page: if older than 30 days (or null), trigger a
+   *  background refresh. Bounds the Google Pro-tier `regularOpeningHours`
+   *  call to viewed items only (1,000 free/month). */
+  openingHoursLastRefreshedAt?: string;
 
   // Travel data
   travelDistanceKm: number;

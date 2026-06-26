@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { UserProfile, BucketListItem } from '../types';
+import type { UserProfile, BucketListItem, PreferredTransport } from '../types';
 
 // ── Legacy category migration map ──
 // Lazy read-side migration. Older categories from before the 2026-06-24 recommend-flow pass
@@ -60,6 +60,13 @@ function normalizeTransit(v: number | null): number | null {
 
 // ── Helpers: convert between camelCase (app) and snake_case (database) ──
 
+/** Coerce a raw value to a valid PreferredTransport, falling back to 'car'.
+ *  Walking is intentionally excluded — the detail page auto-overrides to walking
+ *  when walkMinutes ≤ 15, so it's never a stored default. */
+function readPreferredTransport(raw: unknown): PreferredTransport {
+  return raw === 'transit' || raw === 'bike' ? raw : 'car';
+}
+
 function profileFromDb(row: Record<string, unknown>): UserProfile {
   return {
     id: row.id as string,
@@ -72,6 +79,7 @@ function profileFromDb(row: Record<string, unknown>): UserProfile {
     needsAccessibility: (row.needs_accessibility as boolean) || false,
     onboardingComplete: (row.onboarding_complete as boolean) || false,
     shareSaves: row.share_saves !== false, // default true (opt-out)
+    preferredTransport: readPreferredTransport(row.preferred_transport),
   };
 }
 
@@ -87,6 +95,7 @@ function profileToDb(profile: UserProfile) {
     needs_accessibility: profile.needsAccessibility,
     onboarding_complete: profile.onboardingComplete,
     share_saves: profile.shareSaves !== false,
+    preferred_transport: profile.preferredTransport || 'car',
     updated_at: new Date().toISOString(),
   };
 }
@@ -119,6 +128,7 @@ function itemFromDb(row: Record<string, unknown>): BucketListItem {
     region: row.region as string | undefined,
     city: row.city as string | undefined,
     openingHours: row.opening_hours as string | undefined,
+    openingHoursLastRefreshedAt: row.opening_hours_last_refreshed_at as string | undefined,
     travelDistanceKm: (row.travel_distance_km as number) || 0,
     walkMinutes: (row.walk_minutes as number | null) ?? seedLegacy('walk'),
     bikeMinutes: (row.bike_minutes as number | null) ?? seedLegacy('bike'),
@@ -171,6 +181,7 @@ function itemToDb(item: BucketListItem, userId: string) {
     region: item.region || null,
     city: item.city || null,
     opening_hours: item.openingHours || null,
+    opening_hours_last_refreshed_at: item.openingHoursLastRefreshedAt || null,
     travel_distance_km: item.travelDistanceKm,
     walk_minutes: item.walkMinutes,
     bike_minutes: item.bikeMinutes,

@@ -3,8 +3,8 @@ import L from 'leaflet';
 import { searchPlaces, reverseGeocode, calculateBatchAllModes, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { markHomePinRefined } from '../utils/homePinPrompt';
-import type { UserProfile, HereSearchResult, BucketListItem } from '../types';
-import { ArrowsClockwise } from '@phosphor-icons/react';
+import type { UserProfile, HereSearchResult, BucketListItem, PreferredTransport } from '../types';
+import { ArrowsClockwise, Car, Train, Bicycle } from '@phosphor-icons/react';
 
 interface Props {
   profile: UserProfile;
@@ -111,6 +111,7 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
   };
 
   const [shareSaves, setShareSaves] = useState(profile.shareSaves !== false);
+  const [preferredTransport, setPreferredTransport] = useState<PreferredTransport>(profile.preferredTransport || 'car');
 
   // Background refresh of per-mode travel times. Triggered automatically on
   // home-location change and manually via the "Refresh travel times" button.
@@ -157,7 +158,7 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
       profile.homeLatitude, profile.homeLongitude, homeLat, homeLng,
     );
     onSave({ ...profile, displayName: name,
-      homeLatitude: homeLat, homeLongitude: homeLng, homeAddress, shareSaves });
+      homeLatitude: homeLat, homeLongitude: homeLng, homeAddress, shareSaves, preferredTransport });
     markHomePinRefined(profile.id);
 
     // Home moved meaningfully — refresh travel times in the background before
@@ -221,6 +222,31 @@ export default function Settings({ profile, items, onSave, onSaveItems, onBack, 
               />
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1 block">How you usually travel</label>
+          <p className="text-[11px] text-sand-600 mb-2">
+            Used as the default on each place's detail page. Walking shows
+            automatically when somewhere's right around the corner. You can
+            still switch modes in the Suggest flow.
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { val: 'car' as PreferredTransport, label: 'Car', icon: <Car size={16} /> },
+              { val: 'transit' as PreferredTransport, label: 'Transit', icon: <Train size={16} /> },
+              { val: 'bike' as PreferredTransport, label: 'Bike', icon: <Bicycle size={16} /> },
+            ]).map(({ val, label, icon }) => (
+              <button key={val} onClick={() => setPreferredTransport(val)}
+                className={`py-2.5 rounded-full text-sm font-medium border transition inline-flex items-center justify-center gap-1.5 ${
+                  preferredTransport === val
+                    ? 'bg-sand-900 text-sand-100 border-sand-900'
+                    : 'bg-white text-sand-700 border-sand-200 hover:bg-sand-50'
+                }`}>
+                {icon} {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>
