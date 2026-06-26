@@ -502,9 +502,9 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
       <div className="place-img-container h-48 rounded-none">
         <PlaceImg
           src={draft.photoUrl}
-          alt={draft.name}
+          alt={draft.name || ''}
           name={draft.name}
-          category={draft.category}
+          category={draft.category || 'other'}
           placeholderVariant="detail"
           loading="eager"
         />
