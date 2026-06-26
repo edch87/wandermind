@@ -16,15 +16,9 @@ Decisions made 2026-06-21. Work through in order; ship without social. Social ar
 
 **Pre-launch must-ships, in priority order**
 
-1. **Address-precise home location**
-   - Change Onboarding placeholder from "Search for your city..." to a prompt that encourages street, neighbourhood, or postcode
-   - Add a map drag-to-adjust step in the home location flow so users can pin without typing a full address
-   - Round stored coordinates to roughly 100 to 200m precision for privacy. Exact pin kept only in-session for map display
-   - One-time prompt on next login for existing users whose home is set as a city
+1. ~~**Address-precise home location**~~ ✅ Done — Onboarding has a dedicated "Fine-tune the pin" step with a draggable Leaflet marker (`Onboarding.tsx`'s `pin` step); home search prompt asks for "Street, neighbourhood, or postcode"; coordinates rounded to 3 decimals (~65m) in `storage.ts`; existing city-only users get a dismissible refine banner (`homePinPrompt.ts`).
 
-2. **Map with pin on AddPlace review**
-   - Show map with pin on the review step so users confirm the place is correct before saving
-   - Allow drag to adjust if autocomplete put it slightly wrong
+2. ~~**Map with pin on AddPlace review**~~ ✅ Done — AddPlace has a `confirm` step between search and review with a draggable map preview; pin drags under 50m keep the autocomplete address, larger drags reverse-geocode.
 
 3. ~~**Public transport travel time**~~ ✅ Done (2026-06-21) — bigger refactor than the original spec. At save time we now compute all 4 modes (walk/bike/car/transit) in parallel and store them on the item, dropping the single `travelTimeMinutes` + `transportMode` pair. Transit uses next-upcoming Tuesday 10:30am local as the off-peak departure; HERE returning no routes stores `null` and renders as "Not practical by transit". Settings auto-refreshes all items when home location changes (>500m) and has a manual "Refresh travel times" button for legacy items. Recommend flow's "Calculating travel times..." step is gone — it now reads stored times instantly and includes Transit as a 4th transport toggle. Migration: `supabase-migration-v5.sql`; legacy `travel_time_minutes`/`transport_mode` columns kept one release for safety via lazy read-side migration.
 
@@ -63,7 +57,7 @@ Captured here so context is not lost when we pick this up:
 ## UX & Flow Redesign
 
 - ~~**Duplicate detection on add**~~ ✅ Done (2026-06-22) — search results and pasted Google Maps links now check existing items by `googlePlaceId` then `osmId`. Matched results render with an "Already saved" badge and route taps to ItemDetail instead of the confirm step. Lat/lng proximity intentionally not used as a fallback to avoid false positives on side-by-side places. Helper `findExistingMatch` lives in `AddPlace.tsx`; `App.tsx` passes `items` + `onViewExisting` through.
-- **Three-state dog / child / accessibility** — replace the single Yes/unknown toggle on AddPlace with a Yes / Not sure / No pill group per item, defaulting to "Not sure". Stop the inference layer from writing `false` from OSM/Google tags (only `true`), so the detail view only shows "Not dog-friendly" / "Not accessible" / "Not stroller-friendly" when the user explicitly said so. Recommend-flow filter behaviour stays the same: explicit `false` excludes, `undefined` is allowed through.
+- ~~**Three-state dog / child / accessibility**~~ ✅ Done (2026-06-26) — AddPlace's Accessibility section now uses three Yes / Not sure / No pill groups (one per row, defaulting to "Not sure"). `inference.ts` only ever writes `true` (the OSM `dog=no` / `wheelchair=no` writes were removed); negative states are user-only signal. Detail-page chips already keyed off `!== undefined`, so they now only render the negative state when the user explicitly picked No. Recommend filter behaviour unchanged. Supabase one-shot UPDATE nulled legacy `false` values that came from inference.
 
 
 - ~~**Clarify "time" means total door-to-door time**~~ ✅ Done — relabelled to "Total time, door to door?" with subtitle

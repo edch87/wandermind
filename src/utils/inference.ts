@@ -295,10 +295,13 @@ export function inferDefaults(tags: Record<string, string>): InferredDefaults {
 
   if (tags['fee'] === 'no' || tags['fee'] === '0') result.costLevel = 'free';
   if (tags['fee'] === 'yes' && result.costLevel === 'free') result.costLevel = 'cheap';
+  // Only ever write `true` from inference — never `false`. Negative states are
+  // user-only signal (the AddPlace UI's three-state pill group is the only path
+  // to a confirmed `false`). Stops OSM `wheelchair=no` / `dog=no` from putting
+  // "Not dog-friendly" chips on items the user never confirmed and from
+  // excluding those items in the recommend flow's strict filters.
   if (tags['wheelchair'] === 'yes') result.wheelchairAccessible = true;
-  if (tags['wheelchair'] === 'no') result.wheelchairAccessible = false;
   if (tags['dog'] === 'yes') result.dogFriendly = true;
-  if (tags['dog'] === 'no') result.dogFriendly = false;
   if (tags['indoor'] === 'yes' || tags['covered'] === 'yes') result.setting = 'indoor';
   if (tags['sport'] === 'skiing') result.bestSeasons = ['winter'];
   if (tags['sport'] === 'swimming') result.bestSeasons = ['summer'];

@@ -638,20 +638,30 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
         )}
 
         <Section label="Accessibility">
-          <div className="toggle-group">
-            <button className={`toggle-btn ${draft.dogFriendly === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ dogFriendly: draft.dogFriendly === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Dog size={16} /> Dog-friendly</span>
-            </button>
-            <button className={`toggle-btn ${draft.wheelchairAccessible === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ wheelchairAccessible: draft.wheelchairAccessible === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Wheelchair size={16} /> Wheelchair</span>
-            </button>
-            <button className={`toggle-btn ${draft.strollerFriendly === true ? 'active' : ''}`}
-              onClick={() => updateDraft({ strollerFriendly: draft.strollerFriendly === true ? undefined : true })}>
-              <span className="inline-flex items-center gap-1.5"><Baby size={16} /> Stroller</span>
-            </button>
-          </div>
+          {/* Three-state per field: Yes / Not sure / No. "Not sure" is the
+              default (undefined) and means "no signal" — recommend-flow filters
+              let it through, and the detail page shows no chip. Explicit Yes
+              and No are user-only signal (inference no longer writes false).
+              Tapping the active pill again clears back to "Not sure" so users
+              can undo a misclick without leaving a misleading "No". */}
+          <AccessibilityRow
+            label="Dogs"
+            icon={<Dog size={16} />}
+            value={draft.dogFriendly}
+            onChange={(v) => updateDraft({ dogFriendly: v })}
+          />
+          <AccessibilityRow
+            label="Wheelchair"
+            icon={<Wheelchair size={16} />}
+            value={draft.wheelchairAccessible}
+            onChange={(v) => updateDraft({ wheelchairAccessible: v })}
+          />
+          <AccessibilityRow
+            label="Stroller"
+            icon={<Baby size={16} />}
+            value={draft.strollerFriendly}
+            onChange={(v) => updateDraft({ strollerFriendly: v })}
+          />
         </Section>
 
         <Section label="Priority">
@@ -684,6 +694,50 @@ function Section({ label, children }: { label: string; children: React.ReactNode
     <div className="mb-5">
       <label className="block text-xs font-medium text-sand-600 mb-2 uppercase tracking-wide">{label}</label>
       {children}
+    </div>
+  );
+}
+
+/** One row of the Accessibility section: an icon + label on the left, a
+ *  Yes / Not sure / No pill group on the right. `undefined` is the "Not sure"
+ *  state. Tapping the active pill clears back to undefined. */
+function AccessibilityRow({
+  label,
+  icon,
+  value,
+  onChange,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  value: boolean | undefined;
+  onChange: (v: boolean | undefined) => void;
+}) {
+  const pick = (v: boolean | undefined) => onChange(value === v ? undefined : v);
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="inline-flex items-center gap-1.5 text-sm text-sand-800">
+        {icon} {label}
+      </span>
+      <div className="toggle-group !mt-0">
+        <button
+          className={`toggle-btn text-xs ${value === true ? 'active' : ''}`}
+          onClick={() => pick(true)}
+        >
+          Yes
+        </button>
+        <button
+          className={`toggle-btn text-xs ${value === undefined ? 'active' : ''}`}
+          onClick={() => onChange(undefined)}
+        >
+          Not sure
+        </button>
+        <button
+          className={`toggle-btn text-xs ${value === false ? 'active' : ''}`}
+          onClick={() => pick(false)}
+        >
+          No
+        </button>
+      </div>
     </div>
   );
 }
