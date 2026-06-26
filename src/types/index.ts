@@ -124,6 +124,11 @@ export interface BucketListItem {
 
 export interface RecommendationConstraints {
   date: string;
+  /** Time-of-day slots the user is available in. Multi-select: morning, afternoon,
+   *  and/or evening. Pre-filled from getRemainingSlotsToday() for today and all
+   *  three for tomorrow. Items with bestTimesOfDay must overlap (or be 'any'/empty
+   *  to pass through). Replaces the old today-only auto-slot filter. */
+  selectedSlots: TimeOfDay[];
   timeAvailableMinutes: number;
   /** Minimum time filter — only show activities that need at least this many minutes */
   timeMinMinutes?: number;

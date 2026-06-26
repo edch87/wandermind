@@ -220,7 +220,13 @@ export function getRecommendations(
     if (cap > 0) effectiveMax = Math.min(effectiveMax, cap);
   }
 
-  const remainingSlots = isToday ? getRemainingSlotsToday(now) : null;
+  // User-picked slots (multi-select). Empty array = treat as no filter (engine
+  // back-compat: callers that don't set selectedSlots get the old "anything goes"
+  // behaviour). For today the form pre-fills only remaining slots, so a 7pm
+  // request still excludes morning-only items.
+  const userSlots = constraints.selectedSlots && constraints.selectedSlots.length > 0
+    ? constraints.selectedSlots
+    : null;
 
   // Build allowed categories from selected vibes (hard filter).
   // 'flexible' = no restriction. If only flexible (or empty), all categories pass.
@@ -253,12 +259,14 @@ export function getRecommendations(
     // Minimum total — user wants at least this much
     if (constraints.timeMinMinutes && totalNeeded < constraints.timeMinMinutes) return false;
 
-    // Time of day (today only)
-    if (remainingSlots) {
+    // Time of day — driven by the user's slot picker (applies to today AND tomorrow).
+    // Items tagged with specific slots must overlap with at least one selected slot;
+    // items with no slot data (or tagged 'any') always pass.
+    if (userSlots) {
       const itemSlots = item.bestTimesOfDay || [];
       const anyOk = itemSlots.length === 0 || itemSlots.includes('any');
       if (!anyOk) {
-        const overlap = itemSlots.some(s => remainingSlots.includes(s));
+        const overlap = itemSlots.some(s => userSlots.includes(s));
         if (!overlap) return false;
       }
     }

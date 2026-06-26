@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { UserProfile, BucketListItem, WeatherForecast, HereSearchResult } from '../types';
 
 import { fetchWeatherForecast } from '../utils/api';
-import { getRecommendations } from '../utils/recommendation';
+import { getRecommendations, getRemainingSlotsToday } from '../utils/recommendation';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
 import { isHomePinRefined, markHomePinRefined } from '../utils/homePinPrompt';
 import { DiscoverCard } from './Discover';
@@ -72,6 +72,8 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
     // shuffle is applied; the old `energy: 'surprise_me'` enum value is gone.
     const scored = getRecommendations(items, {
       date: new Date().toISOString().split('T')[0],
+      // Spontaneous = "right now" — only consider slots still available today.
+      selectedSlots: getRemainingSlotsToday(),
       timeAvailableMinutes: 480,
       groupTypes: [],
       energy: 'up_for_anything',

@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem, Category, HereSearchResult } from '../types';
+import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem, Category, HereSearchResult, TimeOfDay } from '../types';
 import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
 import { fetchWeatherForecast } from '../utils/api';
-import { getRecommendations, findCombos, viableModes } from '../utils/recommendation';
+import { getRecommendations, findCombos, viableModes, getRemainingSlotsToday } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
 import { DiscoverCard } from './Discover';
@@ -28,9 +28,31 @@ const TIME_SNAPS = [
   { min: Infinity, label: 'Full day', fuzzy: true  },
 ];
 
-/** When today, after 16:00 the slider caps to evening-sized — half-day max.
- *  Full day is hidden so the form can't offer 8hr outings starting after 4pm. */
-const EVENING_TIME_MAX_INDEX = 2; // 'Half day'
+/** With a single time-of-day slot picked, cap the slider to Half day (one slot
+ *  is roughly half a day). Two or three slots open Full day back up. Replaces
+ *  the older after-16:00 hard cap; the slot picker now does that job. */
+const SINGLE_SLOT_TIME_MAX_INDEX = 2; // 'Half day'
+
+/** Multi-select pickable slots — order matches the day. 'any' is data-side only
+ *  (items can be tagged as such); the picker doesn't expose it. */
+const PICKABLE_SLOTS: Exclude<TimeOfDay, 'any'>[] = ['morning', 'afternoon', 'evening'];
+const SLOT_LABELS: Record<Exclude<TimeOfDay, 'any'>, string> = {
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
+};
+
+/** Default slots for a given date offset: remaining slots today (Edward's Q1
+ *  decision = option c), all three for tomorrow. If today has nothing left,
+ *  fall back to ['evening'] so the form never lands empty (the 22:00 nudge
+ *  separately suggests switching to Tomorrow). */
+function defaultSlotsForOffset(offset: number, now: Date = new Date()): TimeOfDay[] {
+  if (offset === 0) {
+    const remaining = getRemainingSlotsToday(now);
+    return remaining.length > 0 ? remaining : ['evening'];
+  }
+  return ['morning', 'afternoon', 'evening'];
+}
 
 const MODE_LABEL: Record<TransportMode, string> = {
   car: 'car', bike: 'bike', walk: 'walk', transit: 'transit',
@@ -113,13 +135,11 @@ interface Props {
 
 type Step = 'input' | 'loading' | 'results';
 
-/** Past 16:00 today, "Today" relabels to "This evening" (Q1 decision). */
-function isEveningWindow(offset: number, now: Date = new Date()): boolean {
-  return offset === 0 && now.getHours() >= 16;
-}
-
-function getDateLabel(offset: number, now: Date = new Date()): string {
-  if (offset === 0) return isEveningWindow(offset, now) ? 'This evening' : 'Today';
+/** Date label for the weather header on results. The "This evening" relabel
+ *  was retired alongside the slot picker — slot chips now communicate the
+ *  same intent more directly. */
+function getDateLabel(offset: number): string {
+  if (offset === 0) return 'Today';
   if (offset === 1) return 'Tomorrow';
   const d = new Date(); d.setDate(d.getDate() + offset);
   return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
@@ -141,6 +161,10 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     return () => { cancelled = true; };
   }, [profile, items]);
   const [dateOffset, setDateOffset] = useState(0);
+  // Multi-select slots (Edward Q1 = option c): pre-fill with all remaining slots
+  // for today (all three for tomorrow); user toggles off what doesn't apply. At
+  // least one slot must remain selected (UI enforces).
+  const [selectedSlots, setSelectedSlots] = useState<TimeOfDay[]>(() => defaultSlotsForOffset(0));
   // Single max-time slider — index into TIME_SNAPS. Default: Half day (idx 2).
   const [timeMaxIndex, setTimeMaxIndex] = useState(2);
   const [groupTypes, setGroupTypes] = useState<GroupType[]>(['solo']);
@@ -163,6 +187,16 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
   const [resultConstraints, setResultConstraints] = useState<Parameters<typeof viableModes>[1] | null>(null);
 
   const toggleGroup = (g: GroupType) => setGroupTypes(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+  /** Slot toggle with at-least-one guard (mirrors transport-modes pattern). */
+  const toggleSlot = (s: TimeOfDay) => setSelectedSlots(prev =>
+    prev.includes(s) ? (prev.length > 1 ? prev.filter(x => x !== s) : prev) : [...prev, s]
+  );
+  /** When the date changes, re-prefill slots so today/tomorrow each get the
+   *  right defaults without the user needing to re-tick chips. */
+  const handleDateChange = (offset: number) => {
+    setDateOffset(offset);
+    setSelectedSlots(defaultSlotsForOffset(offset));
+  };
   const toggleTransport = (m: TransportMode) => setTransportModes(prev =>
     prev.includes(m) ? (prev.length > 1 ? prev.filter(x => x !== m) : prev) : [...prev, m]
   );
@@ -198,6 +232,7 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
     const timeMax = TIME_SNAPS[timeMaxIndex].min;
     const finalConstraints = {
       date: targetDate,
+      selectedSlots,
       timeAvailableMinutes: timeMax,
       groupTypes,
       energy,
@@ -240,13 +275,14 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
   };
 
   const now = new Date();
-  // After 16:00 today, the form switches into evening-window mode (Q1 decision):
-  // "Today" becomes "This evening", the slider caps to evening-sized.
-  const eveningWindow = isEveningWindow(dateOffset, now);
   // Past 22:00 today → nudge the user to switch to tomorrow.
   const isTodayLate = dateOffset === 0 && now.getHours() >= 22;
-  const timeMaxAllowedIndex = eveningWindow ? EVENING_TIME_MAX_INDEX : TIME_SNAPS.length - 1;
-  // Clamp the slider into evening range automatically when the user picks Today after 16:00.
+  // Slot-driven slider cap: one slot ≈ half a day, so cap at Half day. Two or
+  // three slots span enough of the day that Full day is back on the table.
+  const timeMaxAllowedIndex = selectedSlots.length === 1
+    ? SINGLE_SLOT_TIME_MAX_INDEX
+    : TIME_SNAPS.length - 1;
+  // Clamp the slider down automatically when the user narrows to a single slot.
   useEffect(() => {
     if (timeMaxIndex > timeMaxAllowedIndex) setTimeMaxIndex(timeMaxAllowedIndex);
   }, [timeMaxAllowedIndex, timeMaxIndex]);
@@ -269,18 +305,23 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
         <Section label="When?">
           <div className="toggle-group">
             {([
-              { offset: 0, label: eveningWindow ? 'This evening' : 'Today' },
+              { offset: 0, label: 'Today' },
               { offset: 1, label: 'Tomorrow' },
             ]).map(({ offset, label }) => (
               <button key={offset} className={`toggle-btn ${dateOffset === offset ? 'active' : ''}`}
-                onClick={() => setDateOffset(offset)}>{label}</button>
+                onClick={() => handleDateChange(offset)}>{label}</button>
             ))}
           </div>
-          {isTodayLate && (
+          <div className="toggle-group mt-2">
+            {PICKABLE_SLOTS.map(slot => (
+              <button key={slot} className={`toggle-btn ${selectedSlots.includes(slot) ? 'active' : ''}`}
+                onClick={() => toggleSlot(slot)}>{SLOT_LABELS[slot]}</button>
+            ))}
+          </div>
+          {isTodayLate ? (
             <p className="text-[11px] text-terra-600 mt-2">It's late — try Tomorrow for more options.</p>
-          )}
-          {eveningWindow && !isTodayLate && (
-            <p className="text-[11px] text-sand-600 mt-2">We'll only show places open this evening and skip long outings.</p>
+          ) : (
+            <p className="text-[10px] text-sand-600 mt-1">Pick the parts of the day you're free. Long outings need at least two.</p>
           )}
         </Section>
 
