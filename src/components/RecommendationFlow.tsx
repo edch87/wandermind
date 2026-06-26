@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { UserProfile, BucketListItem, GroupType, EnergyLevel, Vibe, CostLevel, TransportMode, WeatherForecast, ScoredItem, Category, HereSearchResult, TimeOfDay } from '../types';
-import { DURATION_LABELS, COST_LABELS, formatDuration } from '../types';
+import { DURATION_LABELS, COST_LABELS, CATEGORY_INFO, formatDuration } from '../types';
 import { fetchWeatherForecast } from '../utils/api';
 import { getRecommendations, findCombos, viableModes, getRemainingSlotsToday } from '../utils/recommendation';
 import { getOpeningHoursWarning } from '../utils/openingHours';
@@ -565,14 +565,48 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
               </div>
             );
           })}
-          {combos.length > 0 && (
-            <div className="bg-sand-100 rounded-[20px] border border-sand-200 p-4">
-              <span className="badge bg-sand-900 text-sand-100 text-[10px] mb-2">Combo suggestion</span>
-              <p className="text-sm text-sand-800">
-                <strong>{combos[0].itemA.name}</strong> → {combos[0].walkingMinutes} min walk → <strong>{combos[0].itemB.name}</strong>
-              </p>
-            </div>
-          )}
+          {combos.length > 0 && (() => {
+            const combo = combos[0];
+            const hasHome = profile.homeLatitude != null && profile.homeLongitude != null;
+            const directionsUrl = hasHome
+              ? `https://www.google.com/maps/dir/?api=1&origin=${profile.homeLatitude},${profile.homeLongitude}&waypoints=${combo.itemA.latitude},${combo.itemA.longitude}&destination=${combo.itemB.latitude},${combo.itemB.longitude}`
+              : `https://www.google.com/maps/dir/?api=1&origin=${combo.itemA.latitude},${combo.itemA.longitude}&destination=${combo.itemB.latitude},${combo.itemB.longitude}`;
+            const renderRow = (item: BucketListItem) => (
+              <button
+                onClick={() => onViewItem(item.id)}
+                className="w-full flex items-center gap-3 text-left rounded-[14px] bg-white border border-sand-200 p-2 hover:bg-sand-50 transition"
+              >
+                <div className="place-img-container w-16 h-16 rounded-[10px] overflow-hidden flex-shrink-0">
+                  <PlaceImg src={item.photoUrl} alt={item.name} name={item.name} category={item.category} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sand-900 text-sm truncate">{item.name}</p>
+                  <p className="text-[11px] text-sand-600 truncate">
+                    {DURATION_LABELS[item.durationEstimate]} · {CATEGORY_INFO[item.category].label}
+                  </p>
+                </div>
+              </button>
+            );
+            return (
+              <div className="bg-sand-100 rounded-[20px] border border-sand-200 p-4">
+                <span className="badge bg-sand-900 text-sand-100 text-[10px] mb-3">Combo suggestion</span>
+                <div className="space-y-2">
+                  {renderRow(combo.itemA)}
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-sand-600 py-1">
+                    <Footprints size={13} weight="fill" />
+                    <span>{combo.walkingMinutes} min walk</span>
+                  </div>
+                  {renderRow(combo.itemB)}
+                </div>
+                <button
+                  onClick={() => window.open(directionsUrl, '_blank')}
+                  className="w-full mt-3 py-2.5 rounded-full bg-sand-900 text-sand-100 text-xs font-medium"
+                >
+                  Let's go!
+                </button>
+              </div>
+            );
+          })()}
           {results.length > top3.length && (
             <button onClick={handleShowDifferent}
               className="w-full py-3 rounded-full bg-sand-100 text-sand-700 text-sm font-medium border border-sand-200 hover:bg-sand-200 transition inline-flex items-center justify-center gap-2">
