@@ -16,6 +16,7 @@ import {
   Dog, Wheelchair, Baby,
 } from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
+import KiteIcon from './KiteIcon';
 
 interface Props {
   profile: UserProfile;
@@ -486,9 +487,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   if (step === 'loading') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6">
-        <div className="w-12 h-12 rounded-full bg-sand-100 flex items-center justify-center mb-4">
-          <div className="w-6 h-6 border-2 border-sand-300 border-t-sand-700 rounded-full animate-spin" />
-        </div>
+        <KiteIcon size={48} className="text-sand-900 mb-4" animate />
         <p className="text-sm text-sand-600 font-medium">{loadingMsg}</p>
       </div>
     );

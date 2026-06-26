@@ -181,3 +181,20 @@ body {
   font-weight: 400;
   color: #A67B4B;
 }
+
+/* Kite drift — used on KiteIcon loading states. Bobs up/down with a gentle
+   tilt, like a kite caught in a steady breeze. Origin is near the nose of
+   the kite so the tail swings naturally below. */
+@keyframes kite-drift {
+  0%, 100% { transform: translateY(-6px) rotate(-6deg); }
+  50%      { transform: translateY(6px) rotate(6deg); }
+}
+
+.kite-drift {
+  transform-origin: 50% 20%;
+  animation: kite-drift 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kite-drift { animation: none; }
+}

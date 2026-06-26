@@ -101,7 +101,7 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
-        <div className="text-sand-700 text-lg font-medium">Loading...</div>
+        <KiteIcon size={48} className="text-sand-900" animate />
       </div>
     );
   }
@@ -126,7 +126,7 @@ export default function App() {
   if (dataLoading && !profile) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-sand-50">
-        <div className="text-sand-700 text-lg font-medium">Loading your data...</div>
+        <KiteIcon size={48} className="text-sand-900" animate />
       </div>
     );
   }

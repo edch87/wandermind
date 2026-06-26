@@ -314,7 +314,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   if (completingMessage) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <KiteIcon size={48} className="text-sand-900 mb-6 animate-pulse" />
+        <KiteIcon size={48} className="text-sand-900 mb-6" animate />
         <p className="text-sand-700 text-base">{completingMessage}</p>
       </div>
     );
