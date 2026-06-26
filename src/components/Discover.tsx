@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { UserProfile, BucketListItem, Category, HereSearchResult } from '../types';
 import { CATEGORY_INFO } from '../types';
 import { getDiscoverPlaces, toSearchResult, SOFT_HEART_MIN_SAVES, type DiscoverPlace } from '../utils/discover';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 import { Heart, MapPin } from '@phosphor-icons/react';
 
 interface Props {
@@ -23,16 +23,12 @@ export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: ()
   return (
     <button onClick={onAdd} className="card text-left w-full relative">
       <div className="place-img-container h-28 overflow-hidden">
-        {place.imageUrl ? (
-          <img src={place.imageUrl} alt={place.name} loading="lazy" className="place-img"
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              img.style.display = 'none';
-              const placeholder = img.nextElementSibling as HTMLElement | null;
-              if (placeholder) placeholder.style.display = 'flex';
-            }} />
-        ) : null}
-        <PlaceholderImage category={place.category} className={place.imageUrl ? 'hidden' : ''} />
+        <PlaceImg
+          src={place.imageUrl}
+          alt={place.name}
+          name={place.name}
+          category={place.category}
+        />
         {showHeart && (
           <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm"
                title={`${place.saveCount} larkers have saved this`}>

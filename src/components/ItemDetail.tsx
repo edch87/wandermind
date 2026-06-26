@@ -7,7 +7,7 @@ import type {
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO } from '../types';
 import { formatOpeningHours, getOpeningHoursStatus } from '../utils/openingHours';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 import { TagPicker } from './AddPlace';
 import {
   Sun, CloudRain, CloudSun,
@@ -233,16 +233,16 @@ export default function ItemDetail({ item, profile, onBack, onSave, onDelete }: 
       <div className="page-enter pb-24">
         {/* Hero */}
         <div className="relative">
-          {(livePhotoUrl || draft.photoUrl) ? (
-            <div className="place-img-container h-48 rounded-none">
-              <img src={livePhotoUrl || draft.photoUrl} alt={draft.name} className="place-img"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            </div>
-          ) : (
-            <div className="place-img-container h-32 rounded-none">
-              <PlaceholderImage category={draft.category} className="absolute inset-0" />
-            </div>
-          )}
+          <div className="place-img-container h-48 rounded-none">
+            <PlaceImg
+              src={livePhotoUrl || draft.photoUrl}
+              alt={draft.name}
+              name={draft.name}
+              category={draft.category}
+              placeholderVariant="detail"
+              loading="eager"
+            />
+          </div>
           <button onClick={cancelEdit}
             className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm shadow-sm">
             <X size={16} />
@@ -428,16 +428,16 @@ export default function ItemDetail({ item, profile, onBack, onSave, onDelete }: 
     <div className="page-enter pb-24">
       {/* Hero */}
       <div className="relative">
-        {photoUrl ? (
-          <div className="place-img-container h-56 rounded-none">
-            <img src={photoUrl} alt={item.name} className="place-img"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          </div>
-        ) : (
-          <div className="place-img-container h-40 rounded-none">
-            <PlaceholderImage category={item.category} className="absolute inset-0" />
-          </div>
-        )}
+        <div className="place-img-container h-56 rounded-none">
+          <PlaceImg
+            src={photoUrl}
+            alt={item.name}
+            name={item.name}
+            category={item.category}
+            placeholderVariant="detail"
+            loading="eager"
+          />
+        </div>
         <button onClick={onBack}
           className="absolute top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm shadow-sm">
           ←

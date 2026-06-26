@@ -6,6 +6,7 @@ import { getRecommendations, findCombos, viableModes } from '../utils/recommenda
 import { getOpeningHoursWarning } from '../utils/openingHours';
 import { getDiscoverPlaces, toSearchResult, type DiscoverPlace } from '../utils/discover';
 import { DiscoverCard } from './Discover';
+import PlaceImg from './PlaceImg';
 import { getSuppressedIds, recordShown } from '../utils/recentShown';
 import {
   Car, Bicycle, Footprints, Train, Dog, Wheelchair, Baby, Warning,
@@ -479,23 +480,21 @@ export default function RecommendationFlow({ profile, items, onBack, onViewItem,
             const nonHoursReasons = reasons.filter(r => !r.startsWith('Closed') && !r.startsWith('May be closed') && !r.startsWith('Only open') && !r.startsWith('Closes at') && !r.startsWith('Open until') && !r.startsWith('Opens at'));
             return (
               <div key={item.id} className="card overflow-hidden">
-                {item.photoUrl && (
-                  <div className="place-img-container h-36">
-                    <img src={item.photoUrl} alt={item.name} className="place-img"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <div className="absolute top-3 left-3 z-10">
-                      <span className={`badge text-white text-[10px] ${idx === 0 ? 'bg-terra-500' : 'bg-sand-900/70'}`}>
-                        {labels[idx]}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <div className="p-4">
-                  {!item.photoUrl && (
-                    <span className={`badge text-white text-[10px] mb-2 ${idx === 0 ? 'bg-terra-500' : 'bg-sand-500'}`}>
+                <div className="place-img-container h-36">
+                  <PlaceImg
+                    src={item.photoUrl}
+                    alt={item.name}
+                    name={item.name}
+                    category={item.category}
+                  />
+                  <div className="absolute top-3 left-3 z-10">
+                    <span className={`badge text-white text-[10px] ${idx === 0 ? 'bg-terra-500' : 'bg-sand-900/70'}`}>
                       {labels[idx]}
                     </span>
-                  )}
+                  </div>
+                </div>
+                <div className="p-4">
+
                   <h3 className="font-semibold text-sand-900 text-base">{item.name}</h3>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                     <span className="badge bg-sand-100 text-sand-700">{travelLabel}</span>

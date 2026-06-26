@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
 import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
 import { Star, MapPin, CaretDown, CaretUp, Clock, Coins } from '@phosphor-icons/react';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 
 interface Props {
   items: BucketListItem[];
@@ -262,17 +262,13 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
                 className="w-full text-left card flex overflow-hidden">
                 {/* Image */}
                 <div className="w-24 flex-shrink-0 bg-sand-200 overflow-hidden self-stretch relative">
-                  {item.photoUrl ? (
-                    <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        img.style.display = 'none';
-                        const placeholder = img.nextElementSibling as HTMLElement | null;
-                        if (placeholder) placeholder.style.display = 'flex';
-                      }} />
-                  ) : null}
-                  <PlaceholderImage category={item.category}
-                    className={item.photoUrl ? 'hidden' : ''} />
+                  <PlaceImg
+                    src={item.photoUrl}
+                    alt={item.name}
+                    name={item.name}
+                    category={item.category}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 {/* Content */}
                 <div className="flex-1 p-3 min-w-0 flex flex-col gap-1.5">

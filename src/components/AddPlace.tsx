@@ -15,6 +15,7 @@ import {
   CloudSun, Sun, CloudRain,
   Dog, Wheelchair, Baby,
 } from '@phosphor-icons/react';
+import PlaceImg from './PlaceImg';
 
 interface Props {
   profile: UserProfile;
@@ -204,7 +205,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
     setLoadingMsg('Finding photos...');
     const searchTags = { ...tags, name: result.title };
-    const photoUrl = await fetchPlaceImage(searchTags, lat, lng);
+    const photoUrl = (await fetchPlaceImage(searchTags, lat, lng)) || undefined;
 
     setLoadingMsg('Auto-categorising...');
     const { categoryUncertain: uncertain, ...inferred } = inferDefaults({ ...tags, name: result.title });
@@ -496,25 +497,24 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   // Review screen
   return (
     <div className="page-enter pb-24">
-      {/* Hero image */}
-      {draft.photoUrl && (
-        <div className="place-img-container h-48 rounded-none">
-          <img src={draft.photoUrl} alt={draft.name} className="place-img"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <button onClick={() => setStep('search')}
-            className="absolute top-4 left-4 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm">
-            ←
-          </button>
-        </div>
-      )}
+      {/* Hero image — always shown; PlaceImg renders the designed placeholder
+          when there's no photo so the layout stays consistent. */}
+      <div className="place-img-container h-48 rounded-none">
+        <PlaceImg
+          src={draft.photoUrl}
+          alt={draft.name}
+          name={draft.name}
+          category={draft.category}
+          placeholderVariant="detail"
+          loading="eager"
+        />
+        <button onClick={() => setStep('search')}
+          className="absolute top-4 left-4 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm">
+          ←
+        </button>
+      </div>
 
       <div className="px-6 pt-5">
-        {!draft.photoUrl && (
-          <div className="flex items-center gap-3 mb-4">
-            <button onClick={() => setStep('search')} className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-600 text-sm">←</button>
-            <h2 className="text-lg font-semibold text-sand-900">Review & save</h2>
-          </div>
-        )}
 
         {/* Place name & travel info */}
         <div className="mb-5">

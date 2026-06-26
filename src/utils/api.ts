@@ -685,8 +685,27 @@ function classifyWeatherCode(code: number): { type: WeatherType; description: st
   return { type: 'cloudy', description: 'Overcast' };
 }
 
-// Fetch place image from Wikidata/Wikipedia (unchanged — still works with any geocoding provider)
-export async function fetchPlaceImage(tags: Record<string, string>, lat: number, lng: number): Promise<string> {
+// Tokenise a place/article name for fuzzy match. Lowercases, strips punctuation,
+// drops generic stopwords ("the", "cafe", "restaurant"…) that match too eagerly.
+const NAME_STOPWORDS = new Set([
+  'the','a','an','of','at','on','in','und','und.','&','-',
+  'cafe','café','restaurant','bar','hotel','park','garten','garden',
+  'museum','kirche','church','platz','strasse','straße','street','road',
+  'haus','house','st','st.','saint','sankt','san','santa',
+]);
+function nameTokens(s: string): Set<string> {
+  return new Set(
+    s.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter(t => t.length >= 3 && !NAME_STOPWORDS.has(t)),
+  );
+}
+
+// Fetch place image from Wikidata/Wikipedia. Returns null when no trustworthy
+// photo is found — callers render PlaceholderImage instead of a broken image.
+export async function fetchPlaceImage(tags: Record<string, string>, lat: number, lng: number): Promise<string | null> {
   // Try 1: Wikidata → get image
   const wikidataId = tags['wikidata'];
   if (wikidataId) {
@@ -725,37 +744,45 @@ export async function fetchPlaceImage(tags: Record<string, string>, lat: number,
     } catch { /* fall through */ }
   }
 
-  // Try 3: Search Wikipedia by place name, but only trust a result whose article
-  // is geotagged near the actual place. This prevents the old failure mode where a
-  // venue named after a person returned that person's photo (people have no coords),
-  // and rejects same-name places in other locations.
+  // Try 3: Search Wikipedia by place name. To avoid the old failure mode (a
+  // venue named after a person returning that person's photo, or a same-name
+  // place in another city), we require BOTH:
+  //   (a) the article is geotagged within ~3km of the place, AND
+  //   (b) the article title shares a non-stopword token with the place name.
   try {
     const placeName = tags['name'] || '';
     if (placeName) {
+      const placeTokens = nameTokens(placeName);
+      if (placeTokens.size === 0) return null; // nothing distinctive to match on
       const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(placeName)}&gsrlimit=5&prop=pageimages|coordinates&pithumbsize=400&format=json&origin=*`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         const pages = data.query?.pages as Record<string, {
+          title?: string;
           thumbnail?: { source: string };
           coordinates?: { lat: number; lon: number }[];
         }> | undefined;
         if (pages) {
-          const MAX_KM = 30; // article must be geographically near the place
+          const MAX_KM = 3; // tight enough to reject a same-name venue across town
           for (const page of Object.values(pages)) {
             const coord = page.coordinates?.[0];
-            if (page.thumbnail?.source && coord) {
-              const distKm = haversineDistanceKm(lat, lng, coord.lat, coord.lon);
-              if (distKm <= MAX_KM) return page.thumbnail.source;
-            }
+            if (!page.thumbnail?.source || !coord || !page.title) continue;
+            const distKm = haversineDistanceKm(lat, lng, coord.lat, coord.lon);
+            if (distKm > MAX_KM) continue;
+            // Title must share at least one meaningful token with the place name
+            const titleTokens = nameTokens(page.title);
+            let overlap = false;
+            for (const t of titleTokens) { if (placeTokens.has(t)) { overlap = true; break; } }
+            if (overlap) return page.thumbnail.source;
           }
         }
       }
     }
   } catch { /* fall through */ }
 
-  // Fallback: Static map tile from HERE
-  return `https://image.maps.hereapi.com/mia/v3/base/mc/${Math.round(lat * 100) / 100},${Math.round(lng * 100) / 100},14/400/300/png8?apiKey=${HERE_API_KEY}`;
+  // No trustworthy photo found. Caller should render PlaceholderImage.
+  return null;
 }
 
 export async function fetchWeatherForecast(lat: number, lng: number): Promise<WeatherForecast[]> {

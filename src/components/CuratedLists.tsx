@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BucketListItem, WeatherForecast, Category } from '../types';
 import { CATEGORY_INFO } from '../types';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 
 interface NavTarget {
   name: string;
@@ -57,17 +57,12 @@ export function ItemRail({ title, items, onNavigate, onSeeAll }: {
           <button key={item.id} onClick={() => onNavigate({ name: 'detail', itemId: item.id })}
             className="flex-shrink-0 w-40 card text-left">
             <div className="place-img-container h-24 overflow-hidden">
-              {item.photoUrl ? (
-                <img src={item.photoUrl} alt={item.name} className="place-img"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    img.style.display = 'none';
-                    const placeholder = img.nextElementSibling as HTMLElement | null;
-                    if (placeholder) placeholder.style.display = 'flex';
-                  }} />
-              ) : null}
-              <PlaceholderImage category={item.category}
-                className={item.photoUrl ? 'hidden' : ''} />
+              <PlaceImg
+                src={item.photoUrl}
+                alt={item.name}
+                name={item.name}
+                category={item.category}
+              />
             </div>
             <div className="p-3">
               <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>

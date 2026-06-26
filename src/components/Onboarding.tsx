@@ -8,7 +8,7 @@ import type { UserProfile, BucketListItem, HereSearchResult, Category } from '..
 import { CATEGORY_INFO } from '../types';
 import { MapPin, Target, BookOpen, Shuffle, Check } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 import curatedMunich from '../data/curated/munich.json';
 
 interface Props {
@@ -461,16 +461,12 @@ export default function Onboarding({ displayName, onComplete }: Props) {
                     }`}
                   >
                     <div className="place-img-container h-24 overflow-hidden">
-                      {entry.imageUrl ? (
-                        <img src={entry.imageUrl} alt={entry.name} loading="lazy" className="place-img"
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                            img.style.display = 'none';
-                            const placeholder = img.nextElementSibling as HTMLElement | null;
-                            if (placeholder) placeholder.style.display = 'flex';
-                          }} />
-                      ) : null}
-                      <PlaceholderImage category={entry.category} className={entry.imageUrl ? 'hidden' : ''} />
+                      <PlaceImg
+                        src={entry.imageUrl}
+                        alt={entry.name}
+                        name={entry.name}
+                        category={entry.category}
+                      />
                       {isSelected && (
                         <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-sand-900 flex items-center justify-center shadow-sm">
                           <Check size={14} color="#fff" weight="bold" />

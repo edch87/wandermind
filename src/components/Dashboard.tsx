@@ -11,7 +11,7 @@ import {
   Shuffle, Plus, MapPin, X,
 } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
-import PlaceholderImage from './PlaceholderImage';
+import PlaceImg from './PlaceImg';
 import CuratedLists from './CuratedLists';
 import type { Category } from '../types';
 
@@ -221,17 +221,12 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         <div className="mx-6 mb-5">
           <div className="card overflow-hidden">
             <div className="place-img-container h-32 overflow-hidden">
-              {surprise.photoUrl ? (
-                <img src={surprise.photoUrl} alt={surprise.name} className="place-img"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    img.style.display = 'none';
-                    const placeholder = img.nextElementSibling as HTMLElement | null;
-                    if (placeholder) placeholder.style.display = 'flex';
-                  }} />
-              ) : null}
-              <PlaceholderImage category={surprise.category}
-                className={surprise.photoUrl ? 'hidden' : ''} />
+              <PlaceImg
+                src={surprise.photoUrl}
+                alt={surprise.name}
+                name={surprise.name}
+                category={surprise.category}
+              />
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
