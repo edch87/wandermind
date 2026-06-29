@@ -352,14 +352,16 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50"
+        className="relative flex flex-col items-center justify-center px-8 text-center bg-sand-50"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <button
           onClick={() => setStep('location')}
-          className="absolute top-6 right-6 text-sm text-sand-600 hover:text-sand-700 transition"
+          aria-label="Skip introduction"
+          className="absolute top-3 right-3 min-h-[44px] min-w-[44px] px-3 flex items-center justify-center text-sm text-sand-700 hover:text-sand-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 rounded-full"
         >
           Skip
         </button>
@@ -368,20 +370,30 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           {slide.icon}
         </div>
 
-        <h2 className="text-2xl font-semibold text-sand-900 mb-3">{slide.title}</h2>
-        <p className="text-sand-700 text-sm leading-relaxed max-w-xs mb-10">
-          {slide.description}
-        </p>
+        <div role="group" aria-roledescription="slide" aria-live="polite">
+          <h2 className="text-2xl font-semibold text-sand-900 mb-3">{slide.title}</h2>
+          <p className="text-sand-700 text-sm leading-relaxed max-w-xs mb-10 mx-auto">
+            {slide.description}
+          </p>
+        </div>
 
-        <div className="flex gap-2 mb-8">
-          {CAROUSEL_SLIDES.map((_, i) => (
+        <div className="flex gap-1 mb-8" role="tablist" aria-label="Introduction slides">
+          {CAROUSEL_SLIDES.map((s, i) => (
             <button
               key={i}
               onClick={() => setSlideIndex(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === slideIndex ? 'bg-sand-900 w-6' : 'bg-sand-300'
-              }`}
-            />
+              role="tab"
+              aria-current={i === slideIndex ? 'true' : undefined}
+              aria-label={`Go to slide ${i + 1} of ${CAROUSEL_SLIDES.length}: ${s.title}`}
+              className="p-3 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-1 focus-visible:ring-offset-sand-50 rounded-full"
+            >
+              <span
+                aria-hidden="true"
+                className={`block h-2 rounded-full transition-all ${
+                  i === slideIndex ? 'bg-sand-900 w-6' : 'bg-sand-500 w-2'
+                }`}
+              />
+            </button>
           ))}
         </div>
 
@@ -393,7 +405,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
               setSlideIndex(slideIndex + 1);
             }
           }}
-          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition"
+          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
         >
           {isLast ? 'Get started' : 'Next'}
         </button>
