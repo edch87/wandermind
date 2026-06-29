@@ -324,15 +324,20 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   if (step === 'welcome') {
     const firstName = displayName.split(' ')[0] || 'there';
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-sand-50">
-        <KiteIcon size={48} className="text-sand-900 mb-6" />
-        <h1 className="text-3xl font-semibold text-sand-900 mb-2">Welcome, {firstName}!</h1>
+      <div
+        className="flex flex-col items-center justify-center px-8 text-center bg-sand-50"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
+        <KiteIcon size={56} className="text-sand-900 mb-6" animate />
+        <h1 className="text-3xl font-semibold text-sand-900 mb-2">
+          <span className="heading-accent">Welcome</span>, {firstName}!
+        </h1>
         <p className="text-sand-700 text-sm mb-10 max-w-xs leading-relaxed">
           Here's how Lark works — it only takes a minute.
         </p>
         <button
           onClick={() => setStep('carousel')}
-          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition"
+          className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
         >
           Show me
         </button>
