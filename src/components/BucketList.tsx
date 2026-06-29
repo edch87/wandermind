@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority } from '../types';
-import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS } from '../types';
-import { Star, MapPin, CaretDown, CaretUp, Clock, Coins } from '@phosphor-icons/react';
+import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority, Vibe, Tag } from '../types';
+import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, VIBE_LABELS, TAG_INFO, TAGS, TAG_SOFT_CAP } from '../types';
+import { VIBE_CATEGORIES } from '../utils/recommendation';
+import { getOpeningHoursStatus } from '../utils/openingHours';
+import { Star, MapPin, CaretDown, CaretUp, Clock, Coins, MagnifyingGlass, X } from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
 
 interface Props {
@@ -14,13 +16,30 @@ interface Props {
 
 type Tab = 'want_to_do' | 'done';
 type SortBy = 'recent' | 'priority' | 'travel' | 'name';
+type MaxTravel = 15 | 30 | 60 | 120 | 180;
+
+const TRAVEL_CHOICES: { val: MaxTravel; label: string }[] = [
+  { val: 15,  label: '≤ 15 min' },
+  { val: 30,  label: '≤ 30 min' },
+  { val: 60,  label: '≤ 1 hr' },
+  { val: 120, label: '≤ 2 hr' },
+  { val: 180, label: '≤ 3 hr' },
+];
+
+/** Vibes shown in the filter. 'flexible' is excluded — "All vibes" already covers it. */
+const FILTERABLE_VIBES: Exclude<Vibe, 'flexible'>[] = ['foodie', 'curious', 'active', 'outdoorsy', 'playful', 'unwind', 'explore'];
 
 export default function BucketList({ items, initialTab, initialCategory, onSelectItem, onNavigate }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'want_to_do');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
+  const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<Category | 'all'>(initialCategory ?? 'all');
+  const [filterVibe, setFilterVibe] = useState<Exclude<Vibe, 'flexible'> | 'all'>('all');
+  const [filterTags, setFilterTags] = useState<Tag[]>([]);
   const [filterCost, setFilterCost] = useState<CostLevel | 'all'>('all');
   const [filterDuration, setFilterDuration] = useState<DurationEstimate | 'all'>('all');
+  const [filterMaxTravel, setFilterMaxTravel] = useState<MaxTravel | 'all'>('all');
+  const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterSetting, setFilterSetting] = useState<Setting | 'all'>('all');
   const [filterWeather, setFilterWeather] = useState<WeatherSuitability | 'all'>('all');
   const [filterGroup, setFilterGroup] = useState<GroupType | 'all'>('all');
@@ -33,14 +52,45 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
   const [showFilters, setShowFilters] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
-  const hasActiveFilters = filterCategory !== 'all' || filterCost !== 'all' || filterDuration !== 'all' ||
+  const hasActiveFilters = filterCategory !== 'all' || filterVibe !== 'all' || filterTags.length > 0 ||
+    filterCost !== 'all' || filterDuration !== 'all' || filterMaxTravel !== 'all' || filterOpenNow ||
     filterSetting !== 'all' || filterWeather !== 'all' || filterGroup !== 'all' || filterSeason !== 'all' ||
     filterTimeOfDay !== 'all' || filterPriority !== 'all' || filterDogFriendly || filterWheelchair || filterStroller;
 
   let filtered = items.filter(i => i.status === tab);
+
+  const q = search.trim().toLowerCase();
+  if (q) {
+    filtered = filtered.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      (i.personalNotes || '').toLowerCase().includes(q) ||
+      (i.description || '').toLowerCase().includes(q) ||
+      (i.address || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (filterOpenNow) filtered = filtered.filter(i => getOpeningHoursStatus(i.openingHours)?.isOpen === true);
   if (filterCategory !== 'all') filtered = filtered.filter(i => i.category === filterCategory);
+  if (filterVibe !== 'all') {
+    const allowedCats = new Set<Category>(VIBE_CATEGORIES[filterVibe]);
+    filtered = filtered.filter(i => allowedCats.has(i.category));
+  }
+  if (filterTags.length > 0) {
+    filtered = filtered.filter(i => {
+      const itemTags = i.tags || [];
+      return filterTags.some(t => itemTags.includes(t));
+    });
+  }
   if (filterCost !== 'all') filtered = filtered.filter(i => i.costLevel === filterCost);
   if (filterDuration !== 'all') filtered = filtered.filter(i => i.durationEstimate === filterDuration);
+  if (filterMaxTravel !== 'all') {
+    filtered = filtered.filter(i => {
+      const times = [i.walkMinutes, i.bikeMinutes, i.carMinutes, i.transitMinutes]
+        .filter((t): t is number => t !== null);
+      if (times.length === 0) return true; // legacy items without per-mode times pass through
+      return Math.min(...times) <= filterMaxTravel;
+    });
+  }
   if (filterSetting !== 'all') filtered = filtered.filter(i => i.setting === filterSetting);
   if (filterWeather !== 'all') filtered = filtered.filter(i => i.weatherSuitability === filterWeather);
   if (filterGroup !== 'all') filtered = filtered.filter(i => i.groupSuitability.includes(filterGroup));
@@ -52,10 +102,19 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
   if (filterStroller) filtered = filtered.filter(i => i.strollerFriendly === true);
 
   const clearAllFilters = () => {
-    setFilterCategory('all'); setFilterCost('all'); setFilterDuration('all');
+    setFilterCategory('all'); setFilterVibe('all'); setFilterTags([]);
+    setFilterCost('all'); setFilterDuration('all'); setFilterMaxTravel('all'); setFilterOpenNow(false);
     setFilterSetting('all'); setFilterWeather('all'); setFilterGroup('all');
     setFilterSeason('all'); setFilterTimeOfDay('all'); setFilterPriority('all');
     setFilterDogFriendly(false); setFilterWheelchair(false); setFilterStroller(false);
+  };
+
+  const toggleTag = (t: Tag) => {
+    setFilterTags(prev => {
+      if (prev.includes(t)) return prev.filter(x => x !== t);
+      if (prev.length >= TAG_SOFT_CAP) return prev; // soft cap, matches AddPlace/ItemDetail
+      return [...prev, t];
+    });
   };
 
   filtered.sort((a, b) => {
@@ -89,6 +148,25 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
         </button>
       </div>
 
+      {/* Search */}
+      <div className="relative mb-3">
+        <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-sand-500 pointer-events-none" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search your places"
+          className="w-full text-base pl-9 pr-9 py-2.5 rounded-[12px] border border-sand-200 bg-white text-sand-900 placeholder:text-sand-500 focus:outline-none focus:border-sand-400"
+        />
+        {search && (
+          <button onClick={() => setSearch('')}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-sand-500 hover:text-sand-700">
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
       {/* Sort & Filter */}
       <div className="flex items-center gap-2 mb-4">
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}
@@ -109,6 +187,14 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
 
       {showFilters && (
         <div className="bg-sand-100 rounded-[20px] p-4 mb-4 space-y-3">
+          {/* Open now — single high-signal toggle, placed first */}
+          <div>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterOpenNow ? 'active' : ''}`}
+                onClick={() => setFilterOpenNow(!filterOpenNow)}>Open now</button>
+            </div>
+          </div>
+
           <div>
             <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Category</label>
             <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as Category | 'all')}
@@ -119,6 +205,37 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Vibe</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterVibe === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterVibe('all')}>All</button>
+              {FILTERABLE_VIBES.map(v => (
+                <button key={v} className={`toggle-btn text-xs ${filterVibe === v ? 'active' : ''}`}
+                  onClick={() => setFilterVibe(v)}>{VIBE_LABELS[v]}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">
+              Tags{filterTags.length > 0 && ` (${filterTags.length}/${TAG_SOFT_CAP})`}
+            </label>
+            <div className="toggle-group">
+              {TAGS.map(t => {
+                const selected = filterTags.includes(t);
+                const atCap = !selected && filterTags.length >= TAG_SOFT_CAP;
+                return (
+                  <button key={t}
+                    disabled={atCap}
+                    className={`toggle-btn text-xs ${selected ? 'active' : ''} ${atCap ? 'opacity-40' : ''}`}
+                    onClick={() => toggleTag(t)}>{TAG_INFO[t].label}</button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Cost</label>
             <div className="toggle-group">
@@ -130,6 +247,7 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
               ))}
             </div>
           </div>
+
           <div>
             <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Time needed</label>
             <div className="toggle-group">
@@ -141,6 +259,19 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
               ))}
             </div>
           </div>
+
+          <div>
+            <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Within travel time</label>
+            <div className="toggle-group">
+              <button className={`toggle-btn text-xs ${filterMaxTravel === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterMaxTravel('all')}>Any</button>
+              {TRAVEL_CHOICES.map(({ val, label }) => (
+                <button key={val} className={`toggle-btn text-xs ${filterMaxTravel === val ? 'active' : ''}`}
+                  onClick={() => setFilterMaxTravel(val)}>{label}</button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="text-[10px] font-medium text-sand-700 uppercase tracking-wider block mb-1">Good for</label>
             <div className="toggle-group">
@@ -246,9 +377,11 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
         <div className="text-center py-16">
           <div className="flex justify-center mb-3"><MapPin size={32} className="text-sand-300" /></div>
           <p className="text-sm text-sand-700 mb-4">
-            {tab === 'want_to_do' ? 'No places yet. Start adding some!' : 'Nothing completed yet. Get out there!'}
+            {q || hasActiveFilters
+              ? 'No places match your filters.'
+              : tab === 'want_to_do' ? 'No places yet. Start adding some!' : 'Nothing completed yet. Get out there!'}
           </p>
-          {tab === 'want_to_do' && (
+          {tab === 'want_to_do' && !q && !hasActiveFilters && (
             <button onClick={() => onNavigate({ name: 'add' })}
               className="px-6 py-2.5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium">Add a place</button>
           )}

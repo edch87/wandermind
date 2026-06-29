@@ -15,7 +15,9 @@ const COST_RANK: Record<CostLevel, number> = {
 
 // Vibe → categories (hard filter when one or more non-flexible vibes selected).
 // Sourced from docs/categories.xlsx Sheet 2 (Vibe → Categories map). 8 vibes incl. `active`.
-const VIBE_CATEGORIES: Record<Exclude<Vibe, 'flexible'>, Category[]> = {
+// Exported so other surfaces (BucketList filter) can reuse the same mapping
+// without redefining it — single source of truth.
+export const VIBE_CATEGORIES: Record<Exclude<Vibe, 'flexible'>, Category[]> = {
   foodie:    ['food_drink'],
   curious:   ['museum_gallery', 'historical', 'religious_site', 'neighbourhood_walks'],
   outdoorsy: ['nature_landscape', 'park_garden', 'beach_water', 'neighbourhood_walks'],

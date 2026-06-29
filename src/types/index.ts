@@ -272,6 +272,20 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
   evening: 'Evening',
 };
 
+/** Display labels for the vibe vocabulary. RecommendationFlow currently inlines
+ *  its own labels alongside icons; this map is the canonical source for surfaces
+ *  (like BucketList filters) that only need the text. */
+export const VIBE_LABELS: Record<Vibe, string> = {
+  flexible: 'Open to anything',
+  foodie: 'Foodie',
+  curious: 'Curious',
+  active: 'Active',
+  outdoorsy: 'Outdoorsy',
+  playful: 'Playful',
+  unwind: 'Unwind',
+  explore: 'Explore',
+};
+
 // Format travel duration nicely: 45 min, 1hr 30mins, 2hrs 15mins
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
