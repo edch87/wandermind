@@ -133,6 +133,11 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   const [searchResults, setSearchResults] = useState<HereSearchResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [searching, setSearching] = useState(false);
+  // Tracks whether the user has run at least one search whose result is the
+  // current `searchResults`. Lets us distinguish "haven't searched yet" from
+  // "searched and got zero" so the empty-state copy only shows in the latter
+  // case. Cleared whenever the query string changes.
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Discover-step selection state (keyed by curated entry key)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -222,12 +227,14 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     setSearching(true);
     const results = await searchPlaces(searchQuery);
     setSearchResults(results);
+    setHasSearched(true);
     setSearching(false);
   };
 
   const selectSearchResult = (result: HereSearchResult) => {
     setSelectedLocation({ lat: result.position.lat, lng: result.position.lng, address: result.address.label });
     setSearchResults([]);
+    setHasSearched(false);
     setSearchQuery(result.title);
   };
 
@@ -573,7 +580,10 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
   // ── Location setup ──
   return (
-    <div className="min-h-screen px-6 py-8 bg-sand-50">
+    <div
+      className="px-6 py-8 bg-sand-50"
+      style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+    >
       <div className="mb-1">
         <h2 className="text-xl font-semibold text-sand-900 mt-1">
           Where's <span className="heading-accent">home?</span>
@@ -583,26 +593,52 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         </p>
       </div>
 
-      <div className="mt-5">
-        <label className="text-xs font-medium text-sand-600 uppercase tracking-wider mb-1.5 block">
+      <form
+        className="mt-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSearch();
+        }}
+      >
+        <label htmlFor="home-location-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1.5 block">
           Home location
         </label>
         <div className="flex gap-2 mb-3">
           <input
+            id="home-location-input"
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (hasSearched) setHasSearched(false);
+            }}
             placeholder="Street, neighbourhood, or postcode"
-            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 bg-white"
+            autoComplete="street-address"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="search"
+            enterKeyHint="search"
+            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white"
           />
           <button
-            onClick={handleSearch}
+            type="submit"
             disabled={searching}
-            className="px-5 py-3 bg-sand-900 text-sand-100 rounded-full text-sm font-medium hover:bg-sand-800 disabled:opacity-50"
+            aria-label={searching ? 'Searching' : 'Search'}
+            className="min-h-[44px] px-5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium hover:bg-sand-800 disabled:opacity-50 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
-            {searching ? '...' : 'Search'}
+            {searching ? 'Searching' : 'Search'}
           </button>
+        </div>
+
+        <div aria-live="polite" className="sr-only">
+          {searching
+            ? 'Searching for matches'
+            : hasSearched && searchResults.length === 0
+              ? 'No matches found'
+              : searchResults.length > 0
+                ? `${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'} found`
+                : ''}
         </div>
 
         {searchResults.length > 0 && (
@@ -610,8 +646,9 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             {searchResults.map((r) => (
               <button
                 key={r.id}
+                type="button"
                 onClick={() => selectSearchResult(r)}
-                className="w-full text-left px-4 py-3 text-sm hover:bg-sand-50 border-b border-sand-100 last:border-0 text-sand-800"
+                className="w-full text-left min-h-[44px] px-4 py-3 text-sm hover:bg-sand-50 border-b border-sand-100 last:border-0 text-sand-800 focus:outline-none focus-visible:bg-sand-50 focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-inset"
               >
                 {r.address.label}
               </button>
@@ -619,17 +656,24 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           </div>
         )}
 
-        {selectedLocation && (
-          <p className="text-xs text-forest-600 mb-4 px-1">
-            ✓ {selectedLocation.address.substring(0, 80)}
+        {hasSearched && !searching && searchResults.length === 0 && (
+          <p className="text-sm text-sand-700 mb-3 px-1">
+            No matches. Try a city, postcode, or wider area.
           </p>
         )}
-      </div>
+
+        {selectedLocation && (
+          <p className="text-sm text-forest-600 mb-4 px-1 flex items-center gap-1.5">
+            <Check size={16} weight="bold" aria-hidden="true" />
+            <span>{selectedLocation.address.substring(0, 80)}</span>
+          </p>
+        )}
+      </form>
 
       <button
         onClick={() => setStep('pin')}
         disabled={!selectedLocation}
-        className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2"
+        className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
       >
         Continue
       </button>
