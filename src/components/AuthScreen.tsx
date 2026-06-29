@@ -114,7 +114,10 @@ export default function AuthScreen({ onAuthSuccess, initialMode = 'login', onPas
     'w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:ring-2 focus:ring-sand-700 focus:border-sand-700 bg-white';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-8 bg-gradient-to-b from-sand-100 to-sand-50">
+    <div
+      className="flex flex-col items-center justify-center px-8 bg-gradient-to-b from-sand-100 to-sand-50"
+      style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+    >
       <div className="w-full max-w-xs">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-5">

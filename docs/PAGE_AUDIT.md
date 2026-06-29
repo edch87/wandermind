@@ -38,6 +38,7 @@ File: `src/components/AuthScreen.tsx`
 11. Kite mark bumped from 40px to 56px with `animate` (respects `prefers-reduced-motion` via existing CSS).
 12. Background changed from flat `sand-50` to `bg-gradient-to-b from-sand-100 to-sand-50`.
 13. Sign-up name label changed from question copy to "Your name" with the same uppercase tracking-wider style as the other labels.
+14. Fixed phantom vertical scroll: outer container switched from `min-h-screen` (100vh) to `minHeight: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))`. `#root` already provides safe-area padding plus `min-height: 100dvh`; the old `100vh` overshot the visible viewport on iOS Safari (URL bar) and in PWA standalone (notch + home indicator insets).
 
 ### Accessibility check (WCAG 2.1 AA)
 
