@@ -5,8 +5,8 @@ import { supabase } from '../utils/supabase';
 import { generateId } from '../utils/storage';
 import { markHomePinRefined } from '../utils/homePinPrompt';
 import type { UserProfile, BucketListItem, HereSearchResult, Category } from '../types';
-import { CATEGORY_INFO } from '../types';
-import { MapPin, Target, BookOpen, Shuffle, Check } from '@phosphor-icons/react';
+import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS } from '../types';
+import { MapPin, Target, BookOpen, Shuffle, Check, Clock, Coins } from '@phosphor-icons/react';
 import KiteIcon from './KiteIcon';
 import PlaceImg from './PlaceImg';
 import curatedMunich from '../data/curated/munich.json';
@@ -493,6 +493,12 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
+    // Mirror to touchEndX so a tap (which fires no touchmove) produces a zero
+    // diff in handleTouchEnd. Without this reset, touchEndX kept its previous
+    // value (initial 0) and any tap at clientX > 50 read as a phantom swipe,
+    // double-incrementing slideIndex when the underlying button's onClick also
+    // fired. That was the slide-2 / slide-4 skip.
+    touchEndX.current = e.targetTouches[0].clientX;
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
@@ -500,10 +506,10 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 50) {
-      if (diff > 0 && slideIndex < CAROUSEL_SLIDES.length - 1) {
-        setSlideIndex(slideIndex + 1);
-      } else if (diff < 0 && slideIndex > 0) {
-        setSlideIndex(slideIndex - 1);
+      if (diff > 0) {
+        setSlideIndex(s => Math.min(s + 1, CAROUSEL_SLIDES.length - 1));
+      } else {
+        setSlideIndex(s => Math.max(s - 1, 0));
       }
     }
   };
@@ -603,7 +609,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             if (isLast) {
               setStep('location');
             } else {
-              setSlideIndex(slideIndex + 1);
+              setSlideIndex(s => Math.min(s + 1, CAROUSEL_SLIDES.length - 1));
             }
           }}
           className="w-full max-w-xs bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
@@ -644,7 +650,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             A few <span className="heading-accent">near you</span>
           </h2>
           <p className="text-sm text-sand-700 mt-2">
-            Tap any place to add it to your bucket list. You can always add more later.
+            Tap any place to add it to your bucket list to get you started.
           </p>
         </div>
 
@@ -688,10 +694,11 @@ export default function Onboarding({ displayName, onComplete }: Props) {
               <div
                 role="list"
                 aria-labelledby={headingId}
-                className="grid grid-cols-2 gap-3 px-6"
+                className="space-y-3 px-6"
               >
                 {s.items.map(entry => {
                   const isSelected = selectedKeys.has(entry.key);
+                  const cat = CATEGORY_INFO[entry.category];
                   return (
                     <div key={entry.key} role="listitem">
                       <button
@@ -699,16 +706,17 @@ export default function Onboarding({ displayName, onComplete }: Props) {
                         onClick={() => toggleSelection(entry.key)}
                         aria-pressed={isSelected}
                         aria-label={`${entry.name}${isSelected ? ', selected' : ''}`}
-                        className={`card text-left w-full relative transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 ${
+                        className={`card text-left w-full flex overflow-hidden relative transition-all active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 ${
                           isSelected ? 'ring-2 ring-sand-900 ring-offset-1 ring-offset-sand-50' : ''
                         }`}
                       >
-                        <div className="place-img-container h-32 overflow-hidden">
+                        <div className="w-24 flex-shrink-0 bg-sand-200 overflow-hidden self-stretch relative">
                           <PlaceImg
                             src={entry.imageUrl}
                             alt={entry.name}
                             name={entry.name}
                             category={entry.category}
+                            className="w-full h-full object-cover"
                           />
                           {isSelected && (
                             <div
@@ -719,8 +727,13 @@ export default function Onboarding({ displayName, onComplete }: Props) {
                             </div>
                           )}
                         </div>
-                        <div className="p-2.5">
-                          <div className="text-sm font-medium text-sand-900 truncate">{entry.name}</div>
+                        <div className="flex-1 p-3 min-w-0 flex flex-col gap-1.5">
+                          <h4 className="text-sm font-medium text-sand-900 truncate">{entry.name}</h4>
+                          <div className="flex items-center gap-1.5 flex-wrap content-start">
+                            <span className="badge bg-sand-100 text-sand-700 whitespace-nowrap">{cat.label}</span>
+                            <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 whitespace-nowrap"><Clock size={10} />{DURATION_LABELS[entry.durationEstimate]}</span>
+                            <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1 whitespace-nowrap"><Coins size={10} />{COST_LABELS[entry.costLevel]}</span>
+                          </div>
                         </div>
                       </button>
                     </div>
@@ -747,15 +760,25 @@ export default function Onboarding({ displayName, onComplete }: Props) {
               ? `${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'} selected`
               : 'No places selected'}
           </div>
-          <button
-            type="button"
-            onClick={() => handleFinishDiscover(hasSelection)}
-            className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-          >
-            {hasSelection
-              ? `Add ${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'}`
-              : 'Skip for now'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStep('pin')}
+              aria-label="Back to confirm home"
+              className="flex-1 min-h-[44px] py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFinishDiscover(hasSelection)}
+              className="flex-[2] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+            >
+              {hasSelection
+                ? `Add ${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'}`
+                : 'Skip for now'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -982,13 +1005,22 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         )}
       </form>
 
-      <button
-        onClick={() => setStep('pin')}
-        disabled={!selectedLocation}
-        className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition mt-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-      >
-        Continue
-      </button>
+      <div className="flex gap-2 mt-2">
+        <button
+          onClick={() => setStep('carousel')}
+          aria-label="Back to introduction"
+          className="flex-1 min-h-[44px] py-4 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => setStep('pin')}
+          disabled={!selectedLocation}
+          className="flex-[2] bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-lg hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   );
 }
