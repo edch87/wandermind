@@ -3,7 +3,7 @@ import { supabase } from './utils/supabase';
 import { getProfile, getItems, saveProfile, saveItem, saveItems, deleteItem } from './utils/storage';
 import type { UserProfile, BucketListItem, Category, HereSearchResult } from './types';
 import type { Session } from '@supabase/supabase-js';
-import { House, ClipboardText, Plus, Gear } from '@phosphor-icons/react';
+import { House, ClipboardText, Plus, Compass } from '@phosphor-icons/react';
 import KiteIcon from './components/KiteIcon';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
@@ -166,13 +166,15 @@ export default function App() {
 
   const navigate = (s: Screen) => setScreen(s);
 
-  // Navigation bar component
+  // Navigation bar component. Settings was here historically but lives behind
+  // the initials avatar in the Dashboard header now (2026-06-30 audit) — it's
+  // rarely visited and Discover earns the slot as a daily return reason.
   const navItems: { Icon: React.ElementType; label: string; s: Screen }[] = [
     { Icon: House, label: 'Home', s: { name: 'dashboard' } },
     { Icon: ClipboardText, label: 'My List', s: { name: 'list' } },
     { Icon: Plus, label: 'Add', s: { name: 'add' } },
     { Icon: KiteIcon, label: 'Suggest', s: { name: 'recommend' } },
-    { Icon: Gear, label: 'Settings', s: { name: 'settings' } },
+    { Icon: Compass, label: 'Discover', s: { name: 'discover' } },
   ];
 
   const NavBar = () => (

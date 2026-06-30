@@ -150,7 +150,7 @@ Files: `src/components/Onboarding.tsx`, plus `src/index.css` and new `docs/CAPAC
 ## 3. Dashboard
 
 Status: done (2026-06-30)
-Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/components/Discover.tsx` (DiscoverCard), `src/components/ItemDetail.tsx` (refactor only), `src/utils/travelDisplay.ts` (new), `src/index.css`
+Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/components/Discover.tsx` (DiscoverCard), `src/components/ItemDetail.tsx` (refactor only), `src/utils/travelDisplay.ts` (new), `src/index.css`, `src/App.tsx` (nav restructure)
 
 ### Shipped changes
 
@@ -158,10 +158,17 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
 
 1. Time-of-day greeting: morning (05-12), afternoon (12-17), evening (17-22), "Hello" fallback for late night (22-05). Second line "let's go on a lark" stays consistent.
 
-**Quick actions**
+**Quick actions** (revised same-day after design pass)
 
-1. Restructured from three equal-width buttons to one-on-top / two-below. "Suggest something" gets full-width top billing with `KiteIcon` inline next to the label. "Surprise me" (renamed from "I'm feeling spontaneous") and "Add place" share the row below.
-2. Focus rings on all three buttons (`focus-visible:ring-sand-700` with `sand-50` offset).
+1. Hierarchy now reads through colour and size, not just position. "Suggest something" is the hero: tall terra-500 card, large centred kite icon, primary label plus a subtitle ("Find the right place for right now"). "Surprise me" (renamed from "I'm feeling spontaneous") and "Add place" sit below as slim sand-200 pill buttons (icon + label inline, ≥44px height). Icon arrangement is now consistent across the secondaries.
+2. The original three-equal-buttons layout was rejected for inconsistent icon placement and uneven label heights; the first revision (sand-900 hero) was rejected because the primary action should be the brand orange.
+3. Focus rings on all three buttons (`focus-visible:ring-sand-700` with `sand-50` offset).
+
+**Header + avatar (nav restructure)**
+
+1. Initials avatar (`getInitials(displayName)`, max 2 chars, uppercase) sits top-right of the Dashboard header. Tap opens Settings. 44x44 hit area, descriptive `aria-label="Open settings"`, focus ring.
+2. Bottom nav: Settings slot replaced with Discover (Compass icon). Settings is rarely visited and Discover earns the slot as a daily return reason.
+3. Header switched to a flex row: greeting on the left, avatar on the right. Long names truncate cleanly via `flex-1 min-w-0` on the greeting block.
 
 **Wind gust animation (replaces confetti)**
 
@@ -187,6 +194,7 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
    - **Library-size cap**: <10 items → max 3 rails; <20 items → max 5; otherwise uncapped.
    - **Soft dedup**: each rail prefers items not yet shown in earlier rails. Falls back to repeats only when the rail would otherwise drop below `MIN_RAIL_ITEMS`. Stops the same 5 places appearing under 6 different lenses.
 2. Constants documented inline.
+3. **"Short on time" filter now uses total trip time**, not just activity duration. Trip = (one-way preferred-mode minutes × 2) + activity duration midpoint, capped at `SHORT_ON_TIME_MAX_MIN` (120 min). Walking auto-override at ≤15 min applies; legacy items with null preferred-mode minutes fall back to haversine + average speeds. Before, an 88-minute drive for a 30-minute activity could appear under "Short on time"; Edward flagged this 2026-06-30.
 
 **Travel display utility** (`src/utils/travelDisplay.ts`, new file)
 
@@ -199,20 +207,22 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
 **Rail cards** (`ItemRail` in `CuratedLists.tsx`)
 
 1. Container switched from generic `<div>` to `<section aria-labelledby>` landmark; scroll list given `role="list"` and cards `role="listitem"`.
-2. Caption switched from `text-[10px]` to `text-xs` ([[feedback-typography-minimum]]) and from "X km · cost" to `formatTravelShort` output.
+2. Caption switched from `text-[10px]` to `text-xs` ([[feedback-typography-minimum]]) and from "X km · cost" to `formatTravelShort` output. Time portion now goes through `formatDuration` so the dashboard and detail page read the same ("1hr 30min by car", not "90 min by car").
 3. Each card carries a descriptive `aria-label`: name, category, travel time, cost.
 4. Card image gets `alt=""` (decorative; name appears in label).
 5. Focus rings on every card and on the "See all" link; "See all" bumped to `min-h-[44px]`, text contrast lifted from `sand-600` to `sand-700` for AA.
 6. Active press feedback (`active:scale-[0.98]`) on cards.
+7. **Card layout consistency**: card button is now `flex flex-col` with the image marked `flex-shrink-0`, so the image stays fixed at the top regardless of name length. Name uses `line-clamp-2 leading-snug` so every card in the rail has the same text block height. Before, a long-name card stretched the rail and shorter-name siblings centred their image vertically — Edward flagged the visual mismatch.
 
 **Discover card** (`Discover.tsx`)
 
-1. New optional `preferred` prop. When passed, the card shows `estimateTravelShortFromDistance(distanceKm, preferred)` instead of "~X km".
+1. New optional `preferred` prop. When passed, the card shows `estimateTravelShortFromDistance(distanceKm, preferred)` instead of "~X km". Time portion goes through `formatDuration`.
 2. Caption bumped from `text-[10px]` to `text-xs`.
 3. Descriptive `aria-label` ("Add {name}, {category}, {travel}"). MapPin icon marked `aria-hidden`.
 4. Image `alt=""` (decorative; name in label).
 5. Focus ring + active scale.
 6. Heart badge marked `aria-hidden` (decorative; not the primary action).
+7. Same `flex flex-col` + `flex-shrink-0` + `line-clamp-2` treatment as `ItemRail` cards so the row reads as one consistent visual system.
 
 **Refine-home banner**
 
@@ -255,6 +265,7 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
 - **Pull-to-refresh**: discussed, not built — would lean on Capacitor for native gesture; web alternative not pursued in v1.
 - **3-day mini-forecast**: discussed as a future enhancement; not in v1 to keep the dashboard focused.
 - **Refine-home banner deep link**: still routes to full Settings; deep link to pin step deferred.
+- **Settings reachable only from Dashboard**: with Settings removed from the bottom nav, users on List / Discover / Detail / Suggest can't reach Settings without going Home first. Acceptable for v1 (Settings is rarely visited mid-task) but worth revisiting if user feedback flags it. Long-term answer: avatar in the top-right of every primary screen header.
 
 ---
 
@@ -285,6 +296,17 @@ Status: pending
 ## 8. Discover
 
 Status: pending
+
+### Pre-audit notes (recorded 2026-06-30)
+
+- **Nav promotion**: as of 2026-06-30 Discover replaces Settings in the bottom nav (Settings is now behind the initials avatar in the Dashboard header). Discover is intended to be a daily return reason; the full screen should match that ambition.
+- **Highlight ideas to consider during the audit**: bigger lead card per category (hero with description and provenance), section subtitles that explain the picks ("Off the beaten path", "Worth the drive"), saved-heart badges visible on community picks, optional editorial blurbs.
+- **v1 scaling plan for users outside Munich** (curation is Munich-only today):
+  1. **Wikidata-first with category guardrails**: tighten the Wikidata filter so only Lark-worthy entries surface (museums with art classifications, viewpoints with elevation, named parks, etc.). Free, immediate, raises the floor without manual curation.
+  2. **Community fallback**: once a city has enough saves, community signals replace curated. Aligns with social-deferred-to-v1.1 and grows naturally with usage.
+- **Deferred to v1.5**: LLM-assisted curation (draft starter list per city from Wikidata + Wikipedia, Edward reviews). Skipped for v1 to keep cost at zero and avoid live LLM calls in the user path.
+- **Not in v1**: manual city-by-city curation beyond Munich. Re-evaluate after friends-and-family traction in adjacent cities.
+- Track Discover-scale follow-ups in `IDEAS.md` rather than here; this section is for the audit itself.
 
 ---
 

@@ -43,6 +43,16 @@ function getGreeting(name: string): string {
   return `Hello ${name}`; // 22:00-04:59 — late night, keep it neutral
 }
 
+/** Up to two initials from the user's display name, for the avatar button.
+ *  Falls back to a single character when there's only one word, and to a
+ *  bullet when displayName is empty (shouldn't happen post-onboarding). */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '•';
+  if (parts.length === 1) return parts[0]!.slice(0, 1).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
+
 export default function Dashboard({ profile, items, onNavigate }: Props) {
   const [weather, setWeather] = useState<WeatherForecast[]>([]);
   const [surprise, setSurprise] = useState<BucketListItem | null>(null);
@@ -155,15 +165,27 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
       )}
 
       {/* Header */}
-      <header className="px-6 pt-8 pb-4">
-        <h1 className="text-2xl font-semibold text-sand-900">
-          {getGreeting(profile.displayName)}, let's go on a <span className="heading-accent">lark</span>
-        </h1>
-        {items.length > 0 && (
-          <p className="text-xs text-sand-700 mt-1">
-            {todoItems.length} to explore · {doneItems.length} visited
-          </p>
-        )}
+      <header className="px-6 pt-8 pb-4 flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-semibold text-sand-900">
+            {getGreeting(profile.displayName)}, let's go on a <span className="heading-accent">lark</span>
+          </h1>
+          {items.length > 0 && (
+            <p className="text-xs text-sand-700 mt-1">
+              {todoItems.length} to explore · {doneItems.length} visited
+            </p>
+          )}
+        </div>
+        {/* Initials avatar opens Settings. Moved here from the bottom nav so
+            Discover can take that slot — Settings is rarely visited; surfacing
+            it as a tap-target on the header keeps it accessible. */}
+        <button
+          onClick={() => onNavigate({ name: 'settings' })}
+          aria-label="Open settings"
+          className="flex-shrink-0 w-11 h-11 rounded-full bg-sand-200 text-sand-900 text-sm font-semibold flex items-center justify-center hover:bg-sand-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+        >
+          {getInitials(profile.displayName)}
+        </button>
       </header>
 
       {/* One-time prompt for users whose home is still city-level. New users
@@ -232,32 +254,36 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
         </section>
       )}
 
-      {/* Quick actions — "Suggest something" gets top billing, the other two
-          share the row below. Equal-height buttons with focus rings. */}
+      {/* Quick actions — "Suggest something" is the hero (tall terra card,
+          large centred kite), Surprise me + Add place are slim secondary pills
+          beneath. Visual hierarchy reads "one main thing, two utilities". */}
       <div className="px-6 mb-6">
         <button
           onClick={() => onNavigate({ name: 'recommend' })}
-          className="w-full bg-sand-900 text-sand-100 rounded-[20px] py-4 text-center hover:bg-sand-800 transition mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          className="w-full bg-terra-500 text-white rounded-[20px] py-6 px-4 text-center hover:bg-terra-600 transition mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
         >
-          <div className="flex justify-center items-center gap-2">
-            <KiteIcon size={20} aria-hidden="true" />
-            <span className="text-sm font-medium">Suggest something</span>
-          </div>
+          <div className="flex justify-center mb-2"><KiteIcon size={32} aria-hidden="true" /></div>
+          <div className="text-base font-semibold">Suggest something</div>
+          <div className="text-xs text-white/80 mt-0.5">Find the right place for right now</div>
         </button>
         <div className="flex gap-3">
           <button
             onClick={handleSpontaneous}
-            className="flex-1 bg-terra-500 text-white rounded-[20px] py-4 text-center hover:bg-terra-600 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+            className="flex-1 min-h-[44px] bg-sand-200 text-sand-900 rounded-full px-4 py-2 hover:bg-sand-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
-            <div className="flex justify-center mb-1"><Shuffle size={20} aria-hidden="true" /></div>
-            <div className="text-xs font-medium">Surprise me</div>
+            <div className="flex items-center justify-center gap-2">
+              <Shuffle size={18} aria-hidden="true" />
+              <span className="text-sm font-medium">Surprise me</span>
+            </div>
           </button>
           <button
             onClick={() => onNavigate({ name: 'add' })}
-            className="flex-1 bg-sand-200 text-sand-900 rounded-[20px] py-4 text-center hover:bg-sand-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+            className="flex-1 min-h-[44px] bg-sand-200 text-sand-900 rounded-full px-4 py-2 hover:bg-sand-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
-            <div className="flex justify-center mb-1"><Plus size={20} aria-hidden="true" /></div>
-            <div className="text-xs font-medium">Add place</div>
+            <div className="flex items-center justify-center gap-2">
+              <Plus size={18} aria-hidden="true" />
+              <span className="text-sm font-medium">Add place</span>
+            </div>
           </button>
         </div>
       </div>

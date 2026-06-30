@@ -1,4 +1,5 @@
 import type { BucketListItem, PreferredTransport } from '../types';
+import { formatDuration } from '../types';
 
 /** Walking auto-override threshold: at ≤15 min the place is essentially next
  *  door — surface walking instead of the user's preferred mode regardless of
@@ -55,16 +56,17 @@ export function pickDisplayMode(
   return { mode: preferred, minutes, walkOverride: false };
 }
 
-/** Compact label for rail and surprise cards: "12 min walk" or "20 min by car".
- *  Falls back to "X km" when minutes are unknown (legacy item with no stored
- *  per-mode times). */
+/** Compact label for rail and surprise cards: "12 min walk" or "1hr 30min by car".
+ *  Uses `formatDuration` from types/index.ts so the time portion reads the same
+ *  here as on the detail page and recommend flow. Falls back to "X km" when
+ *  minutes are unknown (legacy item with no stored per-mode times). */
 export function formatTravelShort(
   item: BucketListItem,
   preferred: PreferredTransport,
 ): string {
   const display = pickDisplayMode(item, preferred);
   if (display.minutes != null) {
-    return `${display.minutes} min ${TRANSPORT_META[display.mode].shortLabel}`;
+    return `${formatDuration(display.minutes)} ${TRANSPORT_META[display.mode].shortLabel}`;
   }
   return `${item.travelDistanceKm} km`;
 }
@@ -78,7 +80,7 @@ export function estimateTravelShortFromDistance(
 ): string {
   const walkMin = Math.round((distanceKm / FALLBACK_SPEED_KMH.walk) * 60);
   if (walkMin <= WALK_OVERRIDE_MAX_MIN) {
-    return `${walkMin} min ${TRANSPORT_META.walk.shortLabel}`;
+    return `${formatDuration(walkMin)} ${TRANSPORT_META.walk.shortLabel}`;
   }
   // Transit has no fallback speed (varies wildly); estimate using car for the
   // discover rail when transit is preferred — it's still a sense-of-distance
@@ -86,5 +88,5 @@ export function estimateTravelShortFromDistance(
   const speedMode: 'walk' | 'bike' | 'car' = preferred === 'bike' ? 'bike' : 'car';
   const minutes = Math.round((distanceKm / FALLBACK_SPEED_KMH[speedMode]) * 60);
   const labelMode = preferred === 'bike' ? 'bike' : preferred === 'transit' ? 'transit' : 'car';
-  return `${minutes} min ${TRANSPORT_META[labelMode].shortLabel}`;
+  return `${formatDuration(minutes)} ${TRANSPORT_META[labelMode].shortLabel}`;
 }

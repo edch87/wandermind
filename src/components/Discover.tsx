@@ -37,9 +37,9 @@ export function DiscoverCard({ place, onAdd, preferred }: {
     <button
       onClick={onAdd}
       aria-label={`Add ${place.name}, ${categoryLabel}, ${travelLabel}`}
-      className="card text-left w-full relative focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 active:scale-[0.98] transition-transform"
+      className="card text-left w-full relative flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 active:scale-[0.98] transition-transform"
     >
-      <div className="place-img-container h-28 overflow-hidden">
+      <div className="place-img-container h-28 overflow-hidden flex-shrink-0">
         <PlaceImg
           src={place.imageUrl}
           alt=""
@@ -55,7 +55,7 @@ export function DiscoverCard({ place, onAdd, preferred }: {
         )}
       </div>
       <div className="p-3">
-        <div className="text-xs font-medium text-sand-900 truncate">{place.name}</div>
+        <div className="text-xs font-medium text-sand-900 line-clamp-2 leading-snug">{place.name}</div>
         <div className="text-xs text-sand-700 mt-1 flex items-center gap-1">
           <MapPin size={10} aria-hidden="true" /> {travelLabel}
         </div>

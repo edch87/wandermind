@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { BucketListItem, UserProfile, WeatherForecast, Category } from '../types';
+import type { BucketListItem, UserProfile, WeatherForecast, Category, DurationEstimate } from '../types';
 import { CATEGORY_INFO } from '../types';
-import { formatTravelShort } from '../utils/travelDisplay';
+import { formatTravelShort, WALK_OVERRIDE_MAX_MIN } from '../utils/travelDisplay';
 import PlaceImg from './PlaceImg';
 
 interface NavTarget {
@@ -15,6 +15,49 @@ const MIN_RAIL_ITEMS = 3;
 const MAX_RAIL_ITEMS = 10;
 const MAX_CATEGORY_RAILS = 3;
 const MAX_RECENT_ITEMS = 5;
+
+/** "Short on time" rail cap: total round-trip + activity must fit in this
+ *  many minutes. A 30-min activity 90-min away doesn't fit — total = 30 + 180. */
+const SHORT_ON_TIME_MAX_MIN = 120;
+
+/** Activity-duration midpoints (minutes) used by the trip-total estimator. */
+const DURATION_MIDPOINT_MIN: Record<DurationEstimate, number> = {
+  under_1h: 45,
+  '1_2h': 90,
+  '2_3h': 150,
+  half_day: 300,
+  full_day: 480,
+};
+
+/** Fallback speeds (km/h) for legacy items missing a stored per-mode minute
+ *  count. Mirrors `recommendation.ts` / `travelDisplay.ts` so trip estimates
+ *  feel consistent across the app. */
+const FALLBACK_SPEED_KMH: Record<'walk' | 'bike' | 'car', number> = {
+  walk: 4.5,
+  bike: 15,
+  car: 60,
+};
+
+/** One-way travel minutes for the rail filter: preferred mode with walking
+ *  auto-override at ≤15 min walk, falling back to a haversine guess when the
+ *  preferred mode's stored minute count is null (legacy items). */
+function oneWayMinutes(item: BucketListItem, preferred: 'car' | 'transit' | 'bike'): number {
+  if (item.walkMinutes != null && item.walkMinutes <= WALK_OVERRIDE_MAX_MIN) {
+    return item.walkMinutes;
+  }
+  const stored = preferred === 'car' ? item.carMinutes
+    : preferred === 'transit' ? item.transitMinutes
+    : item.bikeMinutes;
+  if (stored != null) return stored;
+  // Legacy fallback. Transit has no realistic average, so guess via car.
+  const speedMode = preferred === 'bike' ? 'bike' : 'car';
+  return Math.round((item.travelDistanceKm / FALLBACK_SPEED_KMH[speedMode]) * 60);
+}
+
+/** Total trip cost in minutes: travel both ways + the activity itself. */
+function tripTotalMinutes(item: BucketListItem, preferred: 'car' | 'transit' | 'bike'): number {
+  return oneWayMinutes(item, preferred) * 2 + DURATION_MIDPOINT_MIN[item.durationEstimate];
+}
 
 /** When a smart rail (Perfect for today, Short on time, etc.) captures more than
  *  this share of the user's library, it's not really a "split" — it's just the
@@ -51,7 +94,13 @@ function sortForRail(items: BucketListItem[]): BucketListItem[] {
 
 /** Horizontal scrolling rail of place cards. Shared by Dashboard sections.
  *  The rail container is a role="region" landmark so screen-reader users can
- *  jump between rails via rotor. */
+ *  jump between rails via rotor.
+ *
+ *  Card layout: `flex flex-col` keeps the image fixed at the top and the text
+ *  block flush below regardless of name length. `line-clamp-2` on the name
+ *  caps the text block at two lines so every card in the row has identical
+ *  vertical hierarchy. Without these, a card with a long wrapping name made
+ *  shorter siblings centre their image vertically — see audit 2026-06-30. */
 export function ItemRail({ title, items, profile, onNavigate, onSeeAll, headingId }: {
   title: string;
   items: BucketListItem[];
@@ -86,9 +135,9 @@ export function ItemRail({ title, items, profile, onNavigate, onSeeAll, headingI
               onClick={() => onNavigate({ name: 'detail', itemId: item.id })}
               role="listitem"
               aria-label={`${item.name}, ${categoryLabel}, ${travelLabel}, ${cost}`}
-              className="flex-shrink-0 w-40 card text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 active:scale-[0.98] transition-transform"
+              className="flex-shrink-0 w-40 card text-left flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 active:scale-[0.98] transition-transform"
             >
-              <div className="place-img-container h-24 overflow-hidden">
+              <div className="place-img-container h-24 overflow-hidden flex-shrink-0">
                 <PlaceImg
                   src={item.photoUrl}
                   alt=""
@@ -97,7 +146,7 @@ export function ItemRail({ title, items, profile, onNavigate, onSeeAll, headingI
                 />
               </div>
               <div className="p-3">
-                <div className="text-xs font-medium text-sand-900 truncate">{item.name}</div>
+                <div className="text-xs font-medium text-sand-900 line-clamp-2 leading-snug">{item.name}</div>
                 <div className="text-xs text-sand-700 mt-1">
                   {travelLabel} · {cost}
                 </div>
@@ -179,7 +228,14 @@ export default function CuratedLists({ items, profile, todayWeather, onNavigate 
     railDefs.push({ key: 'today', title: 'Perfect for today', candidates: perfectToday });
   }
 
-  const shortOnTime = todo.filter(i => i.durationEstimate === 'under_1h' || i.durationEstimate === '1_2h');
+  // "Short on time" considers total trip time, not just activity duration. A
+  // 30-min activity 90 min away each way doesn't help when you have a free
+  // window — total 30 + 180 = 210 min. Cap at SHORT_ON_TIME_MAX_MIN (2 hours).
+  const preferred = profile.preferredTransport || 'car';
+  const shortOnTime = todo.filter(i =>
+    (i.durationEstimate === 'under_1h' || i.durationEstimate === '1_2h')
+    && tripTotalMinutes(i, preferred) <= SHORT_ON_TIME_MAX_MIN
+  );
   railDefs.push({ key: 'short', title: 'Short on time?', candidates: shortOnTime });
 
   const fullDayOut = todo.filter(i => i.durationEstimate === 'half_day' || i.durationEstimate === 'full_day');
