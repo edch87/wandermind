@@ -21,11 +21,24 @@
   --color-forest-600: #3A6347;
 }
 
+/* Dynamic Type hook. The native iOS bridge (see docs/CAPACITOR.md) writes a
+   multiplier into --dt-scale on UIContentSizeCategoryDidChange so every
+   rem-based Tailwind size follows the user's preferred text size. Default
+   value 1 means no scaling, so the web app behaves identically until the
+   native bridge is wired up at Capacitor wrap time.
+   -webkit-text-size-adjust: 100% covers Safari PWA mode (which honours
+   Dynamic Type natively when this is set). */
+:root {
+  --dt-scale: 1;
+  font-size: calc(100% * var(--dt-scale));
+  -webkit-text-size-adjust: 100%;
+}
+
 /* Belt-and-braces against horizontal page scroll. Leaflet tile panes and
    other wide children inside the centred #root column can otherwise leak
    past the right viewport edge on mobile (especially in iOS standalone
    PWA mode). We never use horizontal scroll, so clip it at every level.
-   html needs it too — some browsers do not propagate body's overflow
+   html needs it too, some browsers do not propagate body's overflow
    setting up to the viewport. */
 html {
   overflow-x: hidden;
