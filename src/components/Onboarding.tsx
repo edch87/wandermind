@@ -171,6 +171,10 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  // Debounce timer for the as-you-type suggest on the location step. Mirrors
+  // the AddPlace search pattern: fire searchPlaces after the user pauses
+  // typing for 600ms, never below the 3-char floor in searchPlaces itself.
+  const searchTimeout = useRef<number | null>(null);
   // Holds the latest selectedLocation for the map's moveend closure, which is
   // attached once and would otherwise hold a stale value across re-renders.
   // Mirrored inside an effect below.
@@ -181,11 +185,22 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   // the map underneath it. On moveend (the user lets go), we reverse-geocode
   // the new centre to keep the human-readable address in sync. Tiles are Carto
   // Positron — light, attribution-only, and visually calmer than HERE explore.
+  //
+  // Init depends only on `step` — selectedLocation is read through a ref so
+  // the user dragging the map (which mutates selectedLocation) doesn't tear
+  // the map down and rebuild it. Cleanup is colocated so React's StrictMode
+  // mount → unmount → mount cycle in dev properly disposes the first instance
+  // before the second one is created (previous code skipped re-init on the
+  // remount because mapInstance.current was still set, leaving the new DOM
+  // node empty).
   useEffect(() => {
-    if (step !== 'pin' || !mapRef.current || mapInstance.current || !selectedLocation) return;
+    if (step !== 'pin' || !mapRef.current) return;
+    const sl = selectedLocationRef.current;
+    if (!sl) return;
 
-    const map = L.map(mapRef.current, { zoomControl: true }).setView(
-      [selectedLocation.lat, selectedLocation.lng],
+    const container = mapRef.current;
+    const map = L.map(container, { zoomControl: true }).setView(
+      [sl.lat, sl.lng],
       16,
     );
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -195,17 +210,16 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     }).addTo(map);
 
     // Reverse-geocode the map's current centre and write back to state. We
-    // read selectedLocation through a ref so the listener (attached once)
-    // always sees the latest value, and we skip when the centre already
-    // matches it — that's how programmatic recentres (from address submit
-    // or GPS) avoid pinging the API a second time.
+    // skip when the centre already matches selectedLocation — that's how
+    // programmatic recentres (from address submit or GPS) avoid pinging the
+    // API a second time.
     map.on('moveend', () => {
       const c = map.getCenter();
-      const sl = selectedLocationRef.current;
+      const cur = selectedLocationRef.current;
       if (
-        sl &&
-        Math.abs(c.lat - sl.lat) < 1e-6 &&
-        Math.abs(c.lng - sl.lng) < 1e-6
+        cur &&
+        Math.abs(c.lat - cur.lat) < 1e-6 &&
+        Math.abs(c.lng - cur.lng) < 1e-6
       ) {
         return;
       }
@@ -221,20 +235,21 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
     mapInstance.current = map;
 
-    // Leaflet sometimes mis-measures the container on first paint inside a
-    // flex/responsive layout, causing tiles to render past the right edge of
-    // the screen. invalidateSize on the next tick forces a re-measure after
-    // the browser has settled the layout.
-    setTimeout(() => map.invalidateSize(), 0);
-  }, [step, selectedLocation]);
+    // Belt-and-braces invalidateSize. 0ms covers normal first-paint; 200ms
+    // catches slow layouts (iOS Safari resolving dvh, in-app webview, etc.)
+    // where the container's height is still 0 on the next tick.
+    const t1 = window.setTimeout(() => map.invalidateSize(), 0);
+    const t2 = window.setTimeout(() => map.invalidateSize(), 200);
 
-  // When leaving the pin step (e.g. user taps Back), tear the map down so it can
-  // be re-created cleanly if they return.
-  useEffect(() => {
-    if (step !== 'pin' && mapInstance.current) {
-      mapInstance.current.remove();
-      mapInstance.current = null;
-    }
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      map.off();
+      map.remove();
+      if (mapInstance.current === map) {
+        mapInstance.current = null;
+      }
+    };
   }, [step]);
 
   // Mirror selectedLocation.address into the editable pin-step input so the
@@ -249,6 +264,17 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   useEffect(() => {
     selectedLocationRef.current = selectedLocation;
   }, [selectedLocation]);
+
+  // Clear the search-debounce timer when Onboarding unmounts so a late
+  // callback never tries to setState on a dead component.
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current !== null) {
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = null;
+      }
+    };
+  }, []);
 
   // Sync the map's centre when selectedLocation changes from a non-map source
   // (the editable address input or the "Use my location" button). We compare
@@ -356,8 +382,42 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
   const categoriesPresent = CATEGORY_ORDER.filter(c => nearbyCurated.some(e => e.category === c));
 
-  const handleSearch = async () => {
+  // As-you-type suggest. Called from the input's onChange. Debounces so we
+  // don't fire a request on every keystroke; AddPlace uses the same shape.
+  const handleSearchInput = (q: string) => {
+    setSearchQuery(q);
+    if (hasSearched) setHasSearched(false);
+    // Typing should invalidate any previously-selected pin — otherwise the
+    // green confirmation line stays on screen while the user is clearly
+    // changing their mind.
+    if (selectedLocation && q !== selectedLocation.address) {
+      setSelectedLocation(null);
+    }
+    if (searchTimeout.current !== null) {
+      clearTimeout(searchTimeout.current);
+      searchTimeout.current = null;
+    }
+    if (q.trim().length < 3) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchTimeout.current = window.setTimeout(async () => {
+      const results = await searchPlaces(q);
+      setSearchResults(results);
+      setHasSearched(true);
+      setSearching(false);
+    }, 600);
+  };
+
+  // Enter key — flush the debounce and search immediately.
+  const handleSearchSubmit = async () => {
     if (!searchQuery.trim()) return;
+    if (searchTimeout.current !== null) {
+      clearTimeout(searchTimeout.current);
+      searchTimeout.current = null;
+    }
     setSearching(true);
     const results = await searchPlaces(searchQuery);
     setSearchResults(results);
@@ -824,7 +884,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         className="mt-5"
         onSubmit={(e) => {
           e.preventDefault();
-          void handleSearch();
+          void handleSearchSubmit();
         }}
       >
         <button
@@ -834,7 +894,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           className="w-full min-h-[44px] mb-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-sand-300 text-sand-800 rounded-full text-sm font-medium hover:bg-sand-100 disabled:opacity-60 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
         >
           <Target size={18} weight="bold" aria-hidden="true" />
-          <span>{geoLooking ? 'Finding you…' : 'Use my location'}</span>
+          <span>{geoLooking ? 'Finding you…' : 'Use my current location'}</span>
         </button>
 
         <div aria-live="polite" className="sr-only">
@@ -850,15 +910,12 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         <label htmlFor="home-location-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1.5 block">
           Or search for it
         </label>
-        <div className="flex gap-2 mb-3">
+        <div className="relative mb-3">
           <input
             id="home-location-input"
             type="text"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (hasSearched) setHasSearched(false);
-            }}
+            onChange={(e) => handleSearchInput(e.target.value)}
             placeholder="Street, neighbourhood, or postcode"
             autoComplete="street-address"
             autoCapitalize="words"
@@ -866,16 +923,17 @@ export default function Onboarding({ displayName, onComplete }: Props) {
             spellCheck={false}
             inputMode="search"
             enterKeyHint="search"
-            className="flex-1 px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white"
+            aria-autocomplete="list"
+            aria-controls="home-location-suggestions"
+            aria-expanded={searchResults.length > 0}
+            className="w-full px-4 py-3 pr-10 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white"
           />
-          <button
-            type="submit"
-            disabled={searching}
-            aria-label={searching ? 'Searching' : 'Search'}
-            className="min-h-[44px] px-5 bg-sand-900 text-sand-100 rounded-full text-sm font-medium hover:bg-sand-800 disabled:opacity-50 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-          >
-            {searching ? 'Searching' : 'Search'}
-          </button>
+          {searching && (
+            <span
+              aria-hidden="true"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-sand-300 border-t-sand-700 rounded-full animate-spin"
+            />
+          )}
         </div>
 
         <div aria-live="polite" className="sr-only">
@@ -889,11 +947,18 @@ export default function Onboarding({ displayName, onComplete }: Props) {
         </div>
 
         {searchResults.length > 0 && (
-          <div className="bg-white border border-sand-200 rounded-[20px] mb-3 max-h-40 overflow-auto">
+          <div
+            id="home-location-suggestions"
+            role="listbox"
+            aria-label="Address suggestions"
+            className="bg-white border border-sand-200 rounded-[20px] mb-3 max-h-60 overflow-auto"
+          >
             {searchResults.map((r) => (
               <button
-                key={r.id}
+                key={r.id || r.googlePlaceId || `${r.position.lat},${r.position.lng}`}
                 type="button"
+                role="option"
+                aria-selected={selectedLocation?.address === r.address.label}
                 onClick={() => selectSearchResult(r)}
                 className="w-full text-left min-h-[44px] px-4 py-3 text-sm hover:bg-sand-50 border-b border-sand-100 last:border-0 text-sand-800 focus:outline-none focus-visible:bg-sand-50 focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-inset"
               >
@@ -903,7 +968,7 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           </div>
         )}
 
-        {hasSearched && !searching && searchResults.length === 0 && (
+        {hasSearched && !searching && searchResults.length === 0 && searchQuery.trim().length >= 3 && (
           <p className="text-sm text-sand-700 mb-3 px-1">
             No matches. Try a city, postcode, or wider area.
           </p>

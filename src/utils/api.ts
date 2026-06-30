@@ -107,7 +107,14 @@ function mapGooglePlace(place: Record<string, unknown>): HereSearchResult | null
  */
 export async function searchPlaces(query: string, lat?: number, lng?: number): Promise<HereSearchResult[]> {
   if (!query.trim() || query.length < 3) return [];
-  if (GOOGLE_API_KEY) return searchPlacesGoogle(query, lat, lng);
+  // Google Places text-search is excellent for POIs but mediocre at raw
+  // street addresses. HERE's geocoder handles addresses much better, so we
+  // fall back to it whenever Google returns no matches (covers home-location
+  // searches like "Sendlinger Strasse 5, Munich" that Google misses).
+  if (GOOGLE_API_KEY) {
+    const googleResults = await searchPlacesGoogle(query, lat, lng);
+    if (googleResults.length > 0) return googleResults;
+  }
   return searchPlacesHere(query, lat, lng);
 }
 
