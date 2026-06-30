@@ -152,18 +152,37 @@ body {
   box-shadow: 0 4px 20px rgba(45, 27, 14, 0.08);
 }
 
-/* Confetti */
-@keyframes confetti-fall {
-  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+/* Wind gust — celebration animation for the "Surprise me" pick. Replaces the
+   old confetti; on-brand for a kite/lark identity. A handful of translucent
+   curved streaks sweep left-to-right across the screen, each on a slight
+   vertical offset, easing in and out. Gated by prefers-reduced-motion. */
+@keyframes wind-streak {
+  0%   { transform: translate3d(-30vw, 0, 0) scaleX(0.6); opacity: 0; }
+  20%  { opacity: 0.9; }
+  80%  { opacity: 0.9; }
+  100% { transform: translate3d(130vw, 0, 0) scaleX(1); opacity: 0; }
 }
 
-.confetti-piece {
+.wind-streak {
   position: fixed;
-  width: 10px;
-  height: 10px;
-  top: -10px;
-  animation: confetti-fall 3s ease-in forwards;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+  /* Subtle curve: the streak is a gradient that fades at both ends so the
+     leading and trailing edges feel airy rather than abrupt. */
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(184, 148, 92, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%);
+  animation: wind-streak 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wind-streak {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* Badge pills */

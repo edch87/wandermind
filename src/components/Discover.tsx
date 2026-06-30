@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { UserProfile, BucketListItem, Category, HereSearchResult } from '../types';
+import type { UserProfile, BucketListItem, Category, HereSearchResult, PreferredTransport } from '../types';
 import { CATEGORY_INFO } from '../types';
 import { getDiscoverPlaces, toSearchResult, SOFT_HEART_MIN_SAVES, type DiscoverPlace } from '../utils/discover';
+import { estimateTravelShortFromDistance } from '../utils/travelDisplay';
 import PlaceImg from './PlaceImg';
 import { Heart, MapPin } from '@phosphor-icons/react';
 
@@ -18,19 +19,36 @@ interface Props {
  * social signal we surface is a soft heart for places that 3+ other larkers
  * have already saved, regardless of source.
  */
-export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: () => void }) {
+export function DiscoverCard({ place, onAdd, preferred }: {
+  place: DiscoverPlace;
+  onAdd: () => void;
+  /** When provided, the card shows an estimated travel time ("20 min by car")
+   *  instead of straight-line distance. The estimate uses the same fallback
+   *  speeds as the recommend engine; it's an approximation since the place
+   *  hasn't been saved yet (no routed minutes stored). */
+  preferred?: PreferredTransport;
+}) {
   const showHeart = (place.saveCount ?? 0) >= SOFT_HEART_MIN_SAVES;
+  const travelLabel = preferred
+    ? estimateTravelShortFromDistance(place.distanceKm, preferred)
+    : `~${place.distanceKm} km`;
+  const categoryLabel = CATEGORY_INFO[place.category]?.label ?? place.category;
   return (
-    <button onClick={onAdd} className="card text-left w-full relative">
+    <button
+      onClick={onAdd}
+      aria-label={`Add ${place.name}, ${categoryLabel}, ${travelLabel}`}
+      className="card text-left w-full relative focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 active:scale-[0.98] transition-transform"
+    >
       <div className="place-img-container h-28 overflow-hidden">
         <PlaceImg
           src={place.imageUrl}
-          alt={place.name}
+          alt=""
           name={place.name}
           category={place.category}
         />
         {showHeart && (
           <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow-sm"
+               aria-hidden="true"
                title={`${place.saveCount} larkers have saved this`}>
             <Heart size={13} weight="fill" color="#c14a2f" />
           </div>
@@ -38,8 +56,8 @@ export function DiscoverCard({ place, onAdd }: { place: DiscoverPlace; onAdd: ()
       </div>
       <div className="p-3">
         <div className="text-xs font-medium text-sand-900 truncate">{place.name}</div>
-        <div className="text-[10px] text-sand-700 mt-1 flex items-center gap-1">
-          <MapPin size={10} /> ~{place.distanceKm} km
+        <div className="text-xs text-sand-700 mt-1 flex items-center gap-1">
+          <MapPin size={10} aria-hidden="true" /> {travelLabel}
         </div>
       </div>
     </button>

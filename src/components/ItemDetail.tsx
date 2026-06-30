@@ -7,6 +7,12 @@ import type {
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO } from '../types';
 import { formatOpeningHours, getOpeningHoursStatus } from '../utils/openingHours';
+import {
+  pickDisplayMode,
+  TRANSPORT_META as TRAVEL_META,
+  TRAVEL_HIDE_MIN_KM,
+  type DisplayMode,
+} from '../utils/travelDisplay';
 import PlaceImg from './PlaceImg';
 import { TagPicker } from './AddPlace';
 import {
@@ -26,44 +32,17 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-/** Walking auto-override threshold: at ≤15 min the place is essentially next
- *  door — surface walking instead of the user's preferred mode regardless of
- *  the profile preference. */
-const WALK_OVERRIDE_MAX_MIN = 15;
-/** Travel block is hidden below this — the place is essentially at home. */
-const TRAVEL_HIDE_MIN_KM = 0.1;
 /** Opening hours TTL — refresh in background on detail-page open if older. */
 const OPENING_HOURS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-const TRANSPORT_META: Record<'car' | 'transit' | 'bike' | 'walk', {
-  label: string;
-  icon: React.ReactNode;
-  googleTravelMode: string;
-}> = {
-  car:     { label: 'By car',     icon: <Car size={16} />,        googleTravelMode: 'driving' },
-  transit: { label: 'By transit', icon: <Train size={16} />,      googleTravelMode: 'transit' },
-  bike:    { label: 'By bike',    icon: <Bicycle size={16} />,    googleTravelMode: 'bicycling' },
-  walk:    { label: 'On foot',    icon: <Footprints size={16} />, googleTravelMode: 'walking' },
+/** Icon node per display mode. Lives here (not in travelDisplay.ts) so the
+ *  shared util doesn't pull Phosphor into surfaces that just need the label. */
+const TRANSPORT_ICON: Record<DisplayMode, React.ReactNode> = {
+  car:     <Car size={16} />,
+  transit: <Train size={16} />,
+  bike:    <Bicycle size={16} />,
+  walk:    <Footprints size={16} />,
 };
-
-/** Pick the mode that should surface on the detail page given the user's
- *  profile preference + the item's stored per-mode minutes.
- *  - Walking auto-override when walkMinutes ≤ 15 (place is essentially next door).
- *  - Otherwise the user's preferredTransport, unless that mode's minutes are
- *    null (e.g. no practical transit) — in which case return the preferred
- *    mode anyway so the caller can render an explicit fallback line. */
-function pickDisplayMode(
-  item: BucketListItem,
-  preferred: PreferredTransport,
-): { mode: 'car' | 'transit' | 'bike' | 'walk'; minutes: number | null; walkOverride: boolean } {
-  if (item.walkMinutes != null && item.walkMinutes <= WALK_OVERRIDE_MAX_MIN) {
-    return { mode: 'walk', minutes: item.walkMinutes, walkOverride: true };
-  }
-  const minutes = preferred === 'car' ? item.carMinutes
-    : preferred === 'transit' ? item.transitMinutes
-    : item.bikeMinutes;
-  return { mode: preferred, minutes, walkOverride: false };
-}
 
 const weatherIconEl = (suitability: string) => {
   switch (suitability) {
@@ -100,7 +79,8 @@ export default function ItemDetail({ item, profile, onBack, onSave, onDelete }: 
 
   const preferredTransport: PreferredTransport = profile.preferredTransport || 'car';
   const display = pickDisplayMode(item, preferredTransport);
-  const meta = TRANSPORT_META[display.mode];
+  const meta = TRAVEL_META[display.mode];
+  const icon = TRANSPORT_ICON[display.mode];
   const showTravelBlock = item.travelDistanceKm >= TRAVEL_HIDE_MIN_KM;
 
   const handleNavigate = () => {
@@ -483,7 +463,7 @@ export default function ItemDetail({ item, profile, onBack, onSave, onDelete }: 
           <div className="bg-white rounded-[20px] p-4 border border-sand-100 mb-4">
             <p className="text-[10px] font-medium text-sand-700 uppercase tracking-wider mb-3">Getting there</p>
             <div className="flex items-center gap-3 mb-3">
-              <span className="w-6 flex justify-center text-sand-500">{meta.icon}</span>
+              <span className="w-6 flex justify-center text-sand-500">{icon}</span>
               {display.minutes != null ? (
                 <span className="text-sm text-sand-700">
                   {formatDuration(display.minutes)} {meta.label.toLowerCase()}
