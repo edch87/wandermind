@@ -139,6 +139,14 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   // case. Cleared whenever the query string changes.
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Pin-step editable address field — the screen-reader / keyboard fallback
+  // for users who can't interact with the Leaflet map. Kept in sync with
+  // selectedLocation.address whenever the map moves the pin, and forward-
+  // geocodes via searchPlaces when the user submits.
+  const [pinAddressInput, setPinAddressInput] = useState('');
+  const [pinAddressError, setPinAddressError] = useState<string | null>(null);
+  const [pinAddressLooking, setPinAddressLooking] = useState(false);
+
   // Discover-step selection state (keyed by curated entry key)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
@@ -206,6 +214,48 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       markerRef.current = null;
     }
   }, [step]);
+
+  // Mirror selectedLocation.address into the editable pin-step input so the
+  // canonical address always appears in the field (drag the marker → field
+  // updates; pick a search result → field updates).
+  useEffect(() => {
+    if (selectedLocation) setPinAddressInput(selectedLocation.address);
+  }, [selectedLocation]);
+
+  // Sync the Leaflet marker + viewport when selectedLocation changes from a
+  // non-map source (the editable address input). Comparing to the marker's
+  // current latlng avoids a feedback loop when the change came from the map
+  // itself (drag/click).
+  useEffect(() => {
+    if (step !== 'pin' || !selectedLocation || !mapInstance.current || !markerRef.current) return;
+    const current = markerRef.current.getLatLng();
+    if (Math.abs(current.lat - selectedLocation.lat) < 1e-6 && Math.abs(current.lng - selectedLocation.lng) < 1e-6) return;
+    markerRef.current.setLatLng([selectedLocation.lat, selectedLocation.lng]);
+    mapInstance.current.setView([selectedLocation.lat, selectedLocation.lng], 16);
+  }, [step, selectedLocation]);
+
+  // Forward-geocode the typed address and move the pin. Restores the canonical
+  // address on failure so the field doesn't end up holding text that no longer
+  // matches the marker.
+  const handlePinAddressSubmit = async () => {
+    if (!pinAddressInput.trim()) return;
+    if (selectedLocation && pinAddressInput.trim() === selectedLocation.address) return;
+    setPinAddressError(null);
+    setPinAddressLooking(true);
+    const results = await searchPlaces(pinAddressInput);
+    setPinAddressLooking(false);
+    if (results.length === 0) {
+      setPinAddressError("Couldn't find that address. Try a city or postcode.");
+      if (selectedLocation) setPinAddressInput(selectedLocation.address);
+      return;
+    }
+    const top = results[0];
+    setSelectedLocation({
+      lat: top.position.lat,
+      lng: top.position.lng,
+      address: top.address.label,
+    });
+  };
 
   // Curated entries within 150km of the user's home, grouped by category.
   const nearbyCurated = useMemo(() => {
@@ -538,38 +588,81 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   // ── Pin refine step ──
   if (step === 'pin') {
     return (
-      <div className="min-h-screen flex flex-col bg-sand-50">
+      <div
+        className="flex flex-col bg-sand-50"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
         <div className="px-6 pt-8 pb-3">
           <h2 className="text-xl font-semibold text-sand-900">
             Fine-tune <span className="heading-accent">the pin</span>
           </h2>
           <p className="text-sm text-sand-700 mt-1">
-            Drag the pin, or tap the map, to drop it exactly on your home.
+            Drag the pin, tap the map, or edit the address below — whatever works.
           </p>
         </div>
 
-        <div ref={mapRef} className="mx-6 h-[55vh] rounded-[20px] border border-sand-200 overflow-hidden" />
+        <div
+          ref={mapRef}
+          role="application"
+          aria-label="Interactive map showing your home location. If you can't use the map, edit the address field below."
+          className="mx-6 rounded-[20px] border border-sand-200 overflow-hidden"
+          style={{ height: '55vh', minHeight: '320px' }}
+        />
 
-        {selectedLocation && (
-          <p className="text-xs text-sand-700 px-6 pt-3 truncate">
-            {selectedLocation.address}
-          </p>
-        )}
+        <form
+          className="px-6 pt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handlePinAddressSubmit();
+          }}
+        >
+          <label htmlFor="pin-address-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1 block">
+            Home address
+          </label>
+          <input
+            id="pin-address-input"
+            type="text"
+            value={pinAddressInput}
+            onChange={(e) => {
+              setPinAddressInput(e.target.value);
+              if (pinAddressError) setPinAddressError(null);
+            }}
+            onBlur={() => void handlePinAddressSubmit()}
+            placeholder="Street, city, or postcode"
+            autoComplete="street-address"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="search"
+            enterKeyHint="done"
+            disabled={pinAddressLooking}
+            className="w-full px-4 py-2.5 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white disabled:opacity-60"
+          />
+          <div aria-live="polite" className="sr-only">
+            {pinAddressLooking ? 'Looking up address' : pinAddressError ?? ''}
+          </div>
+          {pinAddressError && (
+            <p className="text-sm text-terra-600 mt-2" role="alert">
+              {pinAddressError}
+            </p>
+          )}
+        </form>
 
         <div
-          className="px-6 pt-3 flex gap-2"
+          className="px-6 pt-3 mt-auto flex gap-2"
           style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={() => setStep('location')}
-            className="flex-1 py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition"
+            aria-label="Back to home location search"
+            className="flex-1 min-h-[44px] py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
             Back
           </button>
           <button
             onClick={goToDiscoverOrFinish}
             disabled={!selectedLocation}
-            className="flex-[2] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            className="flex-[2] min-h-[44px] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
             This is home
           </button>
