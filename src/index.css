@@ -198,3 +198,35 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .kite-drift { animation: none; }
 }
+
+/* Centre-crosshair pin pulse — fires when the pin moves from a non-map
+   source (address field or GPS) so users get a clear "we moved it" cue. */
+@keyframes pin-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+.pin-pulse {
+  animation: pin-pulse 0.5s ease-out;
+  transform-origin: 50% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-pulse { animation: none; }
+}
+
+/* Bump Leaflet's default zoom controls up to a 44pt hit target (Apple HIG
+   and WCAG agree) without changing their visual position. */
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 22px;
+}
+
+.leaflet-bar a:focus-visible {
+  outline: 2px solid #7A5C3A;
+  outline-offset: 2px;
+}

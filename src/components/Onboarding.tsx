@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
-import { searchPlaces, reverseGeocode, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, reverseGeocode } from '../utils/api';
 import { supabase } from '../utils/supabase';
 import { generateId } from '../utils/storage';
 import { markHomePinRefined } from '../utils/homePinPrompt';
@@ -147,6 +147,16 @@ export default function Onboarding({ displayName, onComplete }: Props) {
   const [pinAddressError, setPinAddressError] = useState<string | null>(null);
   const [pinAddressLooking, setPinAddressLooking] = useState(false);
 
+  // "Use my location" button (location step). Reverse-geocodes the GPS coords
+  // straight into selectedLocation so the user can skip typing an address.
+  const [geoLooking, setGeoLooking] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+
+  // Brief visual pulse on the centre crosshair pin when selectedLocation
+  // changes from a non-map source (address field or GPS). Closes the loop so
+  // users see the pin "jumped" rather than wondering if the address went in.
+  const [pinPulse, setPinPulse] = useState(false);
+
   // Discover-step selection state (keyed by curated entry key)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
@@ -161,42 +171,55 @@ export default function Onboarding({ displayName, onComplete }: Props) {
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
+  // Holds the latest selectedLocation for the map's moveend closure, which is
+  // attached once and would otherwise hold a stale value across re-renders.
+  // Mirrored inside an effect below.
+  const selectedLocationRef = useRef<{ lat: number; lng: number; address: string } | null>(null);
 
-  // Build the map for the dedicated pin-refine step. The marker is draggable so
-  // users can nudge it after autocomplete drops them roughly the right place.
-  // Tapping anywhere on the map also moves the pin. On drag-end or click we
-  // reverse-geocode to keep the human-readable address in sync.
+  // Build the map for the dedicated pin-refine step. We use a centre-crosshair
+  // model: the pin is a fixed DOM overlay at the map's centre, and users drag
+  // the map underneath it. On moveend (the user lets go), we reverse-geocode
+  // the new centre to keep the human-readable address in sync. Tiles are Carto
+  // Positron — light, attribution-only, and visually calmer than HERE explore.
   useEffect(() => {
     if (step !== 'pin' || !mapRef.current || mapInstance.current || !selectedLocation) return;
 
-    const map = L.map(mapRef.current).setView([selectedLocation.lat, selectedLocation.lng], 16);
-    L.tileLayer(HERE_TILE_URL, { attribution: HERE_TILE_ATTRIBUTION }).addTo(map);
+    const map = L.map(mapRef.current, { zoomControl: true }).setView(
+      [selectedLocation.lat, selectedLocation.lng],
+      16,
+    );
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(map);
 
-    const marker = L.marker([selectedLocation.lat, selectedLocation.lng], { draggable: true }).addTo(map);
-
-    const updateFromMap = async (lat: number, lng: number) => {
-      const geo = await reverseGeocode(lat, lng);
-      setSelectedLocation({
-        lat,
-        lng,
-        address: geo?.address.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-      });
-    };
-
-    marker.on('dragend', () => {
-      const { lat, lng } = marker.getLatLng();
-      void updateFromMap(lat, lng);
-    });
-
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      marker.setLatLng([lat, lng]);
-      void updateFromMap(lat, lng);
+    // Reverse-geocode the map's current centre and write back to state. We
+    // read selectedLocation through a ref so the listener (attached once)
+    // always sees the latest value, and we skip when the centre already
+    // matches it — that's how programmatic recentres (from address submit
+    // or GPS) avoid pinging the API a second time.
+    map.on('moveend', () => {
+      const c = map.getCenter();
+      const sl = selectedLocationRef.current;
+      if (
+        sl &&
+        Math.abs(c.lat - sl.lat) < 1e-6 &&
+        Math.abs(c.lng - sl.lng) < 1e-6
+      ) {
+        return;
+      }
+      void (async () => {
+        const geo = await reverseGeocode(c.lat, c.lng);
+        setSelectedLocation({
+          lat: c.lat,
+          lng: c.lng,
+          address: geo?.address.label || `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}`,
+        });
+      })();
     });
 
     mapInstance.current = map;
-    markerRef.current = marker;
 
     // Leaflet sometimes mis-measures the container on first paint inside a
     // flex/responsive layout, causing tiles to render past the right edge of
@@ -211,32 +234,47 @@ export default function Onboarding({ displayName, onComplete }: Props) {
     if (step !== 'pin' && mapInstance.current) {
       mapInstance.current.remove();
       mapInstance.current = null;
-      markerRef.current = null;
     }
   }, [step]);
 
   // Mirror selectedLocation.address into the editable pin-step input so the
-  // canonical address always appears in the field (drag the marker → field
+  // canonical address always appears in the field (drag the map → field
   // updates; pick a search result → field updates).
   useEffect(() => {
     if (selectedLocation) setPinAddressInput(selectedLocation.address);
   }, [selectedLocation]);
 
-  // Sync the Leaflet marker + viewport when selectedLocation changes from a
-  // non-map source (the editable address input). Comparing to the marker's
-  // current latlng avoids a feedback loop when the change came from the map
-  // itself (drag/click).
+  // Mirror selectedLocation into the ref so the moveend closure always reads
+  // the latest value (the listener is attached once).
   useEffect(() => {
-    if (step !== 'pin' || !selectedLocation || !mapInstance.current || !markerRef.current) return;
-    const current = markerRef.current.getLatLng();
-    if (Math.abs(current.lat - selectedLocation.lat) < 1e-6 && Math.abs(current.lng - selectedLocation.lng) < 1e-6) return;
-    markerRef.current.setLatLng([selectedLocation.lat, selectedLocation.lng]);
-    mapInstance.current.setView([selectedLocation.lat, selectedLocation.lng], 16);
+    selectedLocationRef.current = selectedLocation;
+  }, [selectedLocation]);
+
+  // Sync the map's centre when selectedLocation changes from a non-map source
+  // (the editable address input or the "Use my location" button). We compare
+  // against the map's current centre and skip if they already match, which
+  // avoids a feedback loop when the change came from the map itself
+  // (moveend writes back into selectedLocation).
+  useEffect(() => {
+    if (step !== 'pin' || !selectedLocation || !mapInstance.current) return;
+    const c = mapInstance.current.getCenter();
+    if (Math.abs(c.lat - selectedLocation.lat) < 1e-6 && Math.abs(c.lng - selectedLocation.lng) < 1e-6) return;
+    mapInstance.current.setView([selectedLocation.lat, selectedLocation.lng], mapInstance.current.getZoom() ?? 16);
   }, [step, selectedLocation]);
+
+  // Trigger a short visual pulse on the centre crosshair so the user gets
+  // confirmation that their non-map action (address submit, GPS) moved the
+  // pin. Reset is on a timer; if the user fires another pulse quickly we
+  // re-trigger by toggling off→on.
+  const triggerPinPulse = () => {
+    setPinPulse(false);
+    requestAnimationFrame(() => setPinPulse(true));
+    setTimeout(() => setPinPulse(false), 500);
+  };
 
   // Forward-geocode the typed address and move the pin. Restores the canonical
   // address on failure so the field doesn't end up holding text that no longer
-  // matches the marker.
+  // matches the pin.
   const handlePinAddressSubmit = async () => {
     if (!pinAddressInput.trim()) return;
     if (selectedLocation && pinAddressInput.trim() === selectedLocation.address) return;
@@ -255,6 +293,52 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       lng: top.position.lng,
       address: top.address.label,
     });
+    triggerPinPulse();
+  };
+
+  // "Use my location" — geolocation API + reverse-geocode. Used on the
+  // location step so the user can skip the search box entirely. Capacitor's
+  // Geolocation plugin is unnecessary here because the WKWebView surfaces
+  // navigator.geolocation natively (with a one-time iOS permission prompt).
+  const handleUseMyLocation = async () => {
+    if (!('geolocation' in navigator)) {
+      setGeoError('Location is not available on this device.');
+      return;
+    }
+    setGeoError(null);
+    setGeoLooking(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+      const { latitude, longitude } = position.coords;
+      const geo = await reverseGeocode(latitude, longitude);
+      setSelectedLocation({
+        lat: latitude,
+        lng: longitude,
+        address: geo?.address.label || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+      });
+      setHasSearched(false);
+      setSearchResults([]);
+      triggerPinPulse();
+    } catch (err) {
+      const e = err as GeolocationPositionError;
+      if (e.code === 1) {
+        setGeoError("Location permission denied. You can still type your address below.");
+      } else if (e.code === 2) {
+        setGeoError("Couldn't get your location. Try typing your address below.");
+      } else if (e.code === 3) {
+        setGeoError("Location request timed out. Try typing your address below.");
+      } else {
+        setGeoError("Couldn't get your location. Try typing your address below.");
+      }
+    } finally {
+      setGeoLooking(false);
+    }
   };
 
   // Curated entries within 150km of the user's home, grouped by category.
@@ -594,20 +678,38 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       >
         <div className="px-6 pt-8 pb-3">
           <h2 className="text-xl font-semibold text-sand-900">
-            Fine-tune <span className="heading-accent">the pin</span>
+            Confirm <span className="heading-accent">your home</span>
           </h2>
           <p className="text-sm text-sand-700 mt-1">
-            Drag the pin, tap the map, or edit the address below — whatever works.
+            Drag the map to centre the pin on your home, or edit the address if it's easier. If it's already right, just tap This is home.
           </p>
         </div>
 
-        <div
-          ref={mapRef}
-          role="application"
-          aria-label="Interactive map showing your home location. If you can't use the map, edit the address field below."
-          className="mx-6 rounded-[20px] border border-sand-200 overflow-hidden"
-          style={{ height: '55vh', minHeight: '320px' }}
-        />
+        <div className="mx-6 relative">
+          <div
+            ref={mapRef}
+            role="application"
+            aria-label="Interactive map. Drag to centre the pin on your home. If you can't use the map, edit the address field below."
+            className="rounded-[20px] border border-sand-200 overflow-hidden"
+            style={{ height: '55vh', minHeight: '320px' }}
+          />
+          {/* Centre crosshair pin — pure DOM overlay, never moves; the user
+              drags the map underneath. pointer-events-none so it doesn't
+              swallow drag gestures. translate-y on the wrapper anchors the
+              pin's tip (bottom-centre) to the crosshair point. */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]" aria-hidden="true">
+            <div className="-translate-y-1/2">
+              <div className={pinPulse ? 'pin-pulse' : ''}>
+                <MapPin
+                  size={40}
+                  weight="fill"
+                  className="text-sand-900"
+                  style={{ filter: 'drop-shadow(0 2px 4px rgba(45, 27, 14, 0.35))' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         <form
           className="px-6 pt-3"
@@ -693,8 +795,28 @@ export default function Onboarding({ displayName, onComplete }: Props) {
           void handleSearch();
         }}
       >
+        <button
+          type="button"
+          onClick={handleUseMyLocation}
+          disabled={geoLooking}
+          className="w-full min-h-[44px] mb-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-sand-300 text-sand-800 rounded-full text-sm font-medium hover:bg-sand-100 disabled:opacity-60 disabled:cursor-not-allowed transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+        >
+          <Target size={18} weight="bold" aria-hidden="true" />
+          <span>{geoLooking ? 'Finding you…' : 'Use my location'}</span>
+        </button>
+
+        <div aria-live="polite" className="sr-only">
+          {geoLooking ? 'Finding your location' : geoError ?? ''}
+        </div>
+
+        {geoError && (
+          <p className="text-sm text-terra-600 mb-3" role="alert">
+            {geoError}
+          </p>
+        )}
+
         <label htmlFor="home-location-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1.5 block">
-          Home location
+          Or search for it
         </label>
         <div className="flex gap-2 mb-3">
           <input
