@@ -14,6 +14,7 @@ import {
 import KiteIcon from './KiteIcon';
 import PlaceImg from './PlaceImg';
 import CuratedLists from './CuratedLists';
+import HeaderAvatar from './HeaderAvatar';
 import type { Category } from '../types';
 
 interface Props {
@@ -41,16 +42,6 @@ function getGreeting(name: string): string {
   if (hour >= 12 && hour < 17) return `Good afternoon, ${name}`;
   if (hour >= 17 && hour < 22) return `Good evening, ${name}`;
   return `Hello ${name}`; // 22:00-04:59 — late night, keep it neutral
-}
-
-/** Up to two initials from the user's display name, for the avatar button.
- *  Falls back to a single character when there's only one word, and to a
- *  bullet when displayName is empty (shouldn't happen post-onboarding). */
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '•';
-  if (parts.length === 1) return parts[0]!.slice(0, 1).toUpperCase();
-  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
 export default function Dashboard({ profile, items, onNavigate }: Props) {
@@ -176,16 +167,10 @@ export default function Dashboard({ profile, items, onNavigate }: Props) {
             </p>
           )}
         </div>
-        {/* Initials avatar opens Settings. Moved here from the bottom nav so
-            Discover can take that slot — Settings is rarely visited; surfacing
-            it as a tap-target on the header keeps it accessible. */}
-        <button
-          onClick={() => onNavigate({ name: 'settings' })}
-          aria-label="Open settings"
-          className="flex-shrink-0 w-11 h-11 rounded-full bg-sand-200 text-sand-900 text-sm font-semibold flex items-center justify-center hover:bg-sand-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-        >
-          {getInitials(profile.displayName)}
-        </button>
+        {/* Initials avatar opens Settings. Settings was removed from the bottom
+            nav in the 2026-06-30 audit; the avatar replaces it across every
+            primary tab. Shared as `HeaderAvatar`. */}
+        <HeaderAvatar profile={profile} onOpen={() => onNavigate({ name: 'settings' })} />
       </header>
 
       {/* One-time prompt for users whose home is still city-level. New users

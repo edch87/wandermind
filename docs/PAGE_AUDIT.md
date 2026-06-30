@@ -265,7 +265,8 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
 - **Pull-to-refresh**: discussed, not built — would lean on Capacitor for native gesture; web alternative not pursued in v1.
 - **3-day mini-forecast**: discussed as a future enhancement; not in v1 to keep the dashboard focused.
 - **Refine-home banner deep link**: still routes to full Settings; deep link to pin step deferred.
-- **Settings reachable only from Dashboard**: with Settings removed from the bottom nav, users on List / Discover / Detail / Suggest can't reach Settings without going Home first. Acceptable for v1 (Settings is rarely visited mid-task) but worth revisiting if user feedback flags it. Long-term answer: avatar in the top-right of every primary screen header.
+- ~~**Settings reachable only from Dashboard**~~: resolved 2026-06-30. Extracted `HeaderAvatar` into `src/components/HeaderAvatar.tsx` and wired it into Dashboard, BucketList ("My List"), and Discover so Settings is reachable from every primary content tab. Skipped on flow-style screens (AddPlace, RecommendationFlow, ItemDetail) where the back/cancel affordance owns the right side of the header.
+- **Discover back button on a tab destination**: now that Discover is a bottom-nav tab, the leading "Back" arrow is redundant for users who arrive via the nav (vs. via Dashboard "See all"). Not removed in this pass; worth revisiting in the Discover audit (item 8). Hit area and contrast lifted to AA in the meantime.
 
 ---
 

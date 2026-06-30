@@ -4,6 +4,7 @@ import { CATEGORY_INFO } from '../types';
 import { getDiscoverPlaces, toSearchResult, SOFT_HEART_MIN_SAVES, type DiscoverPlace } from '../utils/discover';
 import { estimateTravelShortFromDistance } from '../utils/travelDisplay';
 import PlaceImg from './PlaceImg';
+import HeaderAvatar from './HeaderAvatar';
 import { Heart, MapPin } from '@phosphor-icons/react';
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
   items: BucketListItem[];
   onAddPlace: (place: HereSearchResult, category: Category) => void;
   onBack: () => void;
+  /** Open the Settings screen from the header avatar. Shared affordance across
+   *  primary tabs since Settings was pulled from the bottom nav. */
+  onOpenSettings: () => void;
 }
 
 /**
@@ -72,7 +76,7 @@ const CATEGORY_ORDER: Category[] = [
   'entertainment', 'zoo_aquarium', 'wellness', 'shopping', 'other',
 ];
 
-export default function Discover({ profile, items, onAddPlace, onBack }: Props) {
+export default function Discover({ profile, items, onAddPlace, onBack, onOpenSettings }: Props) {
   const [places, setPlaces] = useState<DiscoverPlace[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Category | 'all'>('all');
@@ -100,11 +104,17 @@ export default function Discover({ profile, items, onAddPlace, onBack }: Props) 
     <div className="page-enter pb-24">
       <div className="px-6 pt-8 pb-4">
         <div className="flex items-center gap-3">
-          <button onClick={onBack}
-            className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-600 text-sm">←</button>
-          <h2 className="text-xl font-semibold text-sand-900">
+          <button
+            onClick={onBack}
+            aria-label="Back"
+            className="w-11 h-11 rounded-full bg-sand-100 flex items-center justify-center text-sand-900 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
+            ←
+          </button>
+          <h2 className="flex-1 text-xl font-semibold text-sand-900">
             Discover <span className="heading-accent">nearby</span>
           </h2>
+          <HeaderAvatar profile={profile} onOpen={onOpenSettings} />
         </div>
         <p className="text-xs text-sand-700 mt-2">
           Ideas within 150 km of home — tap one to review and save it.

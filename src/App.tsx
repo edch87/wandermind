@@ -228,6 +228,7 @@ export default function App() {
       )}
       {screen.name === 'list' && (
         <BucketList
+          profile={profile}
           items={items}
           initialTab={screen.initialTab}
           initialCategory={screen.initialCategory}
@@ -259,6 +260,7 @@ export default function App() {
           items={items}
           onAddPlace={(place, category) => setScreen({ name: 'add', initialPlace: place, initialCategory: category })}
           onBack={() => setScreen({ name: 'dashboard' })}
+          onOpenSettings={() => setScreen({ name: 'settings' })}
         />
       )}
       {screen.name === 'settings' && (

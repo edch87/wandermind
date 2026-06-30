@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority, Vibe, Tag } from '../types';
+import type { BucketListItem, Category, CostLevel, DurationEstimate, Setting, WeatherSuitability, GroupType, Season, TimeOfDay, Priority, Vibe, Tag, UserProfile } from '../types';
 import { CATEGORY_INFO, COST_LABELS, DURATION_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, VIBE_LABELS, TAG_INFO, TAGS, TAG_SOFT_CAP } from '../types';
 import { VIBE_CATEGORIES } from '../utils/recommendation';
 import { getOpeningHoursStatus } from '../utils/openingHours';
 import { Star, MapPin, CaretDown, CaretUp, Clock, Coins, MagnifyingGlass, X } from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
+import HeaderAvatar from './HeaderAvatar';
 
 interface Props {
+  profile: UserProfile;
   items: BucketListItem[];
   initialTab?: 'want_to_do' | 'done';
   initialCategory?: Category;
@@ -29,7 +31,7 @@ const TRAVEL_CHOICES: { val: MaxTravel; label: string }[] = [
 /** Vibes shown in the filter. 'flexible' is excluded — "All vibes" already covers it. */
 const FILTERABLE_VIBES: Exclude<Vibe, 'flexible'>[] = ['foodie', 'curious', 'active', 'outdoorsy', 'playful', 'unwind', 'explore'];
 
-export default function BucketList({ items, initialTab, initialCategory, onSelectItem, onNavigate }: Props) {
+export default function BucketList({ profile, items, initialTab, initialCategory, onSelectItem, onNavigate }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'want_to_do');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [search, setSearch] = useState('');
@@ -130,7 +132,10 @@ export default function BucketList({ items, initialTab, initialCategory, onSelec
 
   return (
     <div className="page-enter px-6 py-6 pb-24">
-      <h2 className="text-xl font-semibold text-sand-900 mb-4">My <span className="heading-accent">bucket list</span></h2>
+      <div className="flex items-start gap-3 mb-4">
+        <h2 className="flex-1 text-xl font-semibold text-sand-900">My <span className="heading-accent">bucket list</span></h2>
+        <HeaderAvatar profile={profile} onOpen={() => onNavigate({ name: 'settings' })} />
+      </div>
 
       {/* Tabs */}
       <div className="flex bg-sand-100 rounded-[20px] p-1 mb-4">
