@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import L from 'leaflet';
-import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateAllModesTravel, fetchPlaceImage, reverseGeocode, parseGoogleMapsUrl, isGoogleMapsShortUrl, resolveGoogleMapsShortUrl, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
+import { searchPlaces, fetchPlaceDetails, fetchGooglePlaceOpeningHours, calculateAllModesTravel, fetchPlaceImage, reverseGeocode, HERE_TILE_URL, HERE_TILE_ATTRIBUTION } from '../utils/api';
 import { inferDefaults } from '../utils/inference';
 import { generateId } from '../utils/storage';
 import type {
@@ -10,20 +10,23 @@ import type {
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO, TAG_SOFT_CAP, tagsEligibleForCategory } from '../types';
 import {
-  MapPin, MagnifyingGlass, LinkSimple,
+  ArrowLeft, MagnifyingGlass, CaretDown, CaretUp,
   Buildings, TreeEvergreen, ArrowsClockwise,
   CloudSun, Sun, CloudRain,
-  Dog, Wheelchair, Baby,
+  Dog, Wheelchair, BabyCarriage,
 } from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
 import KiteIcon from './KiteIcon';
+import { formatTravelShort } from '../utils/travelDisplay';
 
 interface Props {
   profile: UserProfile;
   items: BucketListItem[];
-  onSave: (item: BucketListItem) => void;
+  /** Persist the item. The optional `addAnother` flag tells the parent to
+   *  skip the post-save navigation so the user can keep adding from search. */
+  onSave: (item: BucketListItem, options?: { addAnother?: boolean }) => void;
   onBack: () => void;
-  /** Open an existing item's detail screen — used when a search/url result
+  /** Open an existing item's detail screen — used when a search result
    *  matches a place that's already on the user's list. */
   onViewExisting: (id: string) => void;
   /** When set (e.g. from the Discover feed), skip search and jump straight to the review step. */
@@ -69,17 +72,23 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<HereSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [draft, setDraft] = useState<Partial<BucketListItem>>({});
   // True when inference couldn't confidently pick a category — prompts the user to confirm.
   const [categoryUncertain, setCategoryUncertain] = useState(false);
-  const [urlMode, setUrlMode] = useState(false);
-  const [urlInput, setUrlInput] = useState('');
-  const [urlError, setUrlError] = useState('');
+  // Review-step "More details" disclosure (Best seasons + Accessibility).
+  const [moreOpen, setMoreOpen] = useState(false);
   // The result the user just picked, held in state while they confirm or
   // adjust the pin. Once they tap "Add this place" we hand this off to the
   // existing selectPlace pipeline (Google details, travel time, photo, etc.).
   const [pendingPlace, setPendingPlace] = useState<HereSearchResult | null>(null);
+  // Confirm-step address fallback for users who can't drag the map (keyboard /
+  // VoiceOver). Editing the field re-geocodes and moves the pin. Mirrors the
+  // Onboarding pin step's address fallback.
+  const [confirmAddressInput, setConfirmAddressInput] = useState('');
+  const [confirmAddressLooking, setConfirmAddressLooking] = useState(false);
+  const [confirmAddressError, setConfirmAddressError] = useState<string | null>(null);
 
   const searchTimeout = useRef<number | null>(null);
   const confirmMapRef = useRef<HTMLDivElement>(null);
@@ -120,6 +129,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
         position: { lat, lng },
         address: geo?.address || prev.address,
       } : prev);
+      if (geo?.address.label) setConfirmAddressInput(geo.address.label);
     };
 
     marker.on('dragend', () => {
@@ -138,6 +148,36 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     setTimeout(() => map.invalidateSize(), 0);
   }, [step, pendingPlace]);
 
+  /** Address-field fallback for users who can't drag the map (keyboard /
+   *  VoiceOver). Mirrors the Onboarding pin step. Re-geocodes the typed value
+   *  and moves both the pin and the pendingPlace state. */
+  const handleConfirmAddressSubmit = async () => {
+    if (!pendingPlace) return;
+    const value = confirmAddressInput.trim();
+    if (!value) return;
+    if (value === pendingPlace.address.label) return;
+    setConfirmAddressError(null);
+    setConfirmAddressLooking(true);
+    const matches = await searchPlaces(value, profile.homeLatitude, profile.homeLongitude);
+    setConfirmAddressLooking(false);
+    if (matches.length === 0) {
+      setConfirmAddressError("Couldn't find that address. Try a more specific street, city, or postcode.");
+      setConfirmAddressInput(pendingPlace.address.label);
+      return;
+    }
+    const top = matches[0];
+    setPendingPlace(prev => prev ? {
+      ...prev,
+      position: { lat: top.position.lat, lng: top.position.lng },
+      address: top.address,
+    } : prev);
+    setConfirmAddressInput(top.address.label);
+    if (confirmMapInstance.current && confirmMarkerRef.current) {
+      confirmMarkerRef.current.setLatLng([top.position.lat, top.position.lng]);
+      confirmMapInstance.current.setView([top.position.lat, top.position.lng], 16);
+    }
+  };
+
   // Tear the confirm-step map down whenever we leave it, so re-entry (e.g.
   // via Search again → pick a new result) gets a clean instance.
   useEffect(() => {
@@ -150,6 +190,8 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
   const goToConfirm = (place: HereSearchResult) => {
     setPendingPlace(place);
+    setConfirmAddressInput(place.address.label);
+    setConfirmAddressError(null);
     setResults([]);
     setStep('confirm');
   };
@@ -160,19 +202,37 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
   const backToSearch = () => {
     setPendingPlace(null);
+    setConfirmAddressInput('');
+    setConfirmAddressError(null);
+    setStep('search');
+  };
+
+  /** Reset the review state back to a clean search step (used after "Save & add
+   *  another" so the user lands on an empty search ready for the next entry). */
+  const resetForNextAdd = () => {
+    setPendingPlace(null);
+    setConfirmAddressInput('');
+    setConfirmAddressError(null);
+    setDraft({});
+    setCategoryUncertain(false);
+    setMoreOpen(false);
+    setQuery('');
+    setResults([]);
+    setHasSearched(false);
     setStep('search');
   };
 
   const handleSearch = async (q: string) => {
     setQuery(q);
     if (searchTimeout.current !== null) clearTimeout(searchTimeout.current);
-    if (q.length < 3) { setResults([]); return; }
+    if (q.length < 3) { setResults([]); setHasSearched(false); return; }
     searchTimeout.current = window.setTimeout(async () => {
       setSearching(true);
       const res = await searchPlaces(q, profile.homeLatitude, profile.homeLongitude);
       setResults(res);
       setSearching(false);
-    }, 1000);
+      setHasSearched(true);
+    }, 400);
   };
 
   const selectPlace = async (result: HereSearchResult, categoryHint?: Category) => {
@@ -251,71 +311,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     setStep('review');
   };
 
-  const importFromUrl = async (raw: string) => {
-    setUrlError('');
-    let working = raw.trim();
-
-    // Mobile share links (maps.app.goo.gl / goo.gl) have to be expanded first.
-    // The browser can't follow the redirect (CORS), so we round-trip through
-    // the resolve-maps-link Supabase Edge Function.
-    if (isGoogleMapsShortUrl(working)) {
-      setStep('loading');
-      setLoadingMsg('Expanding share link...');
-      const expanded = await resolveGoogleMapsShortUrl(working);
-      if (!expanded) {
-        setStep('search');
-        setUrlError(
-          "Couldn't expand that share link. Check your connection and try again, or paste a Google Maps link from a browser instead.",
-        );
-        return;
-      }
-      working = expanded;
-    }
-
-    const parsed = parseGoogleMapsUrl(working);
-    if (!parsed) {
-      setStep('search');
-      setUrlError(
-        "Couldn't find a location in that link. Make sure it's a Google Maps share link or a maps.google.com URL.",
-      );
-      return;
-    }
-    setStep('loading');
-    setLoadingMsg('Looking up location...');
-
-    // Reverse-geocode for address details + a HERE place id (used by selectPlace
-    // to fetch categories, opening hours, etc.). Fall back to a bare pin if it fails.
-    const geo = await reverseGeocode(parsed.lat, parsed.lng);
-    const result: HereSearchResult = geo
-      ? {
-          ...geo,
-          // Prefer the name from the URL — reverse geocode often returns a street address
-          title: parsed.name || geo.title,
-          position: { lat: parsed.lat, lng: parsed.lng },
-        }
-      : {
-          id: '',
-          title: parsed.name || 'Pinned location',
-          address: { label: parsed.name || `${parsed.lat}, ${parsed.lng}` },
-          position: { lat: parsed.lat, lng: parsed.lng },
-          categories: [],
-        };
-
-    setStep('search');
-
-    // If the pasted link points to a place already on the list, jump straight
-    // to its detail screen instead of taking the user through confirm/review.
-    const existing = findExistingMatch(result, items);
-    if (existing) {
-      onViewExisting(existing.id);
-      return;
-    }
-
-    // Drop into the confirm step so the user can verify the parsed pin before
-    // we spend API calls on details/photos/travel time.
-    goToConfirm(result);
-  };
-
   const updateDraft = (updates: Partial<BucketListItem>) => {
     setDraft(prev => ({ ...prev, ...updates }));
   };
@@ -352,52 +347,80 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   // Search screen
   if (step === 'search') {
     return (
-      <div className="page-enter px-6 py-6">
+      <main
+        aria-label="Add a place"
+        className="page-enter px-6 py-6"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-600 text-sm">←</button>
+          <button
+            onClick={onBack}
+            aria-label="Back to dashboard"
+            className="w-11 h-11 rounded-full bg-sand-100 flex items-center justify-center text-sand-700 hover:bg-sand-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
+            <ArrowLeft size={18} weight="bold" aria-hidden="true" />
+          </button>
           <h2 className="text-xl font-semibold text-sand-900">Add a <span className="heading-accent">place</span></h2>
         </div>
-        <div className="relative mb-4">
-          <input type="text" value={query} onChange={(e) => handleSearch(e.target.value)}
+
+        <form
+          onSubmit={(e) => e.preventDefault()}
+          role="search"
+          className="relative mb-4"
+        >
+          <label htmlFor="add-place-search" className="sr-only">Search for a place</label>
+          <input
+            id="add-place-search"
+            type="text"
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search for a place..."
             autoFocus
-            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="search"
+            enterKeyHint="search"
+            aria-autocomplete="list"
+            aria-controls="add-place-results"
+            aria-expanded={results.length > 0}
+            className="w-full px-4 py-3.5 bg-white border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30"
+          />
+          {searching && (
+            <span
+              aria-hidden="true"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-sand-300 border-t-sand-700 rounded-full animate-spin"
+            />
+          )}
+        </form>
+
+        <div aria-live="polite" className="sr-only">
+          {searching
+            ? 'Searching for places'
+            : hasSearched && results.length === 0
+              ? 'No results found'
+              : results.length > 0
+                ? `${results.length} ${results.length === 1 ? 'result' : 'results'} found`
+                : ''}
         </div>
 
-        {/* Import from a Google Maps link */}
-        {!urlMode ? (
-          <button onClick={() => setUrlMode(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-sand-600 hover:text-sand-900 underline mb-4 px-1">
-            <LinkSimple size={14} /> Or paste a Google Maps link
-          </button>
-        ) : (
-          <div className="mb-4 space-y-2">
-            <div className="flex gap-2">
-              <input type="text" value={urlInput}
-                onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' && urlInput.trim()) importFromUrl(urlInput); }}
-                placeholder="Paste a Google Maps link..."
-                className="flex-1 px-4 py-3 bg-white border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 focus:ring-1 focus:ring-sand-300" />
-              <button onClick={() => importFromUrl(urlInput)} disabled={!urlInput.trim()}
-                className="px-5 py-3 bg-sand-900 text-sand-100 rounded-[12px] text-sm font-medium hover:bg-sand-800 transition disabled:opacity-40">
-                Add
-              </button>
-            </div>
-            {urlError && <p className="text-xs text-red-600 px-1">{urlError}</p>}
-            <p className="text-[10px] text-sand-600 px-1">Open the place in Google Maps, copy the link from your browser's address bar, and paste it here.</p>
-          </div>
-        )}
-
-        {searching && <p className="text-xs text-sand-600 mb-2 px-1">Searching...</p>}
-        <div className="space-y-1">
+        <div id="add-place-results" role="list" className="space-y-1">
           {results.map((r) => {
             const subtitle = [r.address.city, r.address.country].filter(Boolean).join(', ');
             const existing = findExistingMatch(r, items);
             // If already in the list, tap routes to the item detail instead of
             // the confirm step — same surface, no silent hide, no re-adding.
             return (
-              <button key={r.id} onClick={() => existing ? onViewExisting(existing.id) : goToConfirm(r)}
-                className="w-full text-left px-4 py-3.5 rounded-[20px] hover:bg-sand-100 transition">
+              <button
+                key={r.id}
+                onClick={() => existing ? onViewExisting(existing.id) : goToConfirm(r)}
+                role="listitem"
+                aria-label={existing
+                  ? `${r.title}${subtitle ? ', ' + subtitle : ''}, already saved — open detail`
+                  : `${r.title}${subtitle ? ', ' + subtitle : ''}`}
+                className="w-full text-left min-h-[44px] px-4 py-3.5 rounded-[20px] hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-sand-900 truncate">{r.title}</div>
@@ -413,18 +436,18 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
             );
           })}
         </div>
-        {!searching && results.length === 0 && query.length >= 3 && (
-          <div className="text-center py-12">
-            <p className="text-sm text-sand-600">No results found. Try a different search.</p>
+        {!searching && hasSearched && results.length === 0 && (
+          <div className="text-center py-12" role="status">
+            <p className="text-sm text-sand-700">No results found. Try a different search.</p>
           </div>
         )}
         {query.length < 3 && (
           <div className="text-center py-16">
-            <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-300" /></div>
+            <div className="flex justify-center mb-3"><MagnifyingGlass size={32} className="text-sand-400" aria-hidden="true" /></div>
             <p className="text-sm text-sand-700">Search for museums, restaurants, parks, hikes, viewpoints...</p>
           </div>
         )}
-      </div>
+      </main>
     );
   }
 
@@ -438,19 +461,28 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
       // and the flex sizing didn't survive that extra context. Explicit inline
       // height with a px minHeight fallback removes the dependency on parent
       // sizing entirely.
-      <div className="bg-sand-50 pb-4 w-full max-w-full overflow-x-hidden">
+      <main
+        aria-label="Confirm place location"
+        className="bg-sand-50 pb-4 w-full max-w-full overflow-x-hidden"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
         <div className="px-6 pt-6 pb-3">
           <div className="flex items-center gap-3 mb-4">
-            <button onClick={backToSearch}
-              className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-sand-600 text-sm">←</button>
+            <button
+              onClick={backToSearch}
+              aria-label="Back to search"
+              className="w-11 h-11 rounded-full bg-sand-100 flex items-center justify-center text-sand-700 hover:bg-sand-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+            >
+              <ArrowLeft size={18} weight="bold" aria-hidden="true" />
+            </button>
             <h2 className="text-xl font-semibold text-sand-900">
               Is this the right <span className="heading-accent">spot?</span>
             </h2>
           </div>
           <p className="text-base font-medium text-sand-900">{pendingPlace.title}</p>
           <p className="text-xs text-sand-700 mt-0.5 truncate">{pendingPlace.address.label}</p>
-          <p className="text-xs text-sand-600 mt-2">
-            Drag the pin (or tap the map) if it's slightly off.
+          <p className="text-xs text-sand-700 mt-2">
+            Move the pin if it's not quite right.
           </p>
         </div>
 
@@ -461,55 +493,117 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
         <div className="px-6">
           <div
             ref={confirmMapRef}
+            role="application"
+            aria-label="Map with draggable pin. Drag the pin or tap a new spot to adjust the location. If you can't drag, use the address field below."
             className="w-full rounded-[20px] border border-sand-200 overflow-hidden"
             style={{ height: '55vh', minHeight: '320px' }}
           />
         </div>
 
+        {/* Address-field fallback — keyboard / VoiceOver path for users who
+            can't drag the map. Mirrors the Onboarding pin step. */}
+        <form
+          className="px-6 pt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleConfirmAddressSubmit();
+          }}
+        >
+          <label htmlFor="confirm-address-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1 block">
+            Address
+          </label>
+          <input
+            id="confirm-address-input"
+            type="text"
+            value={confirmAddressInput}
+            onChange={(e) => {
+              setConfirmAddressInput(e.target.value);
+              if (confirmAddressError) setConfirmAddressError(null);
+            }}
+            onBlur={() => void handleConfirmAddressSubmit()}
+            placeholder="Street, city, or postcode"
+            autoComplete="street-address"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="search"
+            enterKeyHint="done"
+            disabled={confirmAddressLooking}
+            className="w-full px-4 py-2.5 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white disabled:opacity-60"
+          />
+          <div aria-live="polite" className="sr-only">
+            {confirmAddressLooking ? 'Looking up address' : confirmAddressError ?? ''}
+          </div>
+          {confirmAddressError && (
+            <p className="text-sm text-terra-600 mt-2" role="alert">
+              {confirmAddressError}
+            </p>
+          )}
+        </form>
+
         <div
           className="px-6 pt-3 flex gap-2"
           style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
-          <button onClick={backToSearch}
-            className="flex-1 py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition">
+          <button
+            onClick={backToSearch}
+            className="flex-1 min-h-[44px] py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
             Search again
           </button>
-          <button onClick={confirmPlace}
-            className="flex-[2] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition">
+          <button
+            onClick={confirmPlace}
+            className="flex-[2] min-h-[44px] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
             Add this place
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   // Loading
   if (step === 'loading') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6">
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex flex-col items-center justify-center px-6"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
         <KiteIcon size={48} className="text-sand-900 mb-4" animate />
-        <p className="text-sm text-sand-600 font-medium">{loadingMsg}</p>
+        <p className="text-sm text-sand-700 font-medium">{loadingMsg}</p>
       </div>
     );
   }
 
-  // Review screen
+  // Review screen — final pass before saving. Per-section semantics: every
+  // Section renders an <h3> + a labelled toggle group so the screen reads as a
+  // proper form to assistive tech, not a wall of unrelated buttons.
+  const subtitle = [draft.city, draft.country].filter(Boolean).join(', ');
+  const travelChip = draft.travelDistanceKm != null
+    ? formatTravelShort(draft as BucketListItem, profile.preferredTransport ?? 'car')
+    : null;
+
   return (
-    <div className="page-enter pb-24">
+    <main aria-label="Review and save place" className="page-enter pb-24">
       {/* Hero image — always shown; PlaceImg renders the designed placeholder
           when there's no photo so the layout stays consistent. */}
       <div className="place-img-container h-48 rounded-none">
         <PlaceImg
           src={draft.photoUrl}
-          alt={draft.name || ''}
+          alt=""
           name={draft.name}
           category={draft.category || 'other'}
           placeholderVariant="detail"
           loading="eager"
         />
-        <button onClick={() => setStep('search')}
-          className="absolute top-4 left-4 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur flex items-center justify-center text-sand-700 text-sm">
-          ←
+        <button
+          onClick={() => setStep('search')}
+          aria-label="Back to search"
+          className="absolute top-4 left-4 z-10 w-11 h-11 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-sand-900 hover:bg-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-white shadow-sm"
+        >
+          <ArrowLeft size={18} weight="bold" aria-hidden="true" />
         </button>
       </div>
 
@@ -517,118 +611,136 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
         {/* Place name & travel info */}
         <div className="mb-5">
-          <h2 className="text-xl font-semibold text-sand-900">{draft.name}</h2>
-          <p className="text-xs text-sand-700 mt-1">{draft.address?.split(',').slice(1, 3).join(',')}</p>
-          {draft.travelDistanceKm != null && (
+          <h1 className="text-xl font-semibold text-sand-900">{draft.name}</h1>
+          {subtitle && <p className="text-xs text-sand-700 mt-1">{subtitle}</p>}
+          {travelChip && (
             <div className="flex items-center gap-3 mt-3">
-              <span className="badge bg-sand-100 text-sand-700 inline-flex items-center gap-1.5">
-                <MapPin size={14} /> {draft.travelDistanceKm} km away
+              <span className="badge bg-sand-100 text-sand-700">
+                {travelChip}
               </span>
             </div>
           )}
         </div>
 
         {/* Fields */}
-        <Section label="Category">
+        <Section label="Category" id="category">
           {categoryUncertain && (
-            <p className="mb-2 text-xs text-amber-300 bg-amber-900/30 border border-amber-700/40 rounded-md px-2.5 py-1.5">
+            <p
+              role="alert"
+              className="mb-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5"
+            >
               We weren't sure how to categorise this one. Please pick the best fit below.
             </p>
           )}
-          <div className="toggle-group">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-category">
             {(Object.entries(CATEGORY_INFO) as [Category, { label: string; icon: string; color: string }][]).map(([key, info]) => (
-              <button key={key} className={`toggle-btn text-xs ${draft.category === key ? 'active' : ''}`}
-                onClick={() => { updateDraft({ category: key }); setCategoryUncertain(false); }}>{info.label}</button>
+              <button
+                key={key}
+                role="radio"
+                aria-checked={draft.category === key}
+                className={`toggle-btn text-xs ${draft.category === key ? 'active' : ''}`}
+                onClick={() => { updateDraft({ category: key }); setCategoryUncertain(false); }}
+              >
+                {info.label}
+              </button>
             ))}
           </div>
         </Section>
 
-        <Section label="Setting">
-          <div className="toggle-group">
+        <Section label="Setting" id="setting">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-setting">
             {([
-              { val: 'indoor' as Setting, label: 'Indoor', icon: <Buildings size={16} /> },
-              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreeEvergreen size={16} /> },
-              { val: 'mixed' as Setting, label: 'Mixed', icon: <ArrowsClockwise size={16} /> },
+              { val: 'indoor' as Setting, label: 'Indoor', icon: <Buildings size={16} aria-hidden="true" /> },
+              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreeEvergreen size={16} aria-hidden="true" /> },
+              { val: 'mixed' as Setting, label: 'Mixed', icon: <ArrowsClockwise size={16} aria-hidden="true" /> },
             ]).map(({ val, label, icon }) => (
-              <button key={val} className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ setting: val })}>
+              <button
+                key={val}
+                role="radio"
+                aria-checked={draft.setting === val}
+                className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
+                onClick={() => updateDraft({ setting: val })}
+              >
                 <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
               </button>
             ))}
           </div>
         </Section>
 
-        <Section label="Weather">
-          <div className="toggle-group">
+        <Section label="Weather" id="weather">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-weather">
             {([
-              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} /> },
-              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} /> },
-              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} /> },
+              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} aria-hidden="true" /> },
+              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} aria-hidden="true" /> },
+              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} aria-hidden="true" /> },
             ]).map(({ val, label, icon }) => (
-              <button key={val} className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ weatherSuitability: val })}>
+              <button
+                key={val}
+                role="radio"
+                aria-checked={draft.weatherSuitability === val}
+                className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
+                onClick={() => updateDraft({ weatherSuitability: val })}
+              >
                 <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
               </button>
             ))}
           </div>
         </Section>
 
-        <Section label="Activity duration">
-          <div className="toggle-group">
+        <Section label="Activity duration" id="duration">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-duration">
             {(Object.entries(DURATION_LABELS) as [DurationEstimate, string][]).map(([key, label]) => (
-              <button key={key} className={`toggle-btn ${draft.durationEstimate === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ durationEstimate: key })}>{label}</button>
+              <button
+                key={key}
+                role="radio"
+                aria-checked={draft.durationEstimate === key}
+                className={`toggle-btn ${draft.durationEstimate === key ? 'active' : ''}`}
+                onClick={() => updateDraft({ durationEstimate: key })}
+              >
+                {label}
+              </button>
             ))}
           </div>
-          <p className="text-[10px] text-sand-600 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
+          <p className="text-xs text-sand-700 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
         </Section>
 
-        <Section label="Cost">
-          <div className="toggle-group">
+        <Section label="Cost" id="cost">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-cost">
             {(Object.entries(COST_LABELS) as [CostLevel, string][]).map(([key, label]) => (
-              <button key={key} className={`toggle-btn ${draft.costLevel === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ costLevel: key })}>{label}</button>
+              <button
+                key={key}
+                role="radio"
+                aria-checked={draft.costLevel === key}
+                className={`toggle-btn ${draft.costLevel === key ? 'active' : ''}`}
+                onClick={() => updateDraft({ costLevel: key })}
+              >
+                {label}
+              </button>
             ))}
           </div>
         </Section>
 
-        <Section label="Best seasons">
-          <div className="toggle-group">
-            {(Object.entries(SEASON_LABELS) as [Season, string][]).map(([key, label]) => (
-              <button key={key} className={`toggle-btn ${(draft.bestSeasons || []).includes(key) ? 'active' : ''}`}
-                onClick={() => toggleSeason(key)}>{label}</button>
-            ))}
-          </div>
-        </Section>
-
-        <Section label="Best times of day">
-          <div className="toggle-group">
+        <Section label="Best times of day" id="times">
+          <div className="toggle-group" role="group" aria-labelledby="section-times">
             {(Object.entries(TIME_OF_DAY_LABELS) as [TimeOfDay, string][]).map(([key, label]) => (
-              <button key={key} className={`toggle-btn ${(draft.bestTimesOfDay || []).includes(key) ? 'active' : ''}`}
-                onClick={() => toggleTimeOfDay(key)}>{label}</button>
-            ))}
-          </div>
-        </Section>
-
-        <Section label="Good for">
-          <div className="toggle-group">
-            {([
-              ['solo', 'Solo'],
-              ['couple', 'Couple'],
-              ['friends', 'Friends'],
-              ['kids', 'With kids'],
-            ] as [GroupType, string][]).map(([val, label]) => (
-              <button key={val} className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
-                onClick={() => toggleGroupType(val)}>{label}</button>
+              <button
+                key={key}
+                aria-pressed={(draft.bestTimesOfDay || []).includes(key)}
+                className={`toggle-btn ${(draft.bestTimesOfDay || []).includes(key) ? 'active' : ''}`}
+                onClick={() => toggleTimeOfDay(key)}
+              >
+                {label}
+              </button>
             ))}
           </div>
         </Section>
 
         {/* Tag picker — text-only, user-driven (no inference). Category-eligible
             pool only. Soft 5-tag cap; further taps after the cap show a hint
-            but don't block (existing items can keep more than 5). */}
+            but don't block (existing items can keep more than 5). Tags sit
+            above "Good for" because they drive recommendations more heavily. */}
         {draft.category && (
-          <Section label="Tags">
+          <Section label="Tags" id="tags">
             <TagPicker
               category={draft.category}
               selected={(draft.tags || []) as Tag[]}
@@ -637,62 +749,155 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
           </Section>
         )}
 
-        <Section label="Accessibility">
-          {/* Three-state per field: Yes / Not sure / No. "Not sure" is the
-              default (undefined) and means "no signal" — recommend-flow filters
-              let it through, and the detail page shows no chip. Explicit Yes
-              and No are user-only signal (inference no longer writes false).
-              Tapping the active pill again clears back to "Not sure" so users
-              can undo a misclick without leaving a misleading "No". */}
-          <AccessibilityRow
-            label="Dogs"
-            icon={<Dog size={16} />}
-            value={draft.dogFriendly}
-            onChange={(v) => updateDraft({ dogFriendly: v })}
-          />
-          <AccessibilityRow
-            label="Wheelchair"
-            icon={<Wheelchair size={16} />}
-            value={draft.wheelchairAccessible}
-            onChange={(v) => updateDraft({ wheelchairAccessible: v })}
-          />
-          <AccessibilityRow
-            label="Stroller"
-            icon={<Baby size={16} />}
-            value={draft.strollerFriendly}
-            onChange={(v) => updateDraft({ strollerFriendly: v })}
-          />
-        </Section>
-
-        <Section label="Priority">
-          <div className="toggle-group">
-            {([['low', 'Low'], ['medium', 'Medium'], ['high', 'High']] as const).map(([val, label]) => (
-              <button key={val} className={`toggle-btn ${draft.priority === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ priority: val as Priority })}>{label}</button>
+        <Section label="Good for" id="good-for">
+          <div className="toggle-group" role="group" aria-labelledby="section-good-for">
+            {([
+              ['solo', 'Solo'],
+              ['couple', 'Couple'],
+              ['friends', 'Friends'],
+              ['kids', 'With kids'],
+            ] as [GroupType, string][]).map(([val, label]) => (
+              <button
+                key={val}
+                aria-pressed={(draft.groupSuitability || []).includes(val)}
+                className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
+                onClick={() => toggleGroupType(val)}
+              >
+                {label}
+              </button>
             ))}
           </div>
         </Section>
 
-        <Section label="Personal notes">
-          <textarea value={draft.personalNotes || ''} onChange={(e) => updateDraft({ personalNotes: e.target.value })}
-            placeholder="Any notes about this place..."
-            rows={2}
-            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-500 resize-none bg-white" />
+        <Section label="Priority" id="priority">
+          <div className="toggle-group" role="radiogroup" aria-labelledby="section-priority">
+            {([['low', 'Low'], ['medium', 'Medium'], ['high', 'High']] as const).map(([val, label]) => (
+              <button
+                key={val}
+                role="radio"
+                aria-checked={draft.priority === val}
+                className={`toggle-btn ${draft.priority === val ? 'active' : ''}`}
+                onClick={() => updateDraft({ priority: val as Priority })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </Section>
 
-        <button onClick={() => onSave(draft as BucketListItem)}
-          className="w-full bg-sand-900 text-sand-100 py-4 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-2 mb-4">
-          Save to bucket list
-        </button>
+        <Section label="Personal notes" id="notes">
+          <textarea
+            id="personal-notes"
+            aria-labelledby="section-notes"
+            value={draft.personalNotes || ''}
+            onChange={(e) => updateDraft({ personalNotes: e.target.value })}
+            placeholder="Any notes about this place..."
+            rows={2}
+            className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 resize-none bg-white"
+          />
+        </Section>
+
+        {/* More details disclosure — Best seasons + Accessibility live here.
+            Both are lower-frequency: seasons rarely change once set, and
+            accessibility is opt-in signal (default "Not sure" doesn't affect
+            recommendations). Keeping them collapsed shortens the must-edit
+            scan path. */}
+        <div className="mb-5">
+          <button
+            onClick={() => setMoreOpen(o => !o)}
+            aria-expanded={moreOpen}
+            aria-controls="more-details-panel"
+            className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 bg-sand-100 hover:bg-sand-200 rounded-[12px] text-sm font-medium text-sand-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
+            <span>More details</span>
+            {moreOpen
+              ? <CaretUp size={16} weight="bold" aria-hidden="true" />
+              : <CaretDown size={16} weight="bold" aria-hidden="true" />}
+          </button>
+
+          {moreOpen && (
+            <div id="more-details-panel" className="mt-4">
+              <Section label="Best seasons" id="seasons">
+                <div className="toggle-group" role="group" aria-labelledby="section-seasons">
+                  {(Object.entries(SEASON_LABELS) as [Season, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      aria-pressed={(draft.bestSeasons || []).includes(key)}
+                      className={`toggle-btn ${(draft.bestSeasons || []).includes(key) ? 'active' : ''}`}
+                      onClick={() => toggleSeason(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
+              <Section label="Accessibility" id="accessibility">
+                {/* Three-state per field: Yes / Not sure / No. "Not sure" is the
+                    default (undefined) and means "no signal" — recommend-flow
+                    filters let it through, and the detail page shows no chip.
+                    Explicit Yes and No are user-only signal (inference no
+                    longer writes false). Tapping the active pill again clears
+                    back to "Not sure" so users can undo a misclick without
+                    leaving a misleading "No". */}
+                <AccessibilityRow
+                  label="Dogs"
+                  icon={<Dog size={16} aria-hidden="true" />}
+                  value={draft.dogFriendly}
+                  onChange={(v) => updateDraft({ dogFriendly: v })}
+                />
+                <AccessibilityRow
+                  label="Wheelchair"
+                  icon={<Wheelchair size={16} aria-hidden="true" />}
+                  value={draft.wheelchairAccessible}
+                  onChange={(v) => updateDraft({ wheelchairAccessible: v })}
+                />
+                <AccessibilityRow
+                  label="Stroller"
+                  icon={<BabyCarriage size={16} aria-hidden="true" />}
+                  value={draft.strollerFriendly}
+                  onChange={(v) => updateDraft({ strollerFriendly: v })}
+                />
+              </Section>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 mt-2 mb-4">
+          <button
+            onClick={() => {
+              onSave(draft as BucketListItem, { addAnother: true });
+              resetForNextAdd();
+            }}
+            className="flex-1 min-h-[44px] py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
+            Save & add another
+          </button>
+          <button
+            onClick={() => onSave(draft as BucketListItem)}
+            className="flex-[2] min-h-[44px] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+          >
+            Save to my list
+          </button>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+/** Section heading + slot for a toggle group / control. The `id` prop becomes
+ *  `section-{id}` on the heading so the inner toggle group can reference it
+ *  via aria-labelledby — what makes the group announce as e.g. "Category,
+ *  radio group" instead of a stream of unlabelled buttons. */
+function Section({ label, children, id }: { label: string; children: React.ReactNode; id?: string }) {
   return (
     <div className="mb-5">
-      <label className="block text-xs font-medium text-sand-600 mb-2 uppercase tracking-wide">{label}</label>
+      <h3
+        id={id ? `section-${id}` : undefined}
+        className="text-xs font-medium text-sand-700 mb-2 uppercase tracking-wide"
+      >
+        {label}
+      </h3>
       {children}
     </div>
   );
@@ -713,25 +918,32 @@ function AccessibilityRow({
   onChange: (v: boolean | undefined) => void;
 }) {
   const pick = (v: boolean | undefined) => onChange(value === v ? undefined : v);
+  const groupLabelId = `a11y-${label.toLowerCase().replace(/\s+/g, '-')}-label`;
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="inline-flex items-center gap-1.5 text-sm text-sand-800">
+      <span id={groupLabelId} className="inline-flex items-center gap-1.5 text-sm text-sand-800">
         {icon} {label}
       </span>
-      <div className="toggle-group !mt-0">
+      <div className="toggle-group !mt-0" role="radiogroup" aria-labelledby={groupLabelId}>
         <button
+          role="radio"
+          aria-checked={value === true}
           className={`toggle-btn text-xs ${value === true ? 'active' : ''}`}
           onClick={() => pick(true)}
         >
           Yes
         </button>
         <button
+          role="radio"
+          aria-checked={value === undefined}
           className={`toggle-btn text-xs ${value === undefined ? 'active' : ''}`}
           onClick={() => onChange(undefined)}
         >
           Not sure
         </button>
         <button
+          role="radio"
+          aria-checked={value === false}
           className={`toggle-btn text-xs ${value === false ? 'active' : ''}`}
           onClick={() => pick(false)}
         >
@@ -771,15 +983,19 @@ export function TagPicker({
 
   return (
     <div>
-      <div className="toggle-group">
+      <div className="toggle-group" role="group" aria-label="Tags">
         {all.map(t => (
-          <button key={t} className={`toggle-btn text-xs ${selected.includes(t) ? 'active' : ''}`}
-            onClick={() => toggle(t)}>
+          <button
+            key={t}
+            aria-pressed={selected.includes(t)}
+            className={`toggle-btn text-xs ${selected.includes(t) ? 'active' : ''}`}
+            onClick={() => toggle(t)}
+          >
             {TAG_INFO[t].label}
           </button>
         ))}
       </div>
-      <p className={`text-[10px] mt-1 ${overCap ? 'text-terra-600' : 'text-sand-600'}`}>
+      <p className={`text-xs mt-1 ${overCap ? 'text-terra-600' : 'text-sand-700'}`}>
         {overCap
           ? `${selected.length} selected — best to keep it under ${TAG_SOFT_CAP}.`
           : `Pick the ones that make this place worth recommending. Up to ${TAG_SOFT_CAP}.`}

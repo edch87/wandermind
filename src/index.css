@@ -91,6 +91,10 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* min-height 44px hits the WCAG 2.1 AA touch-target rule on every screen that
+     uses .toggle-btn (AddPlace, Onboarding discover, Settings, ItemDetail edit,
+     RecommendationFlow). Padding stays modest so chip width tracks the label. */
+  min-height: 44px;
   padding: 7px 14px;
   border-radius: 9999px;
   border: 1.5px solid #E8D5BF;
@@ -105,6 +109,11 @@ body {
 .toggle-btn:hover {
   border-color: #B8945C;
   background: #FFF3E6;
+}
+
+.toggle-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
 }
 
 .toggle-btn.active {

@@ -9,7 +9,7 @@ Legend: `[ ]` pending · `[~]` in progress · `[x]` done · `[—]` skipped
 1. `[x]` **AuthScreen** — sign in, sign up, reset password, new password
 2. `[x]` **Onboarding** — first-time setup (name + home)
 3. `[x]` **Dashboard** — main hub after login
-4. `[ ]` **AddPlace** — search, pick, save a place
+4. `[x]` **AddPlace** — search, pick, save a place
 5. `[ ]` **BucketList** — browse saved places
 6. `[ ]` **ItemDetail** — view/edit a place
 7. `[ ]` **RecommendationFlow** — "Suggest" flow (context → pick)
@@ -272,7 +272,88 @@ Files: `src/components/Dashboard.tsx`, `src/components/CuratedLists.tsx`, `src/c
 
 ## 4. AddPlace
 
-Status: pending
+Status: done (2026-06-30)
+Files: `src/components/AddPlace.tsx`, `src/App.tsx` (onSave signature), `src/index.css` (toggle-btn), `IDEAS.md` (v1.1 backlog), `docs/PAGE_AUDIT.md`
+
+### Shipped changes
+
+**Search step**
+
+1. Outer wrapper switched from `<div>` to `<main aria-label="Add a place">` with the standard `calc(100dvh - safe-area insets)` height pattern.
+2. Back arrow: 32x32 sand-100 circle with literal `←` swapped for a 44x44 button using Phosphor `ArrowLeft`, `aria-label="Back to dashboard"`, focus ring (`focus-visible:ring-sand-700` with sand-50 offset). Same treatment on the confirm-step back arrow and the hero-image back arrow on the review step.
+3. Search input wrapped in `<form role="search">` with `onSubmit={preventDefault}` so the iOS keyboard "Search" key behaves naturally. Added sr-only `<label htmlFor="add-place-search">`, plus `autoComplete="off"`, `autoCapitalize="off"`, `autoCorrect="off"`, `spellCheck={false}`, `inputMode="search"`, `enterKeyHint="search"`, `aria-autocomplete="list"`, `aria-controls`, `aria-expanded`.
+4. Focus ring on the search input lifted from `focus:ring-1 focus:ring-sand-300` (1.6:1, fails 3:1 UI contrast) to `focus:ring-2 focus:ring-sand-700/30` with `focus:border-sand-700`.
+5. Inline spinner inside the input replaces the loose "Searching..." paragraph, mirroring the Onboarding pattern. The sr-only `aria-live="polite"` region announces searching / N results / no results.
+6. Result rows: explicit `min-h-[44px]`, focus rings, descriptive `aria-label` (name + city/country + "already saved — open detail" when matched), `role="list"` on the container, `role="listitem"` on each button.
+7. Empty-state copy bumped from `sand-600` to `sand-700` for AA contrast; magnifying-glass icon contrast lifted from `sand-300` to `sand-400` plus `aria-hidden`.
+8. "No results" empty state now has `role="status"`.
+9. Search debounce dropped from 1000ms to 400ms.
+10. **Removed the "Or paste a Google Maps link" import path entirely** (decided 2026-06-30 with Edward). The affordance was hidden behind a small underlined link and rarely worked — search results were just as good. State, handlers, JSX, and imports stripped; `parseGoogleMapsUrl`/`resolveGoogleMapsShortUrl`/`isGoogleMapsShortUrl` left in `src/utils/api.ts` as dead code, ready for re-use if we ever ship a PWA share target (tracked under IDEAS.md "Google Maps import"). This removed all three `text-[10px]` violations in the search step in one go.
+
+**Confirm step**
+
+1. Outer wrapper switched to `<main aria-label="Confirm place location">` with the `calc(100dvh)` height pattern.
+2. Map div given `role="application"` with a descriptive `aria-label` explaining both the drag interaction and the address-field fallback below — mirrors the Onboarding pin step.
+3. **Address-field fallback added**: editable address input below the map with sr-only label, `aria-live` lookup state, `role="alert"` error state, iOS input attrs (`autoComplete="street-address"`, `inputMode="search"`, `enterKeyHint="done"`, `autoCapitalize="words"`, `autoCorrect="off"`, `spellCheck={false}`). On submit/blur, `handleConfirmAddressSubmit` re-geocodes via `searchPlaces` and moves both the pin and the pendingPlace state. Lets keyboard / VoiceOver users adjust the location without touching the map.
+4. Drag handler now syncs the address-field input on reverse-geocode so the text stays in sync with the pin.
+5. Helper copy shortened from "Drag the pin (or tap the map) if it's slightly off." to "Move the pin if it's not quite right." Contrast lifted from `sand-600` to `sand-700`.
+6. "Search again" and "Add this place" CTAs given explicit `min-h-[44px]` and focus rings.
+
+**Loading step**
+
+1. Wrapper switched from `min-h-screen` to the `calc(100dvh - safe-area)` pattern.
+2. Added `role="status"` + `aria-live="polite"` so the loading messages ("Fetching place details…" / "Calculating travel times…" / "Finding photos…" / "Auto-categorising…") are announced to VoiceOver.
+3. Loading copy contrast lifted from `sand-600` to `sand-700`.
+
+**Review step**
+
+1. Wrapper switched to `<main aria-label="Review and save place">`. Place name promoted from `<h2>` to `<h1>` since this is a leaf screen.
+2. Hero back button bumped to 44x44, Phosphor `ArrowLeft`, `aria-label="Back to search"`, background lifted from `bg-white/80` to `bg-white/90` + shadow + focus ring for visibility on imagery.
+3. Address subtitle switched from fragile `draft.address.split(',').slice(1,3).join(',')` to `[draft.city, draft.country].filter(Boolean).join(', ')` — uses the clean fields already on the draft.
+4. Travel chip switched from "X km away" to `formatTravelShort(draft, profile.preferredTransport ?? 'car')` so it reads "20 min by car" / "12 min walk" — same util the Dashboard rails, surprise card, and detail page use. MapPin icon dropped (badge stays compact).
+5. Uncertain-category banner palette fix: `text-amber-300 bg-amber-900/30 border-amber-700/40` (a dark-mode palette on a light-mode screen — bug) → `text-amber-800 bg-amber-50 border-amber-200`. Added `role="alert"`.
+6. `Section` component rewritten: `<label>` (with no `htmlFor`, invalid semantic) → `<h3 id="section-{id}">` with proper IDs. Each toggle group now references its heading via `aria-labelledby` so VoiceOver announces e.g. "Category, radio group" instead of a stream of unlabelled buttons.
+7. Toggle groups carry semantic roles: single-select groups (Category, Setting, Weather, Activity duration, Cost, Priority) use `role="radiogroup"` with `role="radio" aria-checked` on each button. Multi-select groups (Best times, Tags, Good for, Best seasons) use `role="group"` with `aria-pressed` on each button.
+8. AccessibilityRow's three-state pill group converted to `role="radiogroup"` with `aria-labelledby` pointing at the row label, and `role="radio" aria-checked` on each pill.
+9. "Tags" moved above "Good for" since tags drive recommendations more heavily than group suitability.
+10. **"More details" disclosure** added (default closed). Holds **Best seasons** and **Accessibility** — both lower-frequency: seasons rarely change once set, and accessibility is opt-in signal (default "Not sure" doesn't affect recommendations). Disclosure button is `aria-expanded` + `aria-controls`, `min-h-[44px]`, focus ring, Phosphor `CaretDown`/`CaretUp`. Shortens the must-edit scan path on the review screen.
+11. Stroller icon swapped from Phosphor `Baby` to `BabyCarriage` for clarity.
+12. Activity-duration helper text bumped from `text-[10px] text-sand-600` to `text-xs text-sand-700`.
+13. TagPicker helper text same treatment (`text-[10px]` → `text-xs`, color `sand-600` → `sand-700`).
+14. Personal notes textarea: wired `id="personal-notes"` to `aria-labelledby="section-notes"`. Focus ring lifted from `focus:border-sand-500` (no offset, no contrast ring) to `focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30`.
+15. **"Save & add another" secondary button** added next to the primary "Save to my list". On tap, persists via the new `onSave(item, { addAnother: true })` signature and resets AddPlace's internal state back to a clean search step — parent `App.tsx` skips the post-save navigation. Lets a user batch-add places without bouncing back to BucketList between entries.
+16. Hero image `alt=""` (decorative; the h1 carries the name; previously announced twice).
+
+**Global (toggle-btn class)**
+
+1. `.toggle-btn` in `src/index.css` gained `min-height: 44px` so every screen using the class hits the WCAG 2.1 AA touch-target rule. Padding stays at 7px 14px so chip width still tracks the label — only vertical breathing room changes. Affects AddPlace, Onboarding discover, Settings, ItemDetail edit, RecommendationFlow.
+2. `.toggle-btn:focus-visible` rule added: 2px sand-50 inner ring + 2px sand-700 outer ring. Focusable chips now have a visible state across the app.
+
+**App.tsx**
+
+1. `onSave` callback signature widened to `(item: BucketListItem, options?: { addAnother?: boolean }) => void`. When `addAnother` is set, parent persists but skips the `setScreen({ name: 'list' })` so AddPlace can reset itself for the next entry.
+
+### Accessibility check (WCAG 2.1 AA)
+
+- All inputs (search, confirm-address, personal notes) use `text-base` (16px), no iOS auto-zoom.
+- Hit targets ≥44x44: back buttons (search/confirm/review), search input row, search results, confirm CTAs ("Search again" / "Add this place"), every toggle chip (via `min-height: 44px` on `.toggle-btn`), AccessibilityRow pills, "More details" disclosure button, "Save & add another" + "Save to my list" CTAs.
+- Focus rings: solid `sand-700` ring with appropriate offset across every interactive element. `.toggle-btn:focus-visible` global rule covers every chip.
+- Small text: all `text-[10px]` removed; minimum is now `text-xs` (12px). Helper text and copy use `sand-700` or darker on `sand-50`/white (≥4.5:1).
+- Toggle groups carry `role="radiogroup"` / `role="group"` with `aria-labelledby` pointing at the section heading, and per-button `aria-checked` / `aria-pressed`. AccessibilityRow uses the same pattern with a row-level `aria-labelledby`.
+- Confirm map exposes its purpose and the address-field fallback via `role="application"` + `aria-label`. Address input provides a keyboard / VoiceOver path equivalent to dragging.
+- `aria-live="polite"` regions on search status, confirm-address lookup, and the loading step.
+- `role="alert"` on the uncertain-category banner, confirm-address error, and `role="status"` on loading + empty-search state.
+- Personal notes textarea linked to its section heading via `aria-labelledby`.
+- `<main aria-label>` landmark on every step; `<h1>` on the review-step place name; `<h2>` on screen titles; `<h3>` on section headings — clean heading hierarchy.
+- Decorative imagery and icons marked `aria-hidden="true"`; hero photo `alt=""` since the h1 carries the name.
+
+### Open items (cross-app, not blocking)
+
+- **Placeholder text contrast**: still `placeholder:text-sand-400` (~1.9:1 on white). Inherited cross-app open item from earlier audits.
+- **Replace the hero photo on review**: tracked in IDEAS.md New Features as v1.1.
+- **Empty-search affordances** (recent searches, nearby categories the user hasn't added much of, popular-near-you rail): tracked in IDEAS.md New Features as v1.1.
+- **Dead-code in `src/utils/api.ts`**: `parseGoogleMapsUrl`, `isGoogleMapsShortUrl`, `resolveGoogleMapsShortUrl` and the `resolve-maps-link` Supabase Edge Function are kept on ice. Tree-shaken from the bundle since nothing imports them. Reactivates if we ship a PWA share target (see IDEAS.md → Google Maps import → (3)).
+- **Discover→Add flow skips the confirm step**: by design (Discover items are user-confirmed visually), but Discover coords can be slightly off (Wikidata centroids). Edge case, flagged, no change in this pass.
 
 ---
 
