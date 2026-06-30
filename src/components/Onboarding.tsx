@@ -566,103 +566,135 @@ export default function Onboarding({ displayName, onComplete }: Props) {
       .map(c => ({ category: c, items: filteredCurated.filter(e => e.category === c) }))
       .filter(s => s.items.length > 0);
 
+    // Per-category counts for the filter chips (use unfiltered nearbyCurated)
+    const countByCategory = CATEGORY_ORDER.reduce<Record<string, number>>((acc, c) => {
+      acc[c] = nearbyCurated.filter(e => e.category === c).length;
+      return acc;
+    }, {});
+
+    const hasSelection = selectedKeys.size > 0;
+
     return (
-      <div className="min-h-screen bg-sand-50 pb-28">
+      <div
+        className="bg-sand-50 pb-28"
+        style={{ minHeight: 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' }}
+      >
         <div className="px-6 pt-8 pb-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-sand-900">
-              A few <span className="heading-accent">to start</span>
-            </h2>
-            <button
-              onClick={() => handleFinishDiscover(false)}
-              className="text-sm text-sand-600 hover:text-sand-900 transition"
-            >
-              Skip
-            </button>
-          </div>
-          <p className="text-xs text-sand-700 mt-2">
-            Tap any place to add it to your bucket list — you can always add more later.
+          <h2 className="text-xl font-semibold text-sand-900">
+            A few <span className="heading-accent">near you</span>
+          </h2>
+          <p className="text-sm text-sand-700 mt-2">
+            Tap any place to add it to your bucket list. You can always add more later.
           </p>
         </div>
 
         {/* Category filter chips */}
         {categoriesPresent.length > 1 && (
           <div className="flex gap-2 overflow-x-auto px-6 pb-3 scrollbar-hide">
-            <button onClick={() => setCategoryFilter('all')}
-              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition ${
-                categoryFilter === 'all' ? 'bg-sand-900 text-sand-100 border-sand-900' : 'bg-white text-sand-700 border-sand-200'}`}>
-              All
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('all')}
+              aria-pressed={categoryFilter === 'all'}
+              className={`flex-shrink-0 min-h-[44px] px-4 py-2 rounded-full text-sm font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 ${
+                categoryFilter === 'all' ? 'bg-sand-900 text-sand-100 border-sand-900' : 'bg-white text-sand-700 border-sand-200'
+              }`}
+            >
+              All ({nearbyCurated.length})
             </button>
             {categoriesPresent.map(c => (
-              <button key={c} onClick={() => setCategoryFilter(c)}
-                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition ${
-                  categoryFilter === c ? 'bg-sand-900 text-sand-100 border-sand-900' : 'bg-white text-sand-700 border-sand-200'}`}>
-                {CATEGORY_INFO[c].label}
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategoryFilter(c)}
+                aria-pressed={categoryFilter === c}
+                className={`flex-shrink-0 min-h-[44px] px-4 py-2 rounded-full text-sm font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 ${
+                  categoryFilter === c ? 'bg-sand-900 text-sand-100 border-sand-900' : 'bg-white text-sand-700 border-sand-200'
+                }`}
+              >
+                {CATEGORY_INFO[c].label} ({countByCategory[c]})
               </button>
             ))}
           </div>
         )}
 
         {/* Sections */}
-        {sections.map(s => (
-          <div key={s.category} className="mb-5">
-            <h3 className="px-6 text-sm font-semibold text-sand-900 mb-2">{CATEGORY_INFO[s.category].label}</h3>
-            <div className="grid grid-cols-2 gap-3 px-6">
-              {s.items.map(entry => {
-                const isSelected = selectedKeys.has(entry.key);
-                return (
-                  <button
-                    key={entry.key}
-                    onClick={() => toggleSelection(entry.key)}
-                    className={`card text-left w-full relative transition-all ${
-                      isSelected ? 'ring-2 ring-sand-900 ring-offset-1 ring-offset-sand-50' : ''
-                    }`}
-                  >
-                    <div className="place-img-container h-24 overflow-hidden">
-                      <PlaceImg
-                        src={entry.imageUrl}
-                        alt={entry.name}
-                        name={entry.name}
-                        category={entry.category}
-                      />
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-sand-900 flex items-center justify-center shadow-sm">
-                          <Check size={14} color="#fff" weight="bold" />
+        {sections.map(s => {
+          const headingId = `discover-section-${s.category}`;
+          return (
+            <div key={s.category} className="mb-5">
+              <h3 id={headingId} className="px-6 text-base font-semibold text-sand-900 mb-2">
+                {CATEGORY_INFO[s.category].label}
+              </h3>
+              <div
+                role="list"
+                aria-labelledby={headingId}
+                className="grid grid-cols-2 gap-3 px-6"
+              >
+                {s.items.map(entry => {
+                  const isSelected = selectedKeys.has(entry.key);
+                  return (
+                    <div key={entry.key} role="listitem">
+                      <button
+                        type="button"
+                        onClick={() => toggleSelection(entry.key)}
+                        aria-pressed={isSelected}
+                        aria-label={`${entry.name}${isSelected ? ', selected' : ''}`}
+                        className={`card text-left w-full relative transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 ${
+                          isSelected ? 'ring-2 ring-sand-900 ring-offset-1 ring-offset-sand-50' : ''
+                        }`}
+                      >
+                        <div className="place-img-container h-32 overflow-hidden">
+                          <PlaceImg
+                            src={entry.imageUrl}
+                            alt={entry.name}
+                            name={entry.name}
+                            category={entry.category}
+                          />
+                          {isSelected && (
+                            <div
+                              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-sand-900 flex items-center justify-center shadow-sm"
+                              aria-hidden="true"
+                            >
+                              <Check size={14} color="#fff" weight="bold" />
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <div className="p-2.5">
+                          <div className="text-sm font-medium text-sand-900 truncate">{entry.name}</div>
+                        </div>
+                      </button>
                     </div>
-                    <div className="p-2.5">
-                      <div className="text-xs font-medium text-sand-900 truncate">{entry.name}</div>
-                      <div className="text-[10px] text-sand-600 mt-0.5">
-                        {Math.round(haversineKm(selectedLocation!.lat, selectedLocation!.lng, entry.latitude, entry.longitude))} km away
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filteredCurated.length === 0 && (
-          <div className="text-center px-6 py-12">
+          <div className="text-center px-6 py-12" role="status">
             <p className="text-sm text-sand-700">Nothing in this category.</p>
           </div>
         )}
 
         {/* Sticky bottom action bar */}
         <div
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 backdrop-blur border-t border-sand-200 px-6 pt-3"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-sand-50/95 backdrop-blur border-t border-sand-200 px-6 pt-3"
           style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
         >
+          <div aria-live="polite" className="sr-only">
+            {hasSelection
+              ? `${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'} selected`
+              : 'No places selected'}
+          </div>
           <button
-            onClick={() => handleFinishDiscover(true)}
-            disabled={selectedKeys.size === 0}
-            className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            type="button"
+            onClick={() => handleFinishDiscover(hasSelection)}
+            className="w-full bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
           >
-            {selectedKeys.size === 0
-              ? 'Pick a few places to start'
-              : `Add ${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'}`}
+            {hasSelection
+              ? `Add ${selectedKeys.size} ${selectedKeys.size === 1 ? 'place' : 'places'}`
+              : 'Skip for now'}
           </button>
         </div>
       </div>
