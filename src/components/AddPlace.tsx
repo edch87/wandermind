@@ -9,7 +9,16 @@ import type {
   GroupType, Priority, Tag
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO, TAG_SOFT_CAP, tagsEligibleForCategory } from '../types';
-import { ArrowLeft, MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import {
+  ArrowLeft, MagnifyingGlass, Plus,
+  House, TreeEvergreen, ArrowsClockwise,
+  CloudSun, Sun, CloudRain,
+  Clock,
+  SunHorizon, MoonStars,
+  Flower, Leaf, Snowflake, CalendarBlank,
+  Dog, Wheelchair, BabyCarriage,
+  Flag, Check, X, Minus,
+} from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
 import KiteIcon from './KiteIcon';
 import BottomSheet from './BottomSheet';
@@ -540,19 +549,23 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     );
   }
 
-  // Review screen — value + Change row pattern. Each field renders a preselected
-  // value chip plus a Change button; both open a BottomSheet with the field's
-  // options. Single-select commits on tap and auto-closes; multi-select keeps
-  // a draft and commits on Done. Nothing is hidden — every field is visible.
+  // Review screen — third-pass design (2026-07-01):
+  //  - Value chips are the tap targets (Change buttons dropped for a cleaner
+  //    world-class mobile pattern; Airbnb / Google Maps / Uber all do this).
+  //  - Semantic value formatting where words are weak: cost as € symbols,
+  //    priority as a colour-coded flag, accessibility with a state dot.
+  //  - Leading icons in value chips where they encode meaning (Setting,
+  //    Weather, Duration, Times, Seasons, Access). Text-heavy fields
+  //    (Category, Tags, Good for, Notes) stay iconless to avoid noise.
+  //  - Section grouping (Category / Tags / About / When / Who / Access /
+  //    Priority / Notes) so the eye lands on regions instead of a wall of
+  //    identical rows.
   const subtitle = [draft.city, draft.country].filter(Boolean).join(', ');
   const travelChip = draft.travelDistanceKm != null
     ? formatTravelShort(draft as BucketListItem, profile.preferredTransport ?? 'car')
     : null;
 
   // ── Sheet open helpers ───────────────────────────────────────────────────
-  // Multi-select fields hydrate the multiDraft state on open; single-select
-  // fields don't need it (they commit + close on option pick). Splitting the
-  // open handler by kind keeps callsites tidy at each row.
   const openSheet = (field: SheetField) => setSheetField(field);
   const openMultiSheet = (field: SheetField, current: string[]) => {
     setMultiDraft(current);
@@ -560,37 +573,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   };
   const closeSheet = () => setSheetField(null);
 
-  // ── Row helpers ──────────────────────────────────────────────────────────
-  // Small render helpers so each row is a one-liner in JSX below. Keeps the
-  // main review layout scannable — the row shape is identical for every field.
-  const singleRow = (
-    field: SheetField,
-    label: string,
-    valueLabel: string | undefined,
-    { muted = false }: { muted?: boolean } = {},
-  ) => (
-    <FieldRow
-      label={label}
-      valueLabel={valueLabel}
-      muted={muted}
-      onOpen={() => openSheet(field)}
-    />
-  );
-
-  const multiRow = (
-    field: SheetField,
-    label: string,
-    valueLabels: string[],
-    current: string[],
-  ) => (
-    <FieldRow
-      label={label}
-      valueLabels={valueLabels}
-      onOpen={() => openMultiSheet(field, current)}
-    />
-  );
-
-  // ── Option label maps used both in row values and inside sheets ──────────
+  // ── Option label maps used both in review chips and inside sheets ────────
   const SETTING_LABEL: Record<Setting, string> = { indoor: 'Indoor', outdoor: 'Outdoor', mixed: 'Mixed' };
   const WEATHER_LABEL: Record<WeatherSuitability, string> = {
     any: 'Any weather',
@@ -632,7 +615,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
       <div className="px-6 pt-5">
 
         {/* Place name & travel info */}
-        <div className="mb-5">
+        <div className="mb-6">
           <h1 className="text-xl font-semibold text-sand-900">{draft.name}</h1>
           {subtitle && <p className="text-xs text-sand-700 mt-1">{subtitle}</p>}
           {travelChip && (
@@ -644,70 +627,154 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
           )}
         </div>
 
-        {/* Category — uncertain state gets a small amber prompt above the row.
-            Everything else is the same value + Change pattern as the other
-            fields, so the visual rhythm holds. */}
+        {/* Category */}
         {categoryUncertain && (
           <p
             role="alert"
             className="mb-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5"
           >
-            We weren't sure how to categorise this one. Tap Change to pick the best fit.
+            We weren't sure how to categorise this one. Tap to pick the best fit.
           </p>
         )}
-        {singleRow('category', 'Category', draft.category ? CATEGORY_INFO[draft.category].label : undefined)}
+        <ReviewSection label="Category">
+          <ValueChip
+            label={draft.category ? CATEGORY_INFO[draft.category].label : 'Choose category'}
+            muted={!draft.category}
+            onClick={() => openSheet('category')}
+          />
+        </ReviewSection>
 
-        {/* Tags sit right after Category because they drive recommendations
-            more heavily than everything else and have no inference — the one
-            field the user really does need to touch. */}
-        {draft.category && multiRow(
-          'tags', 'Tags',
-          currentTags.map(t => TAG_INFO[t].label),
-          currentTags,
-        )}
-
-        {singleRow('setting', 'Setting', draft.setting ? SETTING_LABEL[draft.setting] : undefined)}
-        {singleRow('weather', 'Weather', draft.weatherSuitability ? WEATHER_LABEL[draft.weatherSuitability] : undefined)}
-        {singleRow('duration', 'Duration', draft.durationEstimate ? DURATION_LABELS[draft.durationEstimate] : undefined)}
-        {singleRow('cost', 'Cost', draft.costLevel ? COST_LABELS[draft.costLevel] : undefined)}
-
-        {multiRow(
-          'times', 'Times of day',
-          currentTimes.map(k => TIME_OF_DAY_LABELS[k]),
-          currentTimes,
-        )}
-        {multiRow(
-          'seasons', 'Seasons',
-          currentSeasons.map(k => SEASON_LABELS[k]),
-          currentSeasons,
-        )}
-        {multiRow(
-          'groups', 'Good for',
-          currentGroups.map(k => GROUP_LABEL[k]),
-          currentGroups,
+        {/* Tags — the one field with no inference, sits right after Category
+            because it drives recommendations more heavily than the rest. */}
+        {draft.category && (
+          <ReviewSection label="Tags">
+            {currentTags.map(t => (
+              <ValueChip
+                key={t}
+                label={TAG_INFO[t].label}
+                onClick={() => openMultiSheet('tags', currentTags)}
+              />
+            ))}
+            <AddChip
+              label={currentTags.length === 0 ? 'Add tags' : 'Add'}
+              onClick={() => openMultiSheet('tags', currentTags)}
+            />
+          </ReviewSection>
         )}
 
-        {/* Three-state accessibility rows — "Not sure" renders muted so users
-            can eyeball which of the three fields they still haven't committed
-            on. Explicit Yes / No are dark filled like other value chips. */}
-        {singleRow('dogs', 'Dogs',
-          draft.dogFriendly === true ? 'Yes' : draft.dogFriendly === false ? 'No' : 'Not sure',
-          { muted: draft.dogFriendly === undefined },
-        )}
-        {singleRow('wheelchair', 'Wheelchair',
-          draft.wheelchairAccessible === true ? 'Yes' : draft.wheelchairAccessible === false ? 'No' : 'Not sure',
-          { muted: draft.wheelchairAccessible === undefined },
-        )}
-        {singleRow('stroller', 'Stroller',
-          draft.strollerFriendly === true ? 'Yes' : draft.strollerFriendly === false ? 'No' : 'Not sure',
-          { muted: draft.strollerFriendly === undefined },
-        )}
+        {/* About — the auto-inferred core: setting, weather, duration, cost.
+            Semantic icons on Setting/Weather/Duration; cost renders as
+            € symbols (Yelp / Google convention). */}
+        <ReviewSection label="About">
+          <ValueChip
+            icon={settingIcon(draft.setting)}
+            label={draft.setting ? SETTING_LABEL[draft.setting] : 'Setting'}
+            muted={!draft.setting}
+            onClick={() => openSheet('setting')}
+          />
+          <ValueChip
+            icon={weatherIcon(draft.weatherSuitability)}
+            label={draft.weatherSuitability ? WEATHER_LABEL[draft.weatherSuitability] : 'Weather'}
+            muted={!draft.weatherSuitability}
+            onClick={() => openSheet('weather')}
+          />
+          <ValueChip
+            icon={<Clock size={14} weight="regular" aria-hidden="true" />}
+            label={draft.durationEstimate ? DURATION_LABELS[draft.durationEstimate] : 'Duration'}
+            muted={!draft.durationEstimate}
+            onClick={() => openSheet('duration')}
+          />
+          <ValueChip
+            label={draft.costLevel ? COST_LABELS[draft.costLevel] : 'Cost'}
+            muted={!draft.costLevel}
+            onClick={() => openSheet('cost')}
+          />
+        </ReviewSection>
 
-        {singleRow('priority', 'Priority', draft.priority ? PRIORITY_LABEL[draft.priority] : undefined)}
+        {/* When it works — Times + Seasons live in one section since both
+            answer "when does this place shine?" Icons per value help scanning. */}
+        <ReviewSection label="When it works">
+          {currentTimes.length === 0 ? (
+            <AddChip label="Time of day" onClick={() => openMultiSheet('times', currentTimes)} />
+          ) : (
+            currentTimes.map(t => (
+              <ValueChip
+                key={`time-${t}`}
+                icon={timeIcon(t)}
+                label={TIME_OF_DAY_LABELS[t]}
+                onClick={() => openMultiSheet('times', currentTimes)}
+              />
+            ))
+          )}
+          {currentSeasons.length === 0 ? (
+            <AddChip label="Season" onClick={() => openMultiSheet('seasons', currentSeasons)} />
+          ) : (
+            currentSeasons.map(s => (
+              <ValueChip
+                key={`season-${s}`}
+                icon={seasonIcon(s)}
+                label={SEASON_LABELS[s]}
+                onClick={() => openMultiSheet('seasons', currentSeasons)}
+              />
+            ))
+          )}
+        </ReviewSection>
+
+        {/* Who it's for — group chips (Solo / Couple / Friends / Kids). No
+            icons here since the labels already communicate cleanly and
+            people-icons would read as visual noise. */}
+        <ReviewSection label="Who it's for">
+          {currentGroups.length === 0 ? (
+            <AddChip label="Who" onClick={() => openMultiSheet('groups', currentGroups)} />
+          ) : (
+            currentGroups.map(g => (
+              <ValueChip
+                key={g}
+                label={GROUP_LABEL[g]}
+                onClick={() => openMultiSheet('groups', currentGroups)}
+              />
+            ))
+          )}
+        </ReviewSection>
+
+        {/* Access — three-state pill with a trailing state dot. Green check
+            for Yes, red cross for No, muted dash for Not sure. Reads faster
+            than the pre-shipped "Not sure" outlined chip. */}
+        <ReviewSection label="Access">
+          <AccessChip
+            icon={<Dog size={14} weight="regular" aria-hidden="true" />}
+            label="Dogs"
+            state={draft.dogFriendly}
+            onClick={() => openSheet('dogs')}
+          />
+          <AccessChip
+            icon={<Wheelchair size={14} weight="regular" aria-hidden="true" />}
+            label="Wheelchair"
+            state={draft.wheelchairAccessible}
+            onClick={() => openSheet('wheelchair')}
+          />
+          <AccessChip
+            icon={<BabyCarriage size={14} weight="regular" aria-hidden="true" />}
+            label="Stroller"
+            state={draft.strollerFriendly}
+            onClick={() => openSheet('stroller')}
+          />
+        </ReviewSection>
+
+        {/* Priority — colour-coded flag chip (Todoist / Things convention).
+            Low is neutral outlined, Medium warms to amber, High pushes to
+            terra. Colour telegraphs urgency without needing to read. */}
+        <ReviewSection label="Priority">
+          <PriorityChip
+            level={draft.priority || 'medium'}
+            label={PRIORITY_LABEL[draft.priority || 'medium']}
+            onClick={() => openSheet('priority')}
+          />
+        </ReviewSection>
 
         {/* Notes stays inline — it's a free-text field, no picker to open. */}
         <div className="mb-5">
-          <label htmlFor="personal-notes" className="block text-xs font-medium text-sand-700 mb-2 uppercase tracking-wide">
+          <label htmlFor="personal-notes" className="block text-xs font-medium text-sand-500 mb-2 uppercase tracking-wider">
             Notes
           </label>
           <textarea
@@ -891,72 +958,167 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 }
 
 /**
- * FieldRow — the value + Change row pattern used across the review step.
- *
- * Displays the field label above a row of chips: the current value(s) as
- * `.value-chip` (dark filled) or `.value-chip--muted` for the "Not sure"
- * state, followed by a `.change-btn` that opens the field's BottomSheet.
- * Both the value chips and the Change button open the sheet — the whole row
- * is a tap target for editing.
- *
- * Two forms:
- * - Single-select: pass `valueLabel` string (or undefined for empty state).
- * - Multi-select: pass `valueLabels` string[] — renders one chip per value.
+ * ReviewSection — thin section wrapper: a lighter uppercase label above a
+ * wrapping row of chips. The section label uses sand-500 (lighter than the
+ * chip text) so the eye lands on the values first, not the field headings.
  */
-function FieldRow({
-  label,
-  valueLabel,
-  valueLabels,
-  muted = false,
-  onOpen,
-}: {
-  label: string;
-  valueLabel?: string;
-  valueLabels?: string[];
-  muted?: boolean;
-  onOpen: () => void;
-}) {
-  const hasValue = valueLabel !== undefined || (valueLabels && valueLabels.length > 0);
-  const changeLabel = hasValue ? 'Change' : 'Choose';
+function ReviewSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <div className="text-xs font-medium text-sand-700 mb-2 uppercase tracking-wider">
+    <div className="mb-5">
+      <div className="text-xs font-medium text-sand-500 mb-2 uppercase tracking-wider">
         {label}
       </div>
-      <div className="flex flex-wrap gap-1.5 items-center">
-        {valueLabel !== undefined && (
-          <button
-            type="button"
-            onClick={onOpen}
-            aria-label={`${label}: ${valueLabel}. Tap to change.`}
-            className={muted ? 'value-chip value-chip--muted' : 'value-chip'}
-          >
-            {valueLabel}
-          </button>
-        )}
-        {valueLabels?.map((l, i) => (
-          <button
-            type="button"
-            key={i}
-            onClick={onOpen}
-            aria-label={`${label} includes ${l}. Tap to change.`}
-            className="value-chip"
-          >
-            {l}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-label={`${changeLabel} ${label.toLowerCase()}`}
-          className="change-btn"
-        >
-          {!hasValue && <Plus size={13} weight="bold" aria-hidden="true" />}
-          {changeLabel}
-        </button>
-      </div>
+      <div className="flex flex-wrap gap-1.5 items-center">{children}</div>
     </div>
   );
+}
+
+/**
+ * ValueChip — the tap target for editing any field. Filled dark pill for
+ * committed values; muted outlined variant used for empty-state and for the
+ * "Not sure" three-state. The whole chip opens the field's BottomSheet.
+ */
+function ValueChip({
+  icon,
+  label,
+  onClick,
+  muted = false,
+  ariaLabel,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  muted?: boolean;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel || `${label}. Tap to change.`}
+      className={muted ? 'value-chip value-chip--muted' : 'value-chip'}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+/** Add chip — muted outlined pill with a leading plus. Used as the empty-state
+ *  affordance for multi-select rows (Tags, Times, Seasons, Groups) so the row
+ *  never renders empty without a clear "add something" tap target. */
+function AddChip({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="value-chip value-chip--muted"
+    >
+      <Plus size={13} weight="bold" aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
+/**
+ * AccessChip — three-state chip with icon + label + state dot. Green check
+ * for Yes, red cross for No, muted dash for Not sure. Reads faster than
+ * "Not sure" text because the dot colour communicates state at a glance.
+ */
+function AccessChip({
+  icon,
+  label,
+  state,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  state: boolean | undefined;
+  onClick: () => void;
+}) {
+  const stateClass = state === true ? 'chip-access__state--yes'
+    : state === false ? 'chip-access__state--no'
+    : 'chip-access__state--unset';
+  const stateIcon = state === true ? <Check size={11} weight="bold" aria-hidden="true" />
+    : state === false ? <X size={11} weight="bold" aria-hidden="true" />
+    : <Minus size={11} weight="bold" aria-hidden="true" />;
+  const stateText = state === true ? 'yes' : state === false ? 'no' : 'not sure';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${label}: ${stateText}. Tap to change.`}
+      className="chip-access"
+    >
+      {icon}
+      <span>{label}</span>
+      <span className={`chip-access__state ${stateClass}`}>{stateIcon}</span>
+    </button>
+  );
+}
+
+/**
+ * PriorityChip — colour-coded flag chip. Low is neutral, Medium warms to
+ * amber, High pushes to terra. Colour telegraphs urgency without reading.
+ * Same tap-to-open-sheet behaviour as every other value chip.
+ */
+function PriorityChip({
+  level,
+  label,
+  onClick,
+}: {
+  level: Priority;
+  label: string;
+  onClick: () => void;
+}) {
+  const cls = level === 'low' ? 'chip-priority-low'
+    : level === 'medium' ? 'chip-priority-med'
+    : 'chip-priority-hi';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Priority: ${label}. Tap to change.`}
+      className={cls}
+    >
+      <Flag size={14} weight="fill" aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
+// ── Icon pickers used by the review's About / When it works sections ─────
+// Kept as small pure functions so the review JSX above stays readable and
+// each icon choice sits next to its enum value.
+
+function settingIcon(s: Setting | undefined): React.ReactNode {
+  if (!s) return null;
+  if (s === 'indoor') return <House size={14} weight="regular" aria-hidden="true" />;
+  if (s === 'outdoor') return <TreeEvergreen size={14} weight="regular" aria-hidden="true" />;
+  return <ArrowsClockwise size={14} weight="regular" aria-hidden="true" />;
+}
+
+function weatherIcon(w: WeatherSuitability | undefined): React.ReactNode {
+  if (!w) return null;
+  if (w === 'any') return <CloudSun size={14} weight="regular" aria-hidden="true" />;
+  if (w === 'good_weather') return <Sun size={14} weight="regular" aria-hidden="true" />;
+  return <CloudRain size={14} weight="regular" aria-hidden="true" />;
+}
+
+function timeIcon(t: TimeOfDay): React.ReactNode {
+  if (t === 'morning') return <SunHorizon size={14} weight="regular" aria-hidden="true" />;
+  if (t === 'afternoon') return <Sun size={14} weight="regular" aria-hidden="true" />;
+  if (t === 'evening') return <MoonStars size={14} weight="regular" aria-hidden="true" />;
+  return <CalendarBlank size={14} weight="regular" aria-hidden="true" />;
+}
+
+function seasonIcon(s: Season): React.ReactNode {
+  if (s === 'spring') return <Flower size={14} weight="regular" aria-hidden="true" />;
+  if (s === 'summer') return <Sun size={14} weight="regular" aria-hidden="true" />;
+  if (s === 'autumn') return <Leaf size={14} weight="regular" aria-hidden="true" />;
+  if (s === 'winter') return <Snowflake size={14} weight="regular" aria-hidden="true" />;
+  return <CalendarBlank size={14} weight="regular" aria-hidden="true" />;
 }
 
 /**

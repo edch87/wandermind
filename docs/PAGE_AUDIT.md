@@ -305,9 +305,9 @@ Files: `src/components/AddPlace.tsx`, `src/App.tsx` (onSave signature), `src/ind
 2. Added `role="status"` + `aria-live="polite"` so the loading messages ("Fetching place details…" / "Calculating travel times…" / "Finding photos…" / "Auto-categorising…") are announced to VoiceOver.
 3. Loading copy contrast lifted from `sand-600` to `sand-700`.
 
-**Review step (redesigned 2026-07-01 to the value + Change row pattern)**
+**Review step (three redesign passes, final 2026-07-01)**
 
-The first pass shipped the "More details" disclosure. Edward pushed back — page still felt cumbersome, hiding seasons and accessibility felt wrong, and the two-button footer looked ugly with the long labels. Second pass replaces the chip-group-per-field layout with a much shorter row pattern inspired by Airbnb / Apple Maps / Linear / Notion, and the disclosure is gone.
+Pass 1 shipped the "More details" disclosure. Edward pushed back — page still felt cumbersome, hiding seasons and accessibility felt wrong, and the two-button footer looked ugly with the long labels. Pass 2 replaced the chip-group-per-field layout with the value + Change row pattern inspired by Airbnb / Apple Maps / Linear / Notion. Pass 3 (this one) went further — every field looked too visually similar, and "Moderate" as a cost label was fuzzy. Solved with three levers: semantic value formatting (cost as `€` symbols, priority as a colour-coded flag, access as a state dot), leading icons in value chips where they encode meaning (Setting, Weather, Duration, Times, Seasons, Access), and section grouping (Category / Tags / About / When it works / Who it's for / Access / Priority / Notes). Change buttons dropped everywhere — the value chip alone is the tap target (the world-class mobile pattern: Airbnb filter chips, Google Maps sort, Uber options, Notion mobile). Categories, Tags, Good for and Notes stay iconless to avoid noise.
 
 Every field renders as a **value chip + Change button** row. The value chip shows the current selection (dark filled for committed values, muted outlined for the "Not sure" accessibility state). Both the value chip and the Change button open the same `BottomSheet` picker. Nothing is hidden — every one of the 12 fields is visible at once and roughly ~60px tall instead of ~130px. Page height drops from ~1500px to ~800px.
 
@@ -330,13 +330,29 @@ The sheet follows the near-universal mobile pattern (Airbnb filter refinement, A
 15. `toggleGroupType` / `toggleSeason` / `toggleTimeOfDay` helpers deleted from the component — the sheet's `MultiChipList` owns the toggle semantics now.
 16. Legacy `TagPicker` export retained for `ItemDetail.tsx`'s inline edit mode (chip-cloud pattern). When ItemDetail's edit mode moves to the sheet pattern in a future audit, the export can be dropped.
 
+**Pass 3 changes (2026-07-01)**
+
+1. **Change buttons dropped.** Every value chip is the tap target that opens the sheet. Removes the repeated `.change-btn` chrome across 13 fields. World-class mobile pattern (Airbnb, Google Maps, Uber, Notion mobile). Users learn "chip is tappable" once — the dark filled affordance already reads as button-like.
+2. **Section grouping.** Instead of 13 identical `label → chip → Change` rows, the review reads as 8 semantic sections: Category, Tags, About (Setting/Weather/Duration/Cost), When it works (Times/Seasons), Who it's for (Groups), Access (three three-state chips), Priority, Notes. Different sections read differently.
+3. **Section labels softened** from `text-sand-700` to `text-sand-500` so the eye lands on the values, not the field headings. The chip content is what matters; the label just tells you what row you're on.
+4. **Semantic cost formatting.** `COST_LABELS` in `types/index.ts` renamed: `Cheap → €`, `Moderate → €€`, `Expensive → €€€`. Free stays a word. Enum keys unchanged so the recommendation engine and stored data don't move. This ripples into every surface that uses the label — review, sheet, Dashboard rails, ItemDetail — for free.
+5. **Priority colour-coded flag.** New `.chip-priority-low` / `--med` / `--hi` classes: neutral outlined → amber → terra. Colour telegraphs urgency without needing to read. Todoist / Things convention. Same tap-to-open-sheet interaction.
+6. **Access state dot.** New `.chip-access` with a trailing `.chip-access__state` circle: green check for Yes, red cross for No, muted dash for Not sure. Reads faster than the pass-2 "Not sure outlined chip" pattern because the affirmative / negative states now have visual identity too.
+7. **Leading icons in value chips** where they encode meaning: House / TreeEvergreen / ArrowsClockwise for Setting; CloudSun / Sun / CloudRain for Weather; Clock for Duration; SunHorizon / Sun / MoonStars for Times of day; Flower / Sun / Leaf / Snowflake for Seasons. Category, Tags, Good for and Notes stay iconless because their labels already communicate cleanly and icons there would read as noise.
+8. **Add chip empty-state affordance.** New `<AddChip>` — muted outlined pill with a leading plus, used when a multi-select field has nothing picked (`Add tags`, `Time of day`, `Season`, `Who`). Ensures the row never renders empty without a clear "add something" tap target.
+9. **FieldRow abstraction retired.** Replaced by four small purpose-built helpers: `<ReviewSection>`, `<ValueChip>`, `<AccessChip>`, `<PriorityChip>` (plus `<AddChip>`). Each is short enough that the review JSX reads as a linear top-to-bottom layout rather than a series of identical rows.
+10. **Icon pickers as pure functions** (`settingIcon`, `weatherIcon`, `timeIcon`, `seasonIcon`) live next to the review render code so an icon choice sits inline with its enum value — easier to keep in sync than a distant lookup map.
+
 **Global (index.css)**
 
 1. `.toggle-btn` gained `min-height: 44px` so every screen using the class hits the WCAG 2.1 AA touch-target rule. Padding stays at 7px 14px so chip width still tracks the label — only vertical breathing room changes. Affects AddPlace, Onboarding discover, Settings, ItemDetail edit, RecommendationFlow.
 2. `.toggle-btn:focus-visible` rule added: 2px sand-50 inner ring + 2px sand-700 outer ring. Focusable chips now have a visible state across the app.
 3. **New `.value-chip`** class for the review's dark filled value pill: sand-900 background, sand-100 text, 44px min-height, gap for icons.
-4. **New `.value-chip--muted`** modifier for the "Not sure" three-state visual: transparent background, sand-300 border, sand-700 text.
-5. **New `.change-btn`** class for the outlined Change pill: sand-500 border, sand-700 text, hover to sand-100 background. Focus ring parity with `.toggle-btn`.
+4. **New `.value-chip--muted`** modifier used for empty-state and (pass 2) three-state "Not sure": transparent background, sand-300 border, sand-700 text.
+5. **New `.change-btn`** class (pass 2) — retained but no longer used after pass 3 dropped Change buttons. Kept in the stylesheet for now in case ItemDetail's audit needs it.
+6. **New `.chip-priority-low / -med / -hi`** classes (pass 3) — colour-coded priority pill variants: neutral outlined → amber-100 fill with amber border → terra-100 fill with terra border. All 44px min-height with parity focus rings.
+7. **New `.chip-access`** class (pass 3) — icon + label + state indicator pill for the three-state accessibility fields.
+8. **New `.chip-access__state`** state-dot classes — a 16×16 circle at the trailing edge of the access chip, with `--yes` (green tint), `--no` (red tint) and `--unset` (muted sand tint) modifiers.
 
 **App.tsx**
 
@@ -378,6 +394,8 @@ The sheet follows the near-universal mobile pattern (Airbnb filter refinement, A
 - **Discover→Add flow skips the confirm step**: by design (Discover items are user-confirmed visually), but Discover coords can be slightly off (Wikidata centroids). Edge case, flagged, no change in this pass.
 - **ItemDetail edit mode still uses the chip-cloud `TagPicker`**: to keep this audit scoped, the legacy export was kept. When the ItemDetail audit runs (item 6), the edit surface should move to the same value + Change + BottomSheet pattern; the `TagPicker` export can be dropped then.
 - **Reduced-motion path for the sheet**: not bespoke yet. If tester feedback flags it, gate the slide-up transition behind `prefers-reduced-motion: no-preference`.
+- **Cost `€` symbols on other surfaces**: since `COST_LABELS` is the single source of truth, Dashboard rails, RecommendationFlow results, and ItemDetail cost chip all read the new symbols automatically. No follow-up code change needed but worth eyeballing when the ItemDetail and BucketList audits run.
+- **Icon consistency across the app**: the review uses Phosphor `House` for Setting → Indoor. `ItemDetail.tsx` still uses `Buildings` for the same value. Not a bug but a small consistency mismatch. Sync when ItemDetail is audited (item 6).
 
 ---
 

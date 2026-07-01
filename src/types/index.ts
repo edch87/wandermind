@@ -250,11 +250,14 @@ export const DURATION_LABELS: Record<DurationEstimate, string> = {
   full_day: 'Full day',
 };
 
+// Cost display strings follow the Yelp / Google Maps universal convention:
+// € symbols encode magnitude at a glance and are language-independent. Enum
+// keys stay unchanged so the recommendation engine and stored data don't move.
 export const COST_LABELS: Record<CostLevel, string> = {
   free: 'Free',
-  cheap: 'Cheap',
-  moderate: 'Moderate',
-  expensive: 'Expensive',
+  cheap: '€',
+  moderate: '€€',
+  expensive: '€€€',
 };
 
 export const SEASON_LABELS: Record<Season, string> = {

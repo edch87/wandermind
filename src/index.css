@@ -192,6 +192,113 @@ body {
   box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
 }
 
+/* Priority flag chip variants — colour encodes urgency (Todoist / Things
+   convention). Low is the muted resting state; medium warms into amber; high
+   pushes further into terra so it reads as "attention-worthy" without shouting.
+   All three still open the same BottomSheet on tap. */
+.chip-priority-low {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: white;
+  color: #7A5C3A;
+  border: 1.5px solid #E8D5BF;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.chip-priority-med {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: #FAEEDA;
+  color: #854F0B;
+  border: 1.5px solid #EF9F27;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.chip-priority-hi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: #FAECE7;
+  color: #712B13;
+  border: 1.5px solid #D85A30;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.chip-priority-low:hover,
+.chip-priority-med:hover,
+.chip-priority-hi:hover {
+  opacity: 0.9;
+}
+.chip-priority-low:focus-visible,
+.chip-priority-med:focus-visible,
+.chip-priority-hi:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
+}
+
+/* Access chip — icon + label + state indicator. Muted outlined chip with a
+   trailing state dot that turns green / red / neutral depending on the
+   three-state value. Clearer than the "Not sure" muted-fill pattern because
+   the affirmative and negative states now read at a glance. */
+.chip-access {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: white;
+  color: #5C3D1F;
+  border: 1.5px solid #E8D5BF;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.chip-access:hover { opacity: 0.9; }
+.chip-access:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
+}
+.chip-access__state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-left: 2px;
+}
+.chip-access__state--yes {
+  background: #EAF3DE;
+  color: #3B6D11;
+}
+.chip-access__state--no {
+  background: #FCEBEB;
+  color: #A32D2D;
+}
+.chip-access__state--unset {
+  background: #FFF3E6;
+  color: #B8945C;
+}
+
 /* Place image cards */
 .place-img {
   width: 100%;
