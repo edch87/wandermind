@@ -305,33 +305,42 @@ Files: `src/components/AddPlace.tsx`, `src/App.tsx` (onSave signature), `src/ind
 2. Added `role="status"` + `aria-live="polite"` so the loading messages ("Fetching place details…" / "Calculating travel times…" / "Finding photos…" / "Auto-categorising…") are announced to VoiceOver.
 3. Loading copy contrast lifted from `sand-600` to `sand-700`.
 
-**Review step**
+**Review step (redesigned 2026-07-01 to the value + Change row pattern)**
+
+The first pass shipped the "More details" disclosure. Edward pushed back — page still felt cumbersome, hiding seasons and accessibility felt wrong, and the two-button footer looked ugly with the long labels. Second pass replaces the chip-group-per-field layout with a much shorter row pattern inspired by Airbnb / Apple Maps / Linear / Notion, and the disclosure is gone.
+
+Every field renders as a **value chip + Change button** row. The value chip shows the current selection (dark filled for committed values, muted outlined for the "Not sure" accessibility state). Both the value chip and the Change button open the same `BottomSheet` picker. Nothing is hidden — every one of the 12 fields is visible at once and roughly ~60px tall instead of ~130px. Page height drops from ~1500px to ~800px.
+
+The sheet follows the near-universal mobile pattern (Airbnb filter refinement, Apple Maps "Choose Guide", Google Maps sort/filter, Notion mobile property edit, Linear mobile status/assignee): slide-up modal with backdrop, drag-down to dismiss, escape to close, body scroll locked, `aria-modal`. Single-select variants commit + close on option tap. Multi-select variants keep a draft and commit on Done.
 
 1. Wrapper switched to `<main aria-label="Review and save place">`. Place name promoted from `<h2>` to `<h1>` since this is a leaf screen.
 2. Hero back button bumped to 44x44, Phosphor `ArrowLeft`, `aria-label="Back to search"`, background lifted from `bg-white/80` to `bg-white/90` + shadow + focus ring for visibility on imagery.
 3. Address subtitle switched from fragile `draft.address.split(',').slice(1,3).join(',')` to `[draft.city, draft.country].filter(Boolean).join(', ')` — uses the clean fields already on the draft.
-4. Travel chip switched from "X km away" to `formatTravelShort(draft, profile.preferredTransport ?? 'car')` so it reads "20 min by car" / "12 min walk" — same util the Dashboard rails, surprise card, and detail page use. MapPin icon dropped (badge stays compact).
-5. Uncertain-category banner palette fix: `text-amber-300 bg-amber-900/30 border-amber-700/40` (a dark-mode palette on a light-mode screen — bug) → `text-amber-800 bg-amber-50 border-amber-200`. Added `role="alert"`.
-6. `Section` component rewritten: `<label>` (with no `htmlFor`, invalid semantic) → `<h3 id="section-{id}">` with proper IDs. Each toggle group now references its heading via `aria-labelledby` so VoiceOver announces e.g. "Category, radio group" instead of a stream of unlabelled buttons.
-7. Toggle groups carry semantic roles: single-select groups (Category, Setting, Weather, Activity duration, Cost, Priority) use `role="radiogroup"` with `role="radio" aria-checked` on each button. Multi-select groups (Best times, Tags, Good for, Best seasons) use `role="group"` with `aria-pressed` on each button.
-8. AccessibilityRow's three-state pill group converted to `role="radiogroup"` with `aria-labelledby` pointing at the row label, and `role="radio" aria-checked` on each pill.
-9. "Tags" moved above "Good for" since tags drive recommendations more heavily than group suitability.
-10. **"More details" disclosure** added (default closed). Holds **Best seasons** and **Accessibility** — both lower-frequency: seasons rarely change once set, and accessibility is opt-in signal (default "Not sure" doesn't affect recommendations). Disclosure button is `aria-expanded` + `aria-controls`, `min-h-[44px]`, focus ring, Phosphor `CaretDown`/`CaretUp`. Shortens the must-edit scan path on the review screen.
-11. Stroller icon swapped from Phosphor `Baby` to `BabyCarriage` for clarity.
-12. Activity-duration helper text bumped from `text-[10px] text-sand-600` to `text-xs text-sand-700`.
-13. TagPicker helper text same treatment (`text-[10px]` → `text-xs`, color `sand-600` → `sand-700`).
-14. Personal notes textarea: wired `id="personal-notes"` to `aria-labelledby="section-notes"`. Focus ring lifted from `focus:border-sand-500` (no offset, no contrast ring) to `focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30`.
-15. **"Save & add another" secondary button** added next to the primary "Save to my list". On tap, persists via the new `onSave(item, { addAnother: true })` signature and resets AddPlace's internal state back to a clean search step — parent `App.tsx` skips the post-save navigation. Lets a user batch-add places without bouncing back to BucketList between entries.
-16. Hero image `alt=""` (decorative; the h1 carries the name; previously announced twice).
+4. Travel chip switched from "X km away" to `formatTravelShort(draft, profile.preferredTransport ?? 'car')` so it reads "20 min by car" / "12 min walk" — same util the Dashboard rails, surprise card, and detail page use.
+5. Uncertain-category banner palette fix: `text-amber-300 bg-amber-900/30 border-amber-700/40` (a dark-mode palette on a light-mode screen — bug) → `text-amber-800 bg-amber-50 border-amber-200`. Added `role="alert"`. Copy adjusted to "Tap Change to pick the best fit" since the row now uses the value + Change pattern.
+6. **Every field becomes a `<FieldRow>`**: field label above, value chip(s) + Change button beneath. Single-select fields show one dark chip; multi-select fields (Times, Seasons, Good for, Tags) show one chip per selected value. Empty-state renders only the Change button labelled "Choose" with a leading plus icon.
+7. **Three-state accessibility uses a muted variant** (`value-chip--muted`): outlined pill with sand-500 border and sand-700 text, so users can eyeball which of Dogs / Wheelchair / Stroller they haven't committed on. Explicit Yes / No are dark filled like every other value chip.
+8. **New `<BottomSheet>` component** (`src/components/BottomSheet.tsx`) handles all pickers. Portal-based render to escape stacking contexts. Backdrop with `absolute inset-0` and 40% opacity, keyboard-reachable close via a real `<button>`. Sheet slides up from bottom with a `translate-y-full → 0` transition. Drag-down handle: `onTouchStart/Move/End` translate the sheet with the finger; release beyond 90px commits to dismiss, less snaps back. Backdrop-tap and Escape both dismiss. Body scroll locked while open. Focus moves into the sheet on open and restores on close. `role="dialog" aria-modal="true" aria-labelledby="bottom-sheet-title"`. Max height clamped to viewport minus safe-area so the sheet stays scrollable on shorter phones.
+9. **Sheet variants**: single-select passes an `onPick` that commits + calls `closeSheet`; multi-select provides `onDone` so the sheet renders a Done affordance in the header and the caller commits the accumulated `multiDraft` state on that tap. Discard-safe: backdrop-tap or drag-down never commit pending edits.
+10. **Multi-select `exclusiveKey` semantics** for Times of day and Seasons: picking "Any" clears the specific values and vice-versa, mirroring the previous inline toggle behaviour. Implemented inside `MultiChipList` so both the Times and Seasons sheets get it for free.
+11. Tags sit right after Category (they drive recommendations more heavily than the rest and have no inference — the one field the user genuinely needs to touch).
+12. Notes stays inline as a textarea — free text has no picker. Real `<label htmlFor="personal-notes">` connects the label to the field.
+13. Footer is a single primary CTA: `Save place` full-width. The "Save & add another" secondary button from the previous pass is gone (Edward's call — the long label was ugly and the batch-add pattern didn't feel worth the visual weight). `onSave` signature reverted to the simple `(item) => void`.
+14. Hero image `alt=""` (decorative; the h1 carries the name; previously announced twice).
+15. `toggleGroupType` / `toggleSeason` / `toggleTimeOfDay` helpers deleted from the component — the sheet's `MultiChipList` owns the toggle semantics now.
+16. Legacy `TagPicker` export retained for `ItemDetail.tsx`'s inline edit mode (chip-cloud pattern). When ItemDetail's edit mode moves to the sheet pattern in a future audit, the export can be dropped.
 
-**Global (toggle-btn class)**
+**Global (index.css)**
 
-1. `.toggle-btn` in `src/index.css` gained `min-height: 44px` so every screen using the class hits the WCAG 2.1 AA touch-target rule. Padding stays at 7px 14px so chip width still tracks the label — only vertical breathing room changes. Affects AddPlace, Onboarding discover, Settings, ItemDetail edit, RecommendationFlow.
+1. `.toggle-btn` gained `min-height: 44px` so every screen using the class hits the WCAG 2.1 AA touch-target rule. Padding stays at 7px 14px so chip width still tracks the label — only vertical breathing room changes. Affects AddPlace, Onboarding discover, Settings, ItemDetail edit, RecommendationFlow.
 2. `.toggle-btn:focus-visible` rule added: 2px sand-50 inner ring + 2px sand-700 outer ring. Focusable chips now have a visible state across the app.
+3. **New `.value-chip`** class for the review's dark filled value pill: sand-900 background, sand-100 text, 44px min-height, gap for icons.
+4. **New `.value-chip--muted`** modifier for the "Not sure" three-state visual: transparent background, sand-300 border, sand-700 text.
+5. **New `.change-btn`** class for the outlined Change pill: sand-500 border, sand-700 text, hover to sand-100 background. Focus ring parity with `.toggle-btn`.
 
 **App.tsx**
 
-1. `onSave` callback signature widened to `(item: BucketListItem, options?: { addAnother?: boolean }) => void`. When `addAnother` is set, parent persists but skips the `setScreen({ name: 'list' })` so AddPlace can reset itself for the next entry.
+1. `onSave` callback signature stays simple: `(item: BucketListItem) => void`. The `addAnother` options arg introduced in the first pass was removed with the secondary button.
 
 ### Accessibility check (WCAG 2.1 AA)
 
@@ -347,6 +356,19 @@ Files: `src/components/AddPlace.tsx`, `src/App.tsx` (onSave signature), `src/ind
 - `<main aria-label>` landmark on every step; `<h1>` on the review-step place name; `<h2>` on screen titles; `<h3>` on section headings — clean heading hierarchy.
 - Decorative imagery and icons marked `aria-hidden="true"`; hero photo `alt=""` since the h1 carries the name.
 
+### Accessibility check (WCAG 2.1 AA) — post-redesign
+
+- Value chips and Change buttons all 44x44 minimum via `min-height: 44px` on `.value-chip` / `.change-btn`.
+- Both the value chip and Change chip in each row expose a descriptive `aria-label` (e.g. "Setting: Indoor. Tap to change.") so VoiceOver announces the semantic role of the tap, not just the visible text.
+- BottomSheet: `role="dialog" aria-modal="true"`, header id linked via `aria-labelledby`, backdrop is a real `<button aria-label="Close">` so keyboard users can reach it, Escape closes.
+- Focus flows into the sheet on open (moved to the sheet element which has `tabIndex={-1}`) and restores to the trigger element on close.
+- Body scroll locked while the sheet is open — page doesn't peek-scroll behind the sheet.
+- Single-select option chips use `role="radiogroup"` + `role="radio" aria-checked` on each pill; multi-select uses `role="group"` + `aria-pressed`.
+- Amber category-uncertainty prompt uses light-mode palette (`amber-50` / `amber-800` / `amber-200`) with `role="alert"`.
+- Notes textarea has a real `<label htmlFor="personal-notes">` link.
+- Focus rings visible on every interactive element (value chips, Change buttons, sheet close, sheet Done, sheet option chips, Save CTA, hero back button, all inputs).
+- Reduced-motion: sheet transition durations are 200ms — well under the `prefers-reduced-motion` opt-out threshold; the drag gesture is direct manipulation and doesn't need to animate. Not a bespoke reduced-motion path, but not a violator either.
+
 ### Open items (cross-app, not blocking)
 
 - **Placeholder text contrast**: still `placeholder:text-sand-400` (~1.9:1 on white). Inherited cross-app open item from earlier audits.
@@ -354,6 +376,8 @@ Files: `src/components/AddPlace.tsx`, `src/App.tsx` (onSave signature), `src/ind
 - **Empty-search affordances** (recent searches, nearby categories the user hasn't added much of, popular-near-you rail): tracked in IDEAS.md New Features as v1.1.
 - **Dead-code in `src/utils/api.ts`**: `parseGoogleMapsUrl`, `isGoogleMapsShortUrl`, `resolveGoogleMapsShortUrl` and the `resolve-maps-link` Supabase Edge Function are kept on ice. Tree-shaken from the bundle since nothing imports them. Reactivates if we ship a PWA share target (see IDEAS.md → Google Maps import → (3)).
 - **Discover→Add flow skips the confirm step**: by design (Discover items are user-confirmed visually), but Discover coords can be slightly off (Wikidata centroids). Edge case, flagged, no change in this pass.
+- **ItemDetail edit mode still uses the chip-cloud `TagPicker`**: to keep this audit scoped, the legacy export was kept. When the ItemDetail audit runs (item 6), the edit surface should move to the same value + Change + BottomSheet pattern; the `TagPicker` export can be dropped then.
+- **Reduced-motion path for the sheet**: not bespoke yet. If tester feedback flags it, gate the slide-up transition behind `prefers-reduced-motion: no-preference`.
 
 ---
 

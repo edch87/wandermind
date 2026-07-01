@@ -9,22 +9,17 @@ import type {
   GroupType, Priority, Tag
 } from '../types';
 import { CATEGORY_INFO, DURATION_LABELS, COST_LABELS, SEASON_LABELS, TIME_OF_DAY_LABELS, TAG_INFO, TAG_SOFT_CAP, tagsEligibleForCategory } from '../types';
-import {
-  ArrowLeft, MagnifyingGlass, CaretDown, CaretUp,
-  Buildings, TreeEvergreen, ArrowsClockwise,
-  CloudSun, Sun, CloudRain,
-  Dog, Wheelchair, BabyCarriage,
-} from '@phosphor-icons/react';
+import { ArrowLeft, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import PlaceImg from './PlaceImg';
 import KiteIcon from './KiteIcon';
+import BottomSheet from './BottomSheet';
 import { formatTravelShort } from '../utils/travelDisplay';
 
 interface Props {
   profile: UserProfile;
   items: BucketListItem[];
-  /** Persist the item. The optional `addAnother` flag tells the parent to
-   *  skip the post-save navigation so the user can keep adding from search. */
-  onSave: (item: BucketListItem, options?: { addAnother?: boolean }) => void;
+  /** Persist the item. */
+  onSave: (item: BucketListItem) => void;
   onBack: () => void;
   /** Open an existing item's detail screen — used when a search result
    *  matches a place that's already on the user's list. */
@@ -34,6 +29,12 @@ interface Props {
   /** Category hint from the discover feed — overrides inference so the user isn't re-asked. */
   initialCategory?: Category;
 }
+
+// The single review field the sheet is currently editing, or null when closed.
+type SheetField =
+  | 'category' | 'setting' | 'weather' | 'duration' | 'cost' | 'priority'
+  | 'times' | 'seasons' | 'groups' | 'tags'
+  | 'dogs' | 'wheelchair' | 'stroller';
 
 type Step = 'search' | 'confirm' | 'loading' | 'review';
 
@@ -77,8 +78,11 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   const [draft, setDraft] = useState<Partial<BucketListItem>>({});
   // True when inference couldn't confidently pick a category — prompts the user to confirm.
   const [categoryUncertain, setCategoryUncertain] = useState(false);
-  // Review-step "More details" disclosure (Best seasons + Accessibility).
-  const [moreOpen, setMoreOpen] = useState(false);
+  // Which field row is currently editing in the bottom sheet, or null when closed.
+  const [sheetField, setSheetField] = useState<SheetField | null>(null);
+  // Draft state used by multi-select sheets so the caller can commit on Done.
+  // Set when the sheet opens, cleared when it closes.
+  const [multiDraft, setMultiDraft] = useState<string[]>([]);
   // The result the user just picked, held in state while they confirm or
   // adjust the pin. Once they tap "Add this place" we hand this off to the
   // existing selectPlace pipeline (Google details, travel time, photo, etc.).
@@ -207,21 +211,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     setStep('search');
   };
 
-  /** Reset the review state back to a clean search step (used after "Save & add
-   *  another" so the user lands on an empty search ready for the next entry). */
-  const resetForNextAdd = () => {
-    setPendingPlace(null);
-    setConfirmAddressInput('');
-    setConfirmAddressError(null);
-    setDraft({});
-    setCategoryUncertain(false);
-    setMoreOpen(false);
-    setQuery('');
-    setResults([]);
-    setHasSearched(false);
-    setStep('search');
-  };
-
   const handleSearch = async (q: string) => {
     setQuery(q);
     if (searchTimeout.current !== null) clearTimeout(searchTimeout.current);
@@ -315,34 +304,8 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     setDraft(prev => ({ ...prev, ...updates }));
   };
 
-  const toggleGroupType = (g: GroupType) => {
-    const current = draft.groupSuitability || [];
-    updateDraft({ groupSuitability: current.includes(g) ? current.filter(x => x !== g) : [...current, g] });
-  };
-
-  const toggleSeason = (s: Season) => {
-    const current = draft.bestSeasons || [];
-    if (s === 'any') {
-      // Toggle "Any season": if already selected, deselect; otherwise select only "any"
-      updateDraft({ bestSeasons: current.includes('any') ? [] : ['any'] });
-    } else {
-      // Selecting a specific season: remove "any" if present, then toggle the specific one
-      const withoutAny = current.filter(x => x !== 'any');
-      const updated = withoutAny.includes(s) ? withoutAny.filter(x => x !== s) : [...withoutAny, s];
-      updateDraft({ bestSeasons: updated });
-    }
-  };
-
-  const toggleTimeOfDay = (t: TimeOfDay) => {
-    const current = draft.bestTimesOfDay || [];
-    if (t === 'any') {
-      updateDraft({ bestTimesOfDay: current.includes('any') ? [] : ['any'] });
-    } else {
-      const withoutAny = current.filter(x => x !== 'any');
-      const updated = withoutAny.includes(t) ? withoutAny.filter(x => x !== t) : [...withoutAny, t];
-      updateDraft({ bestTimesOfDay: updated });
-    }
-  };
+  // Multi-select toggle helpers moved into MultiChipList inside the sheet
+  // (with `exclusiveKey="any"` handling the Any / specific-values semantics).
 
   // Search screen
   if (step === 'search') {
@@ -577,13 +540,72 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     );
   }
 
-  // Review screen — final pass before saving. Per-section semantics: every
-  // Section renders an <h3> + a labelled toggle group so the screen reads as a
-  // proper form to assistive tech, not a wall of unrelated buttons.
+  // Review screen — value + Change row pattern. Each field renders a preselected
+  // value chip plus a Change button; both open a BottomSheet with the field's
+  // options. Single-select commits on tap and auto-closes; multi-select keeps
+  // a draft and commits on Done. Nothing is hidden — every field is visible.
   const subtitle = [draft.city, draft.country].filter(Boolean).join(', ');
   const travelChip = draft.travelDistanceKm != null
     ? formatTravelShort(draft as BucketListItem, profile.preferredTransport ?? 'car')
     : null;
+
+  // ── Sheet open helpers ───────────────────────────────────────────────────
+  // Multi-select fields hydrate the multiDraft state on open; single-select
+  // fields don't need it (they commit + close on option pick). Splitting the
+  // open handler by kind keeps callsites tidy at each row.
+  const openSheet = (field: SheetField) => setSheetField(field);
+  const openMultiSheet = (field: SheetField, current: string[]) => {
+    setMultiDraft(current);
+    setSheetField(field);
+  };
+  const closeSheet = () => setSheetField(null);
+
+  // ── Row helpers ──────────────────────────────────────────────────────────
+  // Small render helpers so each row is a one-liner in JSX below. Keeps the
+  // main review layout scannable — the row shape is identical for every field.
+  const singleRow = (
+    field: SheetField,
+    label: string,
+    valueLabel: string | undefined,
+    { muted = false }: { muted?: boolean } = {},
+  ) => (
+    <FieldRow
+      label={label}
+      valueLabel={valueLabel}
+      muted={muted}
+      onOpen={() => openSheet(field)}
+    />
+  );
+
+  const multiRow = (
+    field: SheetField,
+    label: string,
+    valueLabels: string[],
+    current: string[],
+  ) => (
+    <FieldRow
+      label={label}
+      valueLabels={valueLabels}
+      onOpen={() => openMultiSheet(field, current)}
+    />
+  );
+
+  // ── Option label maps used both in row values and inside sheets ──────────
+  const SETTING_LABEL: Record<Setting, string> = { indoor: 'Indoor', outdoor: 'Outdoor', mixed: 'Mixed' };
+  const WEATHER_LABEL: Record<WeatherSuitability, string> = {
+    any: 'Any weather',
+    good_weather: 'Good weather only',
+    bad_weather_ideal: 'Great for bad weather',
+  };
+  const GROUP_LABEL: Record<GroupType, string> = {
+    solo: 'Solo', couple: 'Couple', friends: 'Friends', kids: 'With kids',
+  };
+  const PRIORITY_LABEL: Record<Priority, string> = { low: 'Low', medium: 'Medium', high: 'High' };
+
+  const currentTags = (draft.tags || []) as Tag[];
+  const currentTimes = draft.bestTimesOfDay || [];
+  const currentSeasons = draft.bestSeasons || [];
+  const currentGroups = draft.groupSuitability || [];
 
   return (
     <main aria-label="Review and save place" className="page-enter pb-24">
@@ -622,341 +644,409 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
           )}
         </div>
 
-        {/* Fields */}
-        <Section label="Category" id="category">
-          {categoryUncertain && (
-            <p
-              role="alert"
-              className="mb-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5"
-            >
-              We weren't sure how to categorise this one. Please pick the best fit below.
-            </p>
-          )}
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-category">
-            {(Object.entries(CATEGORY_INFO) as [Category, { label: string; icon: string; color: string }][]).map(([key, info]) => (
-              <button
-                key={key}
-                role="radio"
-                aria-checked={draft.category === key}
-                className={`toggle-btn text-xs ${draft.category === key ? 'active' : ''}`}
-                onClick={() => { updateDraft({ category: key }); setCategoryUncertain(false); }}
-              >
-                {info.label}
-              </button>
-            ))}
-          </div>
-        </Section>
+        {/* Category — uncertain state gets a small amber prompt above the row.
+            Everything else is the same value + Change pattern as the other
+            fields, so the visual rhythm holds. */}
+        {categoryUncertain && (
+          <p
+            role="alert"
+            className="mb-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5"
+          >
+            We weren't sure how to categorise this one. Tap Change to pick the best fit.
+          </p>
+        )}
+        {singleRow('category', 'Category', draft.category ? CATEGORY_INFO[draft.category].label : undefined)}
 
-        <Section label="Setting" id="setting">
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-setting">
-            {([
-              { val: 'indoor' as Setting, label: 'Indoor', icon: <Buildings size={16} aria-hidden="true" /> },
-              { val: 'outdoor' as Setting, label: 'Outdoor', icon: <TreeEvergreen size={16} aria-hidden="true" /> },
-              { val: 'mixed' as Setting, label: 'Mixed', icon: <ArrowsClockwise size={16} aria-hidden="true" /> },
-            ]).map(({ val, label, icon }) => (
-              <button
-                key={val}
-                role="radio"
-                aria-checked={draft.setting === val}
-                className={`toggle-btn ${draft.setting === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ setting: val })}
-              >
-                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        <Section label="Weather" id="weather">
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-weather">
-            {([
-              { val: 'any' as WeatherSuitability, label: 'Any weather', icon: <CloudSun size={16} aria-hidden="true" /> },
-              { val: 'good_weather' as WeatherSuitability, label: 'Good weather only', icon: <Sun size={16} aria-hidden="true" /> },
-              { val: 'bad_weather_ideal' as WeatherSuitability, label: 'Great for bad weather', icon: <CloudRain size={16} aria-hidden="true" /> },
-            ]).map(({ val, label, icon }) => (
-              <button
-                key={val}
-                role="radio"
-                aria-checked={draft.weatherSuitability === val}
-                className={`toggle-btn ${draft.weatherSuitability === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ weatherSuitability: val })}
-              >
-                <span className="inline-flex items-center gap-1.5">{icon} {label}</span>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        <Section label="Activity duration" id="duration">
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-duration">
-            {(Object.entries(DURATION_LABELS) as [DurationEstimate, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                role="radio"
-                aria-checked={draft.durationEstimate === key}
-                className={`toggle-btn ${draft.durationEstimate === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ durationEstimate: key })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-sand-700 mt-1">How long the activity itself takes (travel time is calculated separately)</p>
-        </Section>
-
-        <Section label="Cost" id="cost">
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-cost">
-            {(Object.entries(COST_LABELS) as [CostLevel, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                role="radio"
-                aria-checked={draft.costLevel === key}
-                className={`toggle-btn ${draft.costLevel === key ? 'active' : ''}`}
-                onClick={() => updateDraft({ costLevel: key })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        <Section label="Best times of day" id="times">
-          <div className="toggle-group" role="group" aria-labelledby="section-times">
-            {(Object.entries(TIME_OF_DAY_LABELS) as [TimeOfDay, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                aria-pressed={(draft.bestTimesOfDay || []).includes(key)}
-                className={`toggle-btn ${(draft.bestTimesOfDay || []).includes(key) ? 'active' : ''}`}
-                onClick={() => toggleTimeOfDay(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        {/* Tag picker — text-only, user-driven (no inference). Category-eligible
-            pool only. Soft 5-tag cap; further taps after the cap show a hint
-            but don't block (existing items can keep more than 5). Tags sit
-            above "Good for" because they drive recommendations more heavily. */}
-        {draft.category && (
-          <Section label="Tags" id="tags">
-            <TagPicker
-              category={draft.category}
-              selected={(draft.tags || []) as Tag[]}
-              onChange={(next) => updateDraft({ tags: next })}
-            />
-          </Section>
+        {/* Tags sit right after Category because they drive recommendations
+            more heavily than everything else and have no inference — the one
+            field the user really does need to touch. */}
+        {draft.category && multiRow(
+          'tags', 'Tags',
+          currentTags.map(t => TAG_INFO[t].label),
+          currentTags,
         )}
 
-        <Section label="Good for" id="good-for">
-          <div className="toggle-group" role="group" aria-labelledby="section-good-for">
-            {([
-              ['solo', 'Solo'],
-              ['couple', 'Couple'],
-              ['friends', 'Friends'],
-              ['kids', 'With kids'],
-            ] as [GroupType, string][]).map(([val, label]) => (
-              <button
-                key={val}
-                aria-pressed={(draft.groupSuitability || []).includes(val)}
-                className={`toggle-btn ${(draft.groupSuitability || []).includes(val) ? 'active' : ''}`}
-                onClick={() => toggleGroupType(val)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </Section>
+        {singleRow('setting', 'Setting', draft.setting ? SETTING_LABEL[draft.setting] : undefined)}
+        {singleRow('weather', 'Weather', draft.weatherSuitability ? WEATHER_LABEL[draft.weatherSuitability] : undefined)}
+        {singleRow('duration', 'Duration', draft.durationEstimate ? DURATION_LABELS[draft.durationEstimate] : undefined)}
+        {singleRow('cost', 'Cost', draft.costLevel ? COST_LABELS[draft.costLevel] : undefined)}
 
-        <Section label="Priority" id="priority">
-          <div className="toggle-group" role="radiogroup" aria-labelledby="section-priority">
-            {([['low', 'Low'], ['medium', 'Medium'], ['high', 'High']] as const).map(([val, label]) => (
-              <button
-                key={val}
-                role="radio"
-                aria-checked={draft.priority === val}
-                className={`toggle-btn ${draft.priority === val ? 'active' : ''}`}
-                onClick={() => updateDraft({ priority: val as Priority })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </Section>
+        {multiRow(
+          'times', 'Times of day',
+          currentTimes.map(k => TIME_OF_DAY_LABELS[k]),
+          currentTimes,
+        )}
+        {multiRow(
+          'seasons', 'Seasons',
+          currentSeasons.map(k => SEASON_LABELS[k]),
+          currentSeasons,
+        )}
+        {multiRow(
+          'groups', 'Good for',
+          currentGroups.map(k => GROUP_LABEL[k]),
+          currentGroups,
+        )}
 
-        <Section label="Personal notes" id="notes">
+        {/* Three-state accessibility rows — "Not sure" renders muted so users
+            can eyeball which of the three fields they still haven't committed
+            on. Explicit Yes / No are dark filled like other value chips. */}
+        {singleRow('dogs', 'Dogs',
+          draft.dogFriendly === true ? 'Yes' : draft.dogFriendly === false ? 'No' : 'Not sure',
+          { muted: draft.dogFriendly === undefined },
+        )}
+        {singleRow('wheelchair', 'Wheelchair',
+          draft.wheelchairAccessible === true ? 'Yes' : draft.wheelchairAccessible === false ? 'No' : 'Not sure',
+          { muted: draft.wheelchairAccessible === undefined },
+        )}
+        {singleRow('stroller', 'Stroller',
+          draft.strollerFriendly === true ? 'Yes' : draft.strollerFriendly === false ? 'No' : 'Not sure',
+          { muted: draft.strollerFriendly === undefined },
+        )}
+
+        {singleRow('priority', 'Priority', draft.priority ? PRIORITY_LABEL[draft.priority] : undefined)}
+
+        {/* Notes stays inline — it's a free-text field, no picker to open. */}
+        <div className="mb-5">
+          <label htmlFor="personal-notes" className="block text-xs font-medium text-sand-700 mb-2 uppercase tracking-wide">
+            Notes
+          </label>
           <textarea
             id="personal-notes"
-            aria-labelledby="section-notes"
             value={draft.personalNotes || ''}
             onChange={(e) => updateDraft({ personalNotes: e.target.value })}
             placeholder="Any notes about this place..."
             rows={2}
             className="w-full px-4 py-3 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 resize-none bg-white"
           />
-        </Section>
-
-        {/* More details disclosure — Best seasons + Accessibility live here.
-            Both are lower-frequency: seasons rarely change once set, and
-            accessibility is opt-in signal (default "Not sure" doesn't affect
-            recommendations). Keeping them collapsed shortens the must-edit
-            scan path. */}
-        <div className="mb-5">
-          <button
-            onClick={() => setMoreOpen(o => !o)}
-            aria-expanded={moreOpen}
-            aria-controls="more-details-panel"
-            className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 bg-sand-100 hover:bg-sand-200 rounded-[12px] text-sm font-medium text-sand-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-          >
-            <span>More details</span>
-            {moreOpen
-              ? <CaretUp size={16} weight="bold" aria-hidden="true" />
-              : <CaretDown size={16} weight="bold" aria-hidden="true" />}
-          </button>
-
-          {moreOpen && (
-            <div id="more-details-panel" className="mt-4">
-              <Section label="Best seasons" id="seasons">
-                <div className="toggle-group" role="group" aria-labelledby="section-seasons">
-                  {(Object.entries(SEASON_LABELS) as [Season, string][]).map(([key, label]) => (
-                    <button
-                      key={key}
-                      aria-pressed={(draft.bestSeasons || []).includes(key)}
-                      className={`toggle-btn ${(draft.bestSeasons || []).includes(key) ? 'active' : ''}`}
-                      onClick={() => toggleSeason(key)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </Section>
-
-              <Section label="Accessibility" id="accessibility">
-                {/* Three-state per field: Yes / Not sure / No. "Not sure" is the
-                    default (undefined) and means "no signal" — recommend-flow
-                    filters let it through, and the detail page shows no chip.
-                    Explicit Yes and No are user-only signal (inference no
-                    longer writes false). Tapping the active pill again clears
-                    back to "Not sure" so users can undo a misclick without
-                    leaving a misleading "No". */}
-                <AccessibilityRow
-                  label="Dogs"
-                  icon={<Dog size={16} aria-hidden="true" />}
-                  value={draft.dogFriendly}
-                  onChange={(v) => updateDraft({ dogFriendly: v })}
-                />
-                <AccessibilityRow
-                  label="Wheelchair"
-                  icon={<Wheelchair size={16} aria-hidden="true" />}
-                  value={draft.wheelchairAccessible}
-                  onChange={(v) => updateDraft({ wheelchairAccessible: v })}
-                />
-                <AccessibilityRow
-                  label="Stroller"
-                  icon={<BabyCarriage size={16} aria-hidden="true" />}
-                  value={draft.strollerFriendly}
-                  onChange={(v) => updateDraft({ strollerFriendly: v })}
-                />
-              </Section>
-            </div>
-          )}
         </div>
 
-        <div className="flex gap-2 mt-2 mb-4">
-          <button
-            onClick={() => {
-              onSave(draft as BucketListItem, { addAnother: true });
-              resetForNextAdd();
-            }}
-            className="flex-1 min-h-[44px] py-3.5 rounded-full font-medium text-sm border border-sand-300 text-sand-800 hover:bg-sand-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-          >
-            Save & add another
-          </button>
-          <button
-            onClick={() => onSave(draft as BucketListItem)}
-            className="flex-[2] min-h-[44px] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
-          >
-            Save to my list
-          </button>
-        </div>
+        <button
+          onClick={() => onSave(draft as BucketListItem)}
+          className="w-full min-h-[44px] bg-sand-900 text-sand-100 py-3.5 rounded-full font-semibold text-base hover:bg-sand-800 transition mt-2 mb-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50"
+        >
+          Save place
+        </button>
       </div>
+
+      {/* ── Bottom-sheet pickers ────────────────────────────────────────────
+          One BottomSheet is mounted at any given time; the field controls
+          which picker renders inside. Single-select variants commit + close
+          on option tap. Multi-select variants pipe through multiDraft and
+          commit on Done. */}
+
+      <BottomSheet open={sheetField === 'category'} onClose={closeSheet} title="Category">
+        <SingleChipList
+          options={(Object.entries(CATEGORY_INFO) as [Category, { label: string }][]).map(([k, v]) => ({ key: k, label: v.label }))}
+          value={draft.category}
+          onPick={(k) => { updateDraft({ category: k as Category }); setCategoryUncertain(false); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheetField === 'setting'} onClose={closeSheet} title="Setting">
+        <SingleChipList
+          options={(['indoor', 'outdoor', 'mixed'] as Setting[]).map(k => ({ key: k, label: SETTING_LABEL[k] }))}
+          value={draft.setting}
+          onPick={(k) => { updateDraft({ setting: k as Setting }); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheetField === 'weather'} onClose={closeSheet} title="Weather">
+        <SingleChipList
+          options={(['any', 'good_weather', 'bad_weather_ideal'] as WeatherSuitability[]).map(k => ({ key: k, label: WEATHER_LABEL[k] }))}
+          value={draft.weatherSuitability}
+          onPick={(k) => { updateDraft({ weatherSuitability: k as WeatherSuitability }); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetField === 'duration'}
+        onClose={closeSheet}
+        title="Activity duration"
+        helpText="How long the activity itself takes. Travel time is calculated separately."
+      >
+        <SingleChipList
+          options={(Object.entries(DURATION_LABELS) as [DurationEstimate, string][]).map(([k, l]) => ({ key: k, label: l }))}
+          value={draft.durationEstimate}
+          onPick={(k) => { updateDraft({ durationEstimate: k as DurationEstimate }); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheetField === 'cost'} onClose={closeSheet} title="Cost">
+        <SingleChipList
+          options={(Object.entries(COST_LABELS) as [CostLevel, string][]).map(([k, l]) => ({ key: k, label: l }))}
+          value={draft.costLevel}
+          onPick={(k) => { updateDraft({ costLevel: k as CostLevel }); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      <BottomSheet open={sheetField === 'priority'} onClose={closeSheet} title="Priority">
+        <SingleChipList
+          options={(['low', 'medium', 'high'] as Priority[]).map(k => ({ key: k, label: PRIORITY_LABEL[k] }))}
+          value={draft.priority}
+          onPick={(k) => { updateDraft({ priority: k as Priority }); closeSheet(); }}
+        />
+      </BottomSheet>
+
+      {/* Three-state accessibility sheets — the option keys map back to
+          boolean | undefined at commit time. "unset" is a first-class explicit
+          value here (three-state model): user is telling us they've considered
+          it and don't have signal. */}
+      {(['dogs', 'wheelchair', 'stroller'] as const).map(field => {
+        const draftKey = field === 'dogs' ? 'dogFriendly'
+          : field === 'wheelchair' ? 'wheelchairAccessible'
+          : 'strollerFriendly';
+        const current = draft[draftKey];
+        const currentKey = current === true ? 'yes' : current === false ? 'no' : 'unset';
+        const titleMap = { dogs: 'Dogs allowed?', wheelchair: 'Wheelchair accessible?', stroller: 'Stroller friendly?' };
+        return (
+          <BottomSheet
+            key={field}
+            open={sheetField === field}
+            onClose={closeSheet}
+            title={titleMap[field]}
+          >
+            <SingleChipList
+              options={[
+                { key: 'yes', label: 'Yes' },
+                { key: 'unset', label: 'Not sure' },
+                { key: 'no', label: 'No' },
+              ]}
+              value={currentKey}
+              onPick={(k) => {
+                const nextVal = k === 'yes' ? true : k === 'no' ? false : undefined;
+                updateDraft({ [draftKey]: nextVal } as Partial<BucketListItem>);
+                closeSheet();
+              }}
+            />
+          </BottomSheet>
+        );
+      })}
+
+      {/* Multi-select sheets — draft state lives in multiDraft; Done commits.
+          Backdrop-tap or drag-down dismiss discards the pending edits (a
+          user's safety net). */}
+      <BottomSheet
+        open={sheetField === 'times'}
+        onClose={closeSheet}
+        title="Times of day"
+        helpText="Pick any that apply."
+        onDone={() => { updateDraft({ bestTimesOfDay: multiDraft as TimeOfDay[] }); closeSheet(); }}
+      >
+        <MultiChipList
+          options={(Object.entries(TIME_OF_DAY_LABELS) as [TimeOfDay, string][]).map(([k, l]) => ({ key: k, label: l }))}
+          selected={multiDraft}
+          onToggle={(k) => setMultiDraft(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
+          exclusiveKey="any"
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetField === 'seasons'}
+        onClose={closeSheet}
+        title="Best seasons"
+        helpText="Pick any that apply."
+        onDone={() => { updateDraft({ bestSeasons: multiDraft as Season[] }); closeSheet(); }}
+      >
+        <MultiChipList
+          options={(Object.entries(SEASON_LABELS) as [Season, string][]).map(([k, l]) => ({ key: k, label: l }))}
+          selected={multiDraft}
+          onToggle={(k) => setMultiDraft(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
+          exclusiveKey="any"
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetField === 'groups'}
+        onClose={closeSheet}
+        title="Good for"
+        helpText="Pick any that apply."
+        onDone={() => { updateDraft({ groupSuitability: multiDraft as GroupType[] }); closeSheet(); }}
+      >
+        <MultiChipList
+          options={(['solo', 'couple', 'friends', 'kids'] as GroupType[]).map(k => ({ key: k, label: GROUP_LABEL[k] }))}
+          selected={multiDraft}
+          onToggle={(k) => setMultiDraft(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
+        />
+      </BottomSheet>
+
+      {/* Tags — soft cap at TAG_SOFT_CAP; out-of-pool selected tags stay
+          visible so the user can drop them after a category change. */}
+      <BottomSheet
+        open={sheetField === 'tags'}
+        onClose={closeSheet}
+        title="Tags"
+        helpText={`Pick the ones that make this place worth recommending. Up to ${TAG_SOFT_CAP}.`}
+        onDone={() => { updateDraft({ tags: multiDraft as Tag[] }); closeSheet(); }}
+      >
+        {draft.category && (
+          <TagSheetBody
+            category={draft.category}
+            selected={multiDraft as Tag[]}
+            onToggle={(t) => setMultiDraft(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}
+          />
+        )}
+      </BottomSheet>
     </main>
   );
 }
 
-/** Section heading + slot for a toggle group / control. The `id` prop becomes
- *  `section-{id}` on the heading so the inner toggle group can reference it
- *  via aria-labelledby — what makes the group announce as e.g. "Category,
- *  radio group" instead of a stream of unlabelled buttons. */
-function Section({ label, children, id }: { label: string; children: React.ReactNode; id?: string }) {
-  return (
-    <div className="mb-5">
-      <h3
-        id={id ? `section-${id}` : undefined}
-        className="text-xs font-medium text-sand-700 mb-2 uppercase tracking-wide"
-      >
-        {label}
-      </h3>
-      {children}
-    </div>
-  );
-}
-
-/** One row of the Accessibility section: an icon + label on the left, a
- *  Yes / Not sure / No pill group on the right. `undefined` is the "Not sure"
- *  state. Tapping the active pill clears back to undefined. */
-function AccessibilityRow({
+/**
+ * FieldRow — the value + Change row pattern used across the review step.
+ *
+ * Displays the field label above a row of chips: the current value(s) as
+ * `.value-chip` (dark filled) or `.value-chip--muted` for the "Not sure"
+ * state, followed by a `.change-btn` that opens the field's BottomSheet.
+ * Both the value chips and the Change button open the sheet — the whole row
+ * is a tap target for editing.
+ *
+ * Two forms:
+ * - Single-select: pass `valueLabel` string (or undefined for empty state).
+ * - Multi-select: pass `valueLabels` string[] — renders one chip per value.
+ */
+function FieldRow({
   label,
-  icon,
-  value,
-  onChange,
+  valueLabel,
+  valueLabels,
+  muted = false,
+  onOpen,
 }: {
   label: string;
-  icon: React.ReactNode;
-  value: boolean | undefined;
-  onChange: (v: boolean | undefined) => void;
+  valueLabel?: string;
+  valueLabels?: string[];
+  muted?: boolean;
+  onOpen: () => void;
 }) {
-  const pick = (v: boolean | undefined) => onChange(value === v ? undefined : v);
-  const groupLabelId = `a11y-${label.toLowerCase().replace(/\s+/g, '-')}-label`;
+  const hasValue = valueLabel !== undefined || (valueLabels && valueLabels.length > 0);
+  const changeLabel = hasValue ? 'Change' : 'Choose';
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
-      <span id={groupLabelId} className="inline-flex items-center gap-1.5 text-sm text-sand-800">
-        {icon} {label}
-      </span>
-      <div className="toggle-group !mt-0" role="radiogroup" aria-labelledby={groupLabelId}>
+    <div className="mb-4">
+      <div className="text-xs font-medium text-sand-700 mb-2 uppercase tracking-wider">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5 items-center">
+        {valueLabel !== undefined && (
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`${label}: ${valueLabel}. Tap to change.`}
+            className={muted ? 'value-chip value-chip--muted' : 'value-chip'}
+          >
+            {valueLabel}
+          </button>
+        )}
+        {valueLabels?.map((l, i) => (
+          <button
+            type="button"
+            key={i}
+            onClick={onOpen}
+            aria-label={`${label} includes ${l}. Tap to change.`}
+            className="value-chip"
+          >
+            {l}
+          </button>
+        ))}
         <button
-          role="radio"
-          aria-checked={value === true}
-          className={`toggle-btn text-xs ${value === true ? 'active' : ''}`}
-          onClick={() => pick(true)}
+          type="button"
+          onClick={onOpen}
+          aria-label={`${changeLabel} ${label.toLowerCase()}`}
+          className="change-btn"
         >
-          Yes
-        </button>
-        <button
-          role="radio"
-          aria-checked={value === undefined}
-          className={`toggle-btn text-xs ${value === undefined ? 'active' : ''}`}
-          onClick={() => onChange(undefined)}
-        >
-          Not sure
-        </button>
-        <button
-          role="radio"
-          aria-checked={value === false}
-          className={`toggle-btn text-xs ${value === false ? 'active' : ''}`}
-          onClick={() => pick(false)}
-        >
-          No
+          {!hasValue && <Plus size={13} weight="bold" aria-hidden="true" />}
+          {changeLabel}
         </button>
       </div>
     </div>
   );
 }
 
-/** Text-only chip picker for editorial tags. Shows the category-eligible pool;
- *  selected tags out of pool (e.g. after a category change) are kept and shown
- *  too so the user can drop them deliberately. Soft cap at TAG_SOFT_CAP. */
+/**
+ * SingleChipList — the option chip grid that renders inside a single-select
+ * BottomSheet. Tap commits and closes via the caller's `onPick`.
+ */
+function SingleChipList({
+  options,
+  value,
+  onPick,
+}: {
+  options: { key: string; label: string }[];
+  value: string | undefined;
+  onPick: (key: string) => void;
+}) {
+  return (
+    <div className="toggle-group" role="radiogroup" aria-label="Options">
+      {options.map(opt => (
+        <button
+          key={opt.key}
+          role="radio"
+          aria-checked={value === opt.key}
+          onClick={() => onPick(opt.key)}
+          className={`toggle-btn ${value === opt.key ? 'active' : ''}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * MultiChipList — the option chip grid for multi-select sheets. Toggles feed
+ * the caller's draft state; commit happens on the sheet's Done button.
+ *
+ * `exclusiveKey` is the "Any" special value used by Times / Seasons: picking
+ * "Any" clears the specific selections and vice-versa. Mirrors the toggle
+ * semantics of the previous inline implementation.
+ */
+function MultiChipList({
+  options,
+  selected,
+  onToggle,
+  exclusiveKey,
+}: {
+  options: { key: string; label: string }[];
+  selected: string[];
+  onToggle: (key: string) => void;
+  exclusiveKey?: string;
+}) {
+  const handle = (k: string) => {
+    if (!exclusiveKey) return onToggle(k);
+    if (k === exclusiveKey) {
+      // Picking "Any" clears everything and either leaves it selected or unselected.
+      if (selected.includes(exclusiveKey)) {
+        onToggle(exclusiveKey);
+      } else {
+        // Clear specifics, then set Any — done as two batched updates in state effect.
+        selected.forEach(s => onToggle(s));
+        onToggle(exclusiveKey);
+      }
+      return;
+    }
+    // Picking a specific value removes "Any" first if present.
+    if (selected.includes(exclusiveKey)) onToggle(exclusiveKey);
+    onToggle(k);
+  };
+  return (
+    <div className="toggle-group" role="group" aria-label="Options">
+      {options.map(opt => (
+        <button
+          key={opt.key}
+          aria-pressed={selected.includes(opt.key)}
+          onClick={() => handle(opt.key)}
+          className={`toggle-btn ${selected.includes(opt.key) ? 'active' : ''}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Legacy TagPicker — kept for ItemDetail's inline edit mode which still uses
+ * the chip-cloud pattern. AddPlace review has moved to the sheet-based
+ * `TagSheetBody` above. When ItemDetail's edit mode moves to the sheet
+ * pattern too (a future audit), this export can be dropped.
+ */
 export function TagPicker({
   category,
   selected,
@@ -967,20 +1057,12 @@ export function TagPicker({
   onChange: (next: Tag[]) => void;
 }) {
   const pool = tagsEligibleForCategory(category);
-  // Show out-of-pool selected tags too — happens when an item's category was changed
-  // after tags were applied. User decides whether to remove them.
   const outOfPool = selected.filter(t => !pool.includes(t));
   const all = [...pool, ...outOfPool];
   const overCap = selected.length > TAG_SOFT_CAP;
-
   const toggle = (t: Tag) => {
-    if (selected.includes(t)) {
-      onChange(selected.filter(x => x !== t));
-    } else {
-      onChange([...selected, t]);
-    }
+    onChange(selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t]);
   };
-
   return (
     <div>
       <div className="toggle-group" role="group" aria-label="Tags">
@@ -1001,5 +1083,46 @@ export function TagPicker({
           : `Pick the ones that make this place worth recommending. Up to ${TAG_SOFT_CAP}.`}
       </p>
     </div>
+  );
+}
+
+/**
+ * Tag sheet body — shows category-eligible tags plus any out-of-pool tags the
+ * item already has (so users can drop them after a category change). Soft cap
+ * at TAG_SOFT_CAP; further picks show a hint but don't block.
+ */
+function TagSheetBody({
+  category,
+  selected,
+  onToggle,
+}: {
+  category: Category;
+  selected: Tag[];
+  onToggle: (t: Tag) => void;
+}) {
+  const pool = tagsEligibleForCategory(category);
+  const outOfPool = selected.filter(t => !pool.includes(t));
+  const all = [...pool, ...outOfPool];
+  const overCap = selected.length > TAG_SOFT_CAP;
+  return (
+    <>
+      <div className="toggle-group" role="group" aria-label="Tags">
+        {all.map(t => (
+          <button
+            key={t}
+            aria-pressed={selected.includes(t)}
+            onClick={() => onToggle(t)}
+            className={`toggle-btn text-xs ${selected.includes(t) ? 'active' : ''}`}
+          >
+            {TAG_INFO[t].label}
+          </button>
+        ))}
+      </div>
+      {overCap && (
+        <p className="text-xs mt-3 text-terra-600" role="alert">
+          {selected.length} selected — best to keep it under {TAG_SOFT_CAP}.
+        </p>
+      )}
+    </>
   );
 }

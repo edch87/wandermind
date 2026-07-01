@@ -218,11 +218,9 @@ export default function App() {
           items={items}
           initialPlace={screen.initialPlace}
           initialCategory={screen.initialCategory}
-          onSave={(item, options) => {
+          onSave={(item) => {
             handleSaveItem(item);
-            // "Save & add another" keeps the user on AddPlace — the component
-            // resets its own state back to the search step internally.
-            if (!options?.addAnother) setScreen({ name: 'list' });
+            setScreen({ name: 'list' });
           }}
           onBack={() => setScreen({ name: 'dashboard' })}
           onViewExisting={(id) => setScreen({ name: 'detail', itemId: id })}

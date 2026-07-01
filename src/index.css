@@ -122,6 +122,76 @@ body {
   color: #FFF3E6;
 }
 
+/* Value chip — dark filled pill used on the AddPlace review to show the
+   preselected value of a field. Sits next to a paired `.change-btn`.
+   Both the chip and the Change button open the same BottomSheet on tap. */
+.value-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: #2D1B0E;
+  color: #FFF3E6;
+  border: 1.5px solid #2D1B0E;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.value-chip:hover {
+  opacity: 0.9;
+}
+
+.value-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
+}
+
+/* Muted variant used when the value is an explicit "not sure" (three-state
+   accessibility fields). Visually softer so users can spot the fields they
+   haven't committed on. */
+.value-chip--muted {
+  background: transparent;
+  color: #7A5C3A;
+  border: 1.5px solid #E8D5BF;
+}
+
+.value-chip--muted:hover {
+  background: #FFF3E6;
+}
+
+/* Change chip — outlined pill paired with a value chip. Slightly warmer
+   border than the toggle-btn default so the Change affordance reads as
+   distinct from an inactive option. */
+.change-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 16px;
+  min-height: 44px;
+  border-radius: 9999px;
+  background: transparent;
+  color: #7A5C3A;
+  border: 1.5px solid #B8945C;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.change-btn:hover {
+  background: #FFF3E6;
+  color: #5C3D1F;
+}
+
+.change-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFF3E6, 0 0 0 4px #5C3D1F;
+}
+
 /* Place image cards */
 .place-img {
   width: 100%;
