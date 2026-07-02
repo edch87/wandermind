@@ -96,12 +96,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
   // adjust the pin. Once they tap "Add this place" we hand this off to the
   // existing selectPlace pipeline (Google details, travel time, photo, etc.).
   const [pendingPlace, setPendingPlace] = useState<HereSearchResult | null>(null);
-  // Confirm-step address fallback for users who can't drag the map (keyboard /
-  // VoiceOver). Editing the field re-geocodes and moves the pin. Mirrors the
-  // Onboarding pin step's address fallback.
-  const [confirmAddressInput, setConfirmAddressInput] = useState('');
-  const [confirmAddressLooking, setConfirmAddressLooking] = useState(false);
-  const [confirmAddressError, setConfirmAddressError] = useState<string | null>(null);
 
   const searchTimeout = useRef<number | null>(null);
   const confirmMapRef = useRef<HTMLDivElement>(null);
@@ -142,7 +136,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
         position: { lat, lng },
         address: geo?.address || prev.address,
       } : prev);
-      if (geo?.address.label) setConfirmAddressInput(geo.address.label);
     };
 
     marker.on('dragend', () => {
@@ -161,36 +154,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
     setTimeout(() => map.invalidateSize(), 0);
   }, [step, pendingPlace]);
 
-  /** Address-field fallback for users who can't drag the map (keyboard /
-   *  VoiceOver). Mirrors the Onboarding pin step. Re-geocodes the typed value
-   *  and moves both the pin and the pendingPlace state. */
-  const handleConfirmAddressSubmit = async () => {
-    if (!pendingPlace) return;
-    const value = confirmAddressInput.trim();
-    if (!value) return;
-    if (value === pendingPlace.address.label) return;
-    setConfirmAddressError(null);
-    setConfirmAddressLooking(true);
-    const matches = await searchPlaces(value, profile.homeLatitude, profile.homeLongitude);
-    setConfirmAddressLooking(false);
-    if (matches.length === 0) {
-      setConfirmAddressError("Couldn't find that address. Try a more specific street, city, or postcode.");
-      setConfirmAddressInput(pendingPlace.address.label);
-      return;
-    }
-    const top = matches[0];
-    setPendingPlace(prev => prev ? {
-      ...prev,
-      position: { lat: top.position.lat, lng: top.position.lng },
-      address: top.address,
-    } : prev);
-    setConfirmAddressInput(top.address.label);
-    if (confirmMapInstance.current && confirmMarkerRef.current) {
-      confirmMarkerRef.current.setLatLng([top.position.lat, top.position.lng]);
-      confirmMapInstance.current.setView([top.position.lat, top.position.lng], 16);
-    }
-  };
-
   // Tear the confirm-step map down whenever we leave it, so re-entry (e.g.
   // via Search again → pick a new result) gets a clean instance.
   useEffect(() => {
@@ -203,8 +166,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
   const goToConfirm = (place: HereSearchResult) => {
     setPendingPlace(place);
-    setConfirmAddressInput(place.address.label);
-    setConfirmAddressError(null);
     setResults([]);
     setStep('confirm');
   };
@@ -215,8 +176,6 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
 
   const backToSearch = () => {
     setPendingPlace(null);
-    setConfirmAddressInput('');
-    setConfirmAddressError(null);
     setStep('search');
   };
 
@@ -461,60 +420,24 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
         {/* px-6 wrapper + w-full on the map is the same pattern Settings uses.
             Earlier mx-6 on the map div was letting Leaflet render past the
             right edge in some PWA layouts — putting the inset on a wrapper
-            forces an explicit constrained width on the map element itself. */}
+            forces an explicit constrained width on the map element itself.
+            Map height reduced from 55vh to 42vh so the CTAs below stay in
+            viewport on shorter phones (iPhone SE etc.) — the previous height
+            plus the App wrapper's 72px bottom nav padding was pushing the
+            buttons below the fold, and Leaflet consumes touch events on the
+            map so users couldn't easily scroll past it to reach them. */}
         <div className="px-6">
           <div
             ref={confirmMapRef}
             role="application"
-            aria-label="Map with draggable pin. Drag the pin or tap a new spot to adjust the location. If you can't drag, use the address field below."
+            aria-label="Map with draggable pin. Drag the pin or tap a new spot to adjust the location."
             className="w-full rounded-[20px] border border-sand-200 overflow-hidden"
-            style={{ height: '55vh', minHeight: '320px' }}
+            style={{ height: '42vh', minHeight: '260px' }}
           />
         </div>
 
-        {/* Address-field fallback — keyboard / VoiceOver path for users who
-            can't drag the map. Mirrors the Onboarding pin step. */}
-        <form
-          className="px-6 pt-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleConfirmAddressSubmit();
-          }}
-        >
-          <label htmlFor="confirm-address-input" className="text-xs font-medium text-sand-700 uppercase tracking-wider mb-1 block">
-            Address
-          </label>
-          <input
-            id="confirm-address-input"
-            type="text"
-            value={confirmAddressInput}
-            onChange={(e) => {
-              setConfirmAddressInput(e.target.value);
-              if (confirmAddressError) setConfirmAddressError(null);
-            }}
-            onBlur={() => void handleConfirmAddressSubmit()}
-            placeholder="Street, city, or postcode"
-            autoComplete="off"
-            autoCapitalize="words"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode="search"
-            enterKeyHint="done"
-            disabled={confirmAddressLooking}
-            className="w-full px-4 py-2.5 border border-sand-200 rounded-[12px] text-base text-sand-900 placeholder:text-sand-400 focus:outline-none focus:border-sand-700 focus:ring-2 focus:ring-sand-700/30 bg-white disabled:opacity-60"
-          />
-          <div aria-live="polite" className="sr-only">
-            {confirmAddressLooking ? 'Looking up address' : confirmAddressError ?? ''}
-          </div>
-          {confirmAddressError && (
-            <p className="text-sm text-terra-600 mt-2" role="alert">
-              {confirmAddressError}
-            </p>
-          )}
-        </form>
-
         <div
-          className="px-6 pt-3 flex gap-2"
+          className="px-6 pt-4 flex gap-2"
           style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
           <button
