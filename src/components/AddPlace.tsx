@@ -494,7 +494,7 @@ export default function AddPlace({ profile, items, onSave, onBack, onViewExistin
             }}
             onBlur={() => void handleConfirmAddressSubmit()}
             placeholder="Street, city, or postcode"
-            autoComplete="street-address"
+            autoComplete="off"
             autoCapitalize="words"
             autoCorrect="off"
             spellCheck={false}
